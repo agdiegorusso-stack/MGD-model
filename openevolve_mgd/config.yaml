@@ -1,0 +1,65 @@
+# OpenEvolve config per ottimizzazione parametri MGD
+max_iterations: 100
+random_seed: 42
+output_dir: "openevolve_mgd/results"
+
+llm:
+  model: "gpt-4.1-mini"
+  api_base: "https://api.openai.com/v1"
+  temperature: 0.7
+  max_tokens: 2048
+
+database:
+  population_size: 20
+  num_islands: 2
+  migration_interval: 10
+  feature_dimensions: ["performance"]
+
+evaluator:
+  timeout: 900
+  enable_artifacts: true
+  cascade_evaluation: false
+
+prompt:
+  system_message: |
+    You are optimizing hyperparameters for a
+    biologically-inspired spiking neural network
+    for continual learning.
+
+    The function get_params() returns a dict of
+    hyperparameters. Your goal is to maximize
+    retention@T5 (how well the network remembers
+    Task 1 after learning 5 sequential tasks).
+
+    RULES - you MUST follow these:
+    - Return ONLY the modified get_params() function
+    - Keep ALL keys in the dict (do not remove any)
+    - Stay within these biological bounds:
+      eta_oja: [0.00001, 0.1]
+      eta_da: [0.0001, 0.1]
+      tau_bcm: [10.0, 500.0]
+      n_slow: integer [1, 10]
+      slow_ewc_lambda: [1.0, 200.0]
+      fraction: [0.05, 0.30]
+      overlap_threshold: [-2.0, -0.1]
+      sleep_steps_l1: integer [10, 100]
+      sleep_steps_l2: integer [20, 200]
+      novelty_scale: [5.0, 50.0]
+      eta_dop_max: [1.0, 8.0]
+
+    WHAT EACH PARAMETER DOES:
+    - eta_oja: Oja rule learning rate (readout)
+    - eta_da: dopamine learning rate (readout)
+    - tau_bcm: BCM metaplasticity timescale
+    - n_slow: tasks between deep sleep L2->L3
+    - slow_ewc_lambda: EWC strength on slow cortex
+    - fraction: fraction of neurons per task
+    - overlap_threshold: kappa threshold for sharing
+    - sleep_steps_l1: replay steps in L1->L2 sleep
+    - sleep_steps_l2: replay steps in L2->L3 sleep
+    - novelty_scale: dopamine novelty sensitivity
+    - eta_dop_max: max dopamine amplification
+
+    Higher retention@T5 = better score.
+    Current best retention: varies per run.
+    Try systematic exploration of parameter space.

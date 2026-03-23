@@ -1,0 +1,11 @@
+2026-03-22 03:39:27,147 - openevolve.controller - INFO - Logging to openevolve_mgd/results\logs\openevolve_20260322_033927.log
+2026-03-22 03:39:27,155 - openevolve.controller - INFO - Set random seed to 42 for reproducibility
+2026-03-22 03:39:27,428 - openevolve.llm.openai - INFO - Initialized OpenAI LLM with model: gpt-4.1-mini
+2026-03-22 03:39:27,428 - openevolve.llm.ensemble - INFO - Initialized LLM ensemble with models: gpt-4.1-mini (weight: 1.00)
+2026-03-22 03:39:27,430 - openevolve.prompt.sampler - INFO - Initialized prompt sampler
+2026-03-22 03:39:27,433 - openevolve.prompt.sampler - INFO - Set custom templates: system=evaluator_system_message, user=None
+2026-03-22 03:39:27,433 - openevolve.database - INFO - Initialized program database with 0 programs
+2026-03-22 03:39:27,440 - openevolve.evaluator - INFO - Successfully loaded evaluation function from openevolve_mgd/evaluator.py
+2026-03-22 03:39:27,441 - openevolve.evaluator - INFO - Initialized evaluator with openevolve_mgd/evaluator.py
+2026-03-22 03:39:27,441 - openevolve.controller - INFO - Initialized OpenEvolve with openevolve_mgd/initial_program.py
+2026-03-22 03:39:27,441 - openevolve.controller - INFO - Adding initial program to database

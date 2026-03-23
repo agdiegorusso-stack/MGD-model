@@ -1,0 +1,45 @@
+2026-03-22 03:16:20,343 - openevolve.controller - INFO - Logging to openevolve_mgd/results\logs\openevolve_20260322_031620.log
+2026-03-22 03:16:20,352 - openevolve.controller - INFO - Set random seed to 42 for reproducibility
+2026-03-22 03:16:20,636 - openevolve.llm.openai - INFO - Initialized OpenAI LLM with model: gpt-4.1-mini
+2026-03-22 03:16:20,637 - openevolve.llm.ensemble - INFO - Initialized LLM ensemble with models: gpt-4.1-mini (weight: 1.00)
+2026-03-22 03:16:20,711 - openevolve.prompt.sampler - INFO - Initialized prompt sampler
+2026-03-22 03:16:20,713 - openevolve.prompt.sampler - INFO - Set custom templates: system=evaluator_system_message, user=None
+2026-03-22 03:16:20,713 - openevolve.database - INFO - Initialized program database with 0 programs
+2026-03-22 03:16:20,716 - openevolve.evaluator - INFO - Successfully loaded evaluation function from openevolve_mgd/evaluator.py
+2026-03-22 03:16:20,716 - openevolve.evaluator - INFO - Initialized evaluator with openevolve_mgd/evaluator.py
+2026-03-22 03:16:20,716 - openevolve.controller - INFO - Initialized OpenEvolve with openevolve_mgd/initial_program.py
+2026-03-22 03:16:20,716 - openevolve.controller - INFO - Adding initial program to database
+2026-03-22 03:17:16,302 - openevolve.evaluator - INFO - Evaluated program 9140406a-a7a7-403f-aa74-852eece018e3 in 55.59s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:17:16,303 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 5, 'diversity': 0}
+2026-03-22 03:17:16,343 - openevolve.process_parallel - INFO - Initialized process parallel controller with 1 workers
+2026-03-22 03:17:16,343 - openevolve.process_parallel - INFO - Set max None tasks per child
+2026-03-22 03:17:16,344 - openevolve.process_parallel - INFO - Started process pool with 1 processes
+2026-03-22 03:17:16,344 - openevolve.controller - INFO - Using island-based evolution with 2 islands
+2026-03-22 03:17:16,344 - openevolve.database - INFO - Island Status:
+2026-03-22 03:17:16,344 - openevolve.database - INFO -  * Island 0: 1 programs, best=0.9667, avg=0.9667, diversity=0.00, gen=0 (best: 9140406a-a7a7-403f-aa74-852eece018e3)
+2026-03-22 03:17:16,345 - openevolve.database - INFO -    Island 1: 0 programs, best=0.0000, avg=0.0000, diversity=0.00, gen=0
+2026-03-22 03:17:16,345 - openevolve.process_parallel - INFO - Starting process-based evolution from iteration 1 for 100 iterations (total: 101)
+2026-03-22 03:17:16,413 - openevolve.process_parallel - INFO - Early stopping disabled
+2026-03-22 03:19:17,815 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 9, 'diversity': 5}
+2026-03-22 03:19:17,815 - openevolve.process_parallel - INFO - Iteration 1: Program b08dea44-51c3-4de7-aa08-72b697e94ecf (parent: 9140406a-a7a7-403f-aa74-852eece018e3) completed in 63.61s
+2026-03-22 03:19:17,816 - openevolve.process_parallel - INFO - Metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:20:16,855 - openevolve.database - INFO - New MAP-Elites cell occupied in island 1: {'complexity': 7, 'diversity': 0}
+2026-03-22 03:20:16,856 - openevolve.process_parallel - INFO - Iteration 2: Program 42f74950-7716-48f2-9487-93852c8c634e (parent: 9140406a-a7a7-403f-aa74-852eece018e3) completed in 59.03s
+2026-03-22 03:20:16,856 - openevolve.process_parallel - INFO - Metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:21:31,896 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 3, 'diversity': 0}
+2026-03-22 03:21:31,897 - openevolve.process_parallel - INFO - Iteration 3: Program 34362b4c-c6de-4c60-8ef9-6a9ee5ba3d86 (parent: 9140406a-a7a7-403f-aa74-852eece018e3) completed in 75.04s
+2026-03-22 03:21:31,897 - openevolve.process_parallel - INFO - Metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:22:35,344 - openevolve.database - INFO - New MAP-Elites cell occupied in island 1: {'complexity': 9, 'diversity': 9}
+2026-03-22 03:22:35,345 - openevolve.process_parallel - INFO - Iteration 4: Program 7c4b3e5c-0f63-4410-bf9e-75b7ffe25571 (parent: 42f74950-7716-48f2-9487-93852c8c634e) completed in 63.45s
+2026-03-22 03:22:35,345 - openevolve.process_parallel - INFO - Metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:23:37,166 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 3, 'diversity': 7}
+2026-03-22 03:23:37,166 - openevolve.process_parallel - INFO - Iteration 5: Program b75f987b-4840-4558-b0a5-8fc787f241c5 (parent: 34362b4c-c6de-4c60-8ef9-6a9ee5ba3d86) completed in 61.82s
+2026-03-22 03:23:37,166 - openevolve.process_parallel - INFO - Metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:24:43,060 - openevolve.database - INFO - New MAP-Elites cell occupied in island 1: {'complexity': 2, 'diversity': 1}
+2026-03-22 03:24:43,061 - openevolve.process_parallel - INFO - Iteration 6: Program c84b4927-70a9-4d12-b93e-3a4ce0c51911 (parent: 7c4b3e5c-0f63-4410-bf9e-75b7ffe25571) completed in 65.89s
+2026-03-22 03:24:43,061 - openevolve.process_parallel - INFO - Metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:25:41,915 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:41,916 - openevolve.process_parallel - INFO - Graceful shutdown requested...
+2026-03-22 03:25:41,916 - openevolve.process_parallel - INFO - Shutdown requested, canceling remaining evaluations...
+2026-03-22 03:25:41,918 - openevolve.controller - INFO - Evolution stopped due to shutdown request
+2026-03-22 03:25:52,887 - openevolve.controller - INFO - Force exit requested - terminating immediately

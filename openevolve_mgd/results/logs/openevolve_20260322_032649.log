@@ -1,0 +1,46 @@
+2026-03-22 03:26:49,729 - openevolve.controller - INFO - Logging to openevolve_mgd/results\logs\openevolve_20260322_032649.log
+2026-03-22 03:26:49,737 - openevolve.controller - INFO - Set random seed to 42 for reproducibility
+2026-03-22 03:26:50,008 - openevolve.llm.openai - INFO - Initialized OpenAI LLM with model: gpt-4.1-mini
+2026-03-22 03:26:50,008 - openevolve.llm.ensemble - INFO - Initialized LLM ensemble with models: gpt-4.1-mini (weight: 1.00)
+2026-03-22 03:26:50,011 - openevolve.prompt.sampler - INFO - Initialized prompt sampler
+2026-03-22 03:26:50,013 - openevolve.prompt.sampler - INFO - Set custom templates: system=evaluator_system_message, user=None
+2026-03-22 03:26:50,013 - openevolve.database - INFO - Initialized program database with 0 programs
+2026-03-22 03:26:50,017 - openevolve.evaluator - INFO - Successfully loaded evaluation function from openevolve_mgd/evaluator.py
+2026-03-22 03:26:50,017 - openevolve.evaluator - INFO - Initialized evaluator with openevolve_mgd/evaluator.py
+2026-03-22 03:26:50,017 - openevolve.controller - INFO - Initialized OpenEvolve with openevolve_mgd/initial_program.py
+2026-03-22 03:26:50,017 - openevolve.controller - INFO - Adding initial program to database
+2026-03-22 03:27:49,236 - openevolve.evaluator - INFO - Evaluated program db543720-6799-472f-8abd-ae2e8c4cf51a in 59.22s: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:27:49,237 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 5, 'diversity': 0}
+2026-03-22 03:27:49,238 - openevolve.process_parallel - INFO - Initialized process parallel controller with 1 workers
+2026-03-22 03:27:49,239 - openevolve.process_parallel - INFO - Set max None tasks per child
+2026-03-22 03:27:49,239 - openevolve.process_parallel - INFO - Started process pool with 1 processes
+2026-03-22 03:27:49,239 - openevolve.controller - INFO - Using island-based evolution with 2 islands
+2026-03-22 03:27:49,239 - openevolve.database - INFO - Island Status:
+2026-03-22 03:27:49,240 - openevolve.database - INFO -  * Island 0: 1 programs, best=0.9667, avg=0.9667, diversity=0.00, gen=0 (best: db543720-6799-472f-8abd-ae2e8c4cf51a)
+2026-03-22 03:27:49,240 - openevolve.database - INFO -    Island 1: 0 programs, best=0.0000, avg=0.0000, diversity=0.00, gen=0
+2026-03-22 03:27:49,240 - openevolve.process_parallel - INFO - Starting process-based evolution from iteration 1 for 100 iterations (total: 101)
+2026-03-22 03:27:49,307 - openevolve.process_parallel - INFO - Early stopping disabled
+2026-03-22 03:29:57,892 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 0, 'diversity': 5}
+2026-03-22 03:29:57,892 - openevolve.process_parallel - INFO - Iteration 1: Program 3c585f19-0a94-44e0-a3a8-8746fcb68d38 (parent: db543720-6799-472f-8abd-ae2e8c4cf51a) completed in 67.04s
+2026-03-22 03:29:57,892 - openevolve.process_parallel - INFO - Metrics: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:31:03,710 - openevolve.database - INFO - New MAP-Elites cell occupied in island 1: {'complexity': 8, 'diversity': 0}
+2026-03-22 03:31:03,711 - openevolve.process_parallel - INFO - Iteration 2: Program 59039a2e-426c-474f-a1bc-08ffac0c229b (parent: db543720-6799-472f-8abd-ae2e8c4cf51a) completed in 65.82s
+2026-03-22 03:31:03,712 - openevolve.process_parallel - INFO - Metrics: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:31:18,307 - openevolve.process_parallel - WARNING - Iteration 3 error: No valid diffs found in response
+2026-03-22 03:32:19,737 - openevolve.database - INFO - New MAP-Elites cell occupied in island 1: {'complexity': 9, 'diversity': 9}
+2026-03-22 03:32:19,738 - openevolve.process_parallel - INFO - Iteration 4: Program 99a1291b-a114-4dbe-b4b1-92bb6b674118 (parent: 59039a2e-426c-474f-a1bc-08ffac0c229b) completed in 61.43s
+2026-03-22 03:32:19,738 - openevolve.process_parallel - INFO - Metrics: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:33:28,106 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 0, 'diversity': 3}
+2026-03-22 03:33:28,106 - openevolve.process_parallel - INFO - Iteration 5: Program 96f9bb25-239f-4943-8f05-60e68340b46f (parent: 3c585f19-0a94-44e0-a3a8-8746fcb68d38) completed in 68.37s
+2026-03-22 03:33:28,107 - openevolve.process_parallel - INFO - Metrics: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:34:53,227 - openevolve.database - INFO - New MAP-Elites cell occupied in island 1: {'complexity': 8, 'diversity': 7}
+2026-03-22 03:34:53,227 - openevolve.process_parallel - INFO - Iteration 6: Program 0a983880-cac2-4c79-bc48-839bf543ee84 (parent: 59039a2e-426c-474f-a1bc-08ffac0c229b) completed in 85.13s
+2026-03-22 03:34:53,228 - openevolve.process_parallel - INFO - Metrics: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:36:01,819 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 0, 'diversity': 2}
+2026-03-22 03:36:01,820 - openevolve.process_parallel - INFO - Iteration 7: Program 26dd2bc8-9b41-4f38-a1b4-b11012a8f188 (parent: db543720-6799-472f-8abd-ae2e8c4cf51a) completed in 68.59s
+2026-03-22 03:36:01,820 - openevolve.process_parallel - INFO - Metrics: score=0.9667, combined_score=0.9667, retention_t5=0.9667
+2026-03-22 03:36:32,850 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:36:32,851 - openevolve.process_parallel - INFO - Graceful shutdown requested...
+2026-03-22 03:36:32,860 - openevolve.process_parallel - INFO - Shutdown requested, canceling remaining evaluations...
+2026-03-22 03:36:32,866 - openevolve.controller - INFO - Evolution stopped due to shutdown request
+2026-03-22 03:37:03,662 - openevolve.controller - INFO - Force exit requested - terminating immediately

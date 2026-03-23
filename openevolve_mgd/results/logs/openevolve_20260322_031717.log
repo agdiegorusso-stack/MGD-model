@@ -1,0 +1,176 @@
+2026-03-22 03:17:17,712 - openevolve.controller - INFO - Logging to openevolve_mgd/results\logs\openevolve_20260322_031717.log
+2026-03-22 03:17:17,720 - openevolve.controller - INFO - Set random seed to 42 for reproducibility
+2026-03-22 03:17:17,984 - openevolve.llm.openai - INFO - Initialized OpenAI LLM with model: gpt-4.1-mini
+2026-03-22 03:17:17,984 - openevolve.llm.ensemble - INFO - Initialized LLM ensemble with models: gpt-4.1-mini (weight: 1.00)
+2026-03-22 03:17:17,987 - openevolve.prompt.sampler - INFO - Initialized prompt sampler
+2026-03-22 03:17:17,989 - openevolve.prompt.sampler - INFO - Set custom templates: system=evaluator_system_message, user=None
+2026-03-22 03:17:17,989 - openevolve.database - INFO - Initialized program database with 0 programs
+2026-03-22 03:17:17,996 - openevolve.evaluator - INFO - Successfully loaded evaluation function from openevolve_mgd/evaluator.py
+2026-03-22 03:17:17,996 - openevolve.evaluator - INFO - Initialized evaluator with openevolve_mgd/evaluator.py
+2026-03-22 03:17:17,996 - openevolve.controller - INFO - Initialized OpenEvolve with openevolve_mgd/initial_program.py
+2026-03-22 03:17:17,996 - openevolve.controller - INFO - Adding initial program to database
+2026-03-22 03:18:13,561 - openevolve.evaluator - INFO - Evaluated program be19b259-ddbc-4496-a9bc-431ddaf1b359 in 55.56s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:18:13,561 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 5, 'diversity': 0}
+2026-03-22 03:18:13,587 - openevolve.process_parallel - INFO - Initialized process parallel controller with 1 workers
+2026-03-22 03:18:13,587 - openevolve.process_parallel - INFO - Set max None tasks per child
+2026-03-22 03:18:13,588 - openevolve.process_parallel - INFO - Started process pool with 1 processes
+2026-03-22 03:18:13,588 - openevolve.controller - INFO - Using island-based evolution with 2 islands
+2026-03-22 03:18:13,588 - openevolve.database - INFO - Island Status:
+2026-03-22 03:18:13,588 - openevolve.database - INFO -  * Island 0: 1 programs, best=0.9667, avg=0.9667, diversity=0.00, gen=0 (best: be19b259-ddbc-4496-a9bc-431ddaf1b359)
+2026-03-22 03:18:13,588 - openevolve.database - INFO -    Island 1: 0 programs, best=0.0000, avg=0.0000, diversity=0.00, gen=0
+2026-03-22 03:18:13,589 - openevolve.process_parallel - INFO - Starting process-based evolution from iteration 1 for 100 iterations (total: 101)
+2026-03-22 03:18:13,590 - openevolve.process_parallel - ERROR - Error submitting iteration 1: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-03-22 03:18:13,590 - openevolve.process_parallel - ERROR - Error submitting iteration 2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-03-22 03:18:13,590 - openevolve.process_parallel - INFO - Early stopping disabled
+2026-03-22 03:18:13,598 - openevolve.database - INFO - Saved database with 1 programs to openevolve_mgd/results\checkpoints\checkpoint_100
+2026-03-22 03:18:13,599 - openevolve.controller - INFO - Saved best program at checkpoint 100 with metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:18:13,599 - openevolve.controller - INFO - Saved checkpoint at iteration 100 to openevolve_mgd/results\checkpoints\checkpoint_100
+2026-03-22 03:18:13,599 - openevolve.process_parallel - INFO - Stopped process pool
+2026-03-22 03:18:13,600 - openevolve.controller - INFO - Using tracked best program: be19b259-ddbc-4496-a9bc-431ddaf1b359
+2026-03-22 03:18:13,600 - openevolve.controller - INFO - Evolution complete. Best program has metrics: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:18:13,602 - openevolve.controller - INFO - Saved best program to openevolve_mgd/results\best\best_program.py with program info to openevolve_mgd/results\best\best_program_info.json
+2026-03-22 03:18:14,194 - openevolve.prompt.sampler - INFO - Set custom templates: system=evaluator_system_message, user=None
+2026-03-22 03:18:14,196 - openevolve.evaluator - INFO - Successfully loaded evaluation function from openevolve_mgd/evaluator.py
+2026-03-22 03:18:14,196 - openevolve.evaluator - INFO - Initialized evaluator with openevolve_mgd/evaluator.py
+2026-03-22 03:18:14,198 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:18:26,772 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:19:17,803 - openevolve.evaluator - INFO - Evaluated program b08dea44-51c3-4de7-aa08-72b697e94ecf in 51.01s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:19:17,806 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:19:24,771 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:20:16,839 - openevolve.evaluator - INFO - Evaluated program 42f74950-7716-48f2-9487-93852c8c634e in 52.05s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:20:16,842 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:20:34,277 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:21:31,880 - openevolve.evaluator - INFO - Evaluated program 34362b4c-c6de-4c60-8ef9-6a9ee5ba3d86 in 57.60s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:21:31,883 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:21:41,305 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:22:35,330 - openevolve.evaluator - INFO - Evaluated program 7c4b3e5c-0f63-4410-bf9e-75b7ffe25571 in 54.02s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:22:35,333 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:22:43,728 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:23:37,155 - openevolve.evaluator - INFO - Evaluated program b75f987b-4840-4558-b0a5-8fc787f241c5 in 53.42s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:23:37,158 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:23:47,180 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:24:43,046 - openevolve.evaluator - INFO - Evaluated program c84b4927-70a9-4d12-b93e-3a4ce0c51911 in 55.86s: score=0.9667, retention_t5=0.9667, params={'eta_oja': 0.001, 'eta_da': 0.01, 'tau_bcm': 100.0, 'n_slow': 3, 'slow_ewc_lambda': 50.0, 'fraction': 0.1, 'overlap_threshold': -0.5, 'sleep_steps_l1': 30, 'sleep_steps_l2': 50, 'novelty_scale': 20.0, 'eta_dop_max': 4.0}
+2026-03-22 03:24:43,049 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:24:52,607 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 03:25:41,915 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:42,092 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:43,094 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:43,094 - openevolve.process_parallel - ERROR - Error in worker iteration 7
+Traceback (most recent call last):
+  File "C:\Python313\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2002, in _run_once
+    event_list = self._selector.select(timeout)
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 446, in select
+    self._poll(timeout)
+    ~~~~~~~~~~^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 775, in _poll
+    status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
+  File "C:\Users\Miste\AppData\Roaming\Python\Python313\site-packages\openevolve\controller.py", line 341, in signal_handler
+    self.parallel_controller.request_shutdown()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'request_shutdown'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python313\Lib\asyncio\runners.py", line 72, in close
+    loop.run_until_complete(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2002, in _run_once
+    event_list = self._selector.select(timeout)
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 446, in select
+    self._poll(timeout)
+    ~~~~~~~~~~^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 775, in _poll
+    status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
+  File "C:\Users\Miste\AppData\Roaming\Python\Python313\site-packages\openevolve\controller.py", line 341, in signal_handler
+    self.parallel_controller.request_shutdown()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'request_shutdown'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Miste\AppData\Roaming\Python\Python313\site-packages\openevolve\process_parallel.py", line 292, in _run_iteration_worker
+    child_metrics = asyncio.run(_worker_evaluator.evaluate_program(child_code, child_id))
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    with Runner(debug=debug, loop_factory=loop_factory) as runner:
+         ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\runners.py", line 62, in __exit__
+    self.close()
+    ~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\runners.py", line 77, in close
+    loop.close()
+    ~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\proactor_events.py", line 695, in close
+    self._proactor.close()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 865, in close
+    self._poll(msg_update)
+    ~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\windows_events.py", line 775, in _poll
+    status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
+  File "C:\Users\Miste\AppData\Roaming\Python\Python313\site-packages\openevolve\controller.py", line 341, in signal_handler
+    self.parallel_controller.request_shutdown()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'request_shutdown'
+2026-03-22 03:25:43,127 - openevolve.llm.ensemble - INFO - Sampled model: gpt-4.1-mini
+2026-03-22 03:25:43,188 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:43,603 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:44,607 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:44,607 - openevolve.process_parallel - ERROR - LLM generation failed: 'NoneType' object has no attribute 'request_shutdown'
+2026-03-22 03:25:46,741 - openevolve.controller - INFO - Received signal 2, initiating graceful shutdown...
+2026-03-22 03:25:50,047 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
