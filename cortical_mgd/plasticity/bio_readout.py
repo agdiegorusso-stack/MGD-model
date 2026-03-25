@@ -218,3 +218,55 @@ class BioReadout:
         self.theta_bcm = self.theta_bcm.to(device)
         self.y_mean_sq = self.y_mean_sq.to(device)
         return self
+
+
+import threading
+
+
+class DopamineController:
+    """
+    Gestisce la variabile DA (Dopamina) virtuale.
+    DA non e' piu' legata all'accuratezza del classificatore:
+    viene modulata da feedback causale esterno ("Felicita'").
+
+    Usa threading.Lock per operazioni thread-safe tra WebcamThread e InputThread.
+    """
+    def __init__(self, base_da: float = 0.1, happy_boost: float = 0.9,
+                 decay_rate: float = 0.02):
+        self.DA = base_da
+        self.base_da = base_da
+        self.happy_boost = happy_boost
+        self.decay_rate = decay_rate
+        self._lock = threading.Lock()
+        self._happy_event = threading.Event()
+
+    def trigger_happiness(self, label: str = "") -> None:
+        """Chiamato dal thread audio/tastiera quando l'utente esprime felicita'."""
+        with self._lock:
+            self.DA = self.happy_boost
+        self._happy_event.set()
+        print(f"[DOPAMINA] Spike DA={self.happy_boost:.2f} per oggetto: '{label}'")
+
+    def decay_step(self) -> None:
+        """
+        Chiamato ogni tick del loop principale.
+        Decade esponenzialmente verso base_da.
+        Modula eta_mgd abbassando la soglia di plasticita' STDP.
+        """
+        with self._lock:
+            self.DA = self.base_da + (self.DA - self.base_da) * (1.0 - self.decay_rate)
+        self._happy_event.clear()
+
+    @property
+    def eta_mgd(self) -> float:
+        """
+        Learning rate geometrico MGD modulato dalla dopamina.
+        DA alta -> eta alta -> plasticita' massima -> memorizzazione forzata.
+        """
+        with self._lock:
+            return float(self.DA)
+
+    def is_plastic(self, threshold: float = 0.5) -> bool:
+        """True se il sistema e' in stato ad alta plasticita' (apprendimento attivo)."""
+        with self._lock:
+            return self.DA >= threshold

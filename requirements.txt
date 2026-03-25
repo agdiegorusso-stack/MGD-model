@@ -1,0 +1,5 @@
+numpy
+torch
+requests
+sentence-transformers>=2.0.0
+tinydb

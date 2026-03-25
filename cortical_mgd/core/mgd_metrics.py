@@ -137,10 +137,31 @@ def compute_D_avg(weight_matrix: Union[torch.Tensor, np.ndarray]) -> float:
     return D_avg
 
 
+def compute_D_avg_local(W: torch.Tensor) -> torch.Tensor:
+    """
+    Proxy locale O(n) per D_avg. Sostituisce la SVD con l'entropia
+    della distribuzione delle norme delle colonne di W.
+
+    Motivazione:
+      - SVD misura quante direzioni principali sono attive (globale, O(n^3))
+      - La norma di ogni colonna ||w_j|| misura quanto il neurone j contribuisce
+      - Se tutti i neuroni hanno norma simile -> attivita distribuita -> D alto
+      - Se pochi neuroni dominano -> D basso
+      - Entrambi catturano la stessa quantita: la "dispersione" dell'attivita
+
+    D_eff = exp( H( p_j ) )  dove  p_j = ||w_j|| / sum_k ||w_k||
+    Costo: O(n) invece di O(n^3).
+    """
+    norms = W.norm(dim=0).clamp(min=1e-10)   # (n_neurons,)
+    p = norms / norms.sum()
+    return torch.exp(-(p * torch.log(p + 1e-15)).sum())
+
+
 def compute_D_avg_torch(W: torch.Tensor) -> torch.Tensor:
     """
     Versione torch-native di compute_D_avg.
-    Usa torch.linalg.svd — gira su CUDA senza round-trip numpy.
+    Usa eigvalsh sulla gram matrix (piu veloce di svd per matrici simmetriche PSD).
+    Gli autovalori di W^T W coincidono con i quadrati dei valori singolari di W.
     Ritorna un tensore scalare (float32) sul device di W.
     """
     if W.shape[0] > W.shape[1]:
@@ -148,7 +169,7 @@ def compute_D_avg_torch(W: torch.Tensor) -> torch.Tensor:
     else:
         gram = W @ W.T
     gram = gram + torch.eye(gram.shape[0], device=W.device, dtype=W.dtype) * 1e-6
-    sv = torch.linalg.svd(gram, full_matrices=False).S
+    sv = torch.linalg.eigvalsh(gram)          # autovalori in ordine crescente
     sv = sv[sv > 1e-10]
     if sv.numel() == 0:
         return torch.tensor(1.0, device=W.device)

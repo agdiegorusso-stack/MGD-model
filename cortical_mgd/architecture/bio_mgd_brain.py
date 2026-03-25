@@ -12,7 +12,7 @@ class BioMGDBrain(nn.Module):
         super().__init__()
         
         # LIVELLO 0: Ippocampo (Pattern Separation)
-        self.hippocampus = CorticalColumn(n_neurons=2000, input_dim=784, target_sparsity=0.02)
+        self.hippocampus = CorticalColumn(n_neurons=2000, input_dim=input_dim, target_sparsity=0.02)
         
         # LIVELLO 1: Corteccia sensoriale (quattro aree)
         self.cortex_A = CorticalColumn(300, 2000, 0.1)
@@ -33,7 +33,8 @@ class BioMGDBrain(nn.Module):
         self.gate_L2 = ModularGate(500, 30)
         
         # LIVELLO 3: Esecutivo
-        self.L3 = CorticalColumn(200, 500, 0.1)
+        # Strict WTA per L3 (target_sparsity=0.005 -> k_wta=1) per evitare overlap e tie-breaking fittizi
+        self.L3 = CorticalColumn(200, 500, 0.005)
         
         self.task_routing = {}
         self.task_novelty = {}

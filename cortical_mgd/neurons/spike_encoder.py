@@ -43,3 +43,43 @@ def rate_encode(inputs: torch.Tensor, max_time: int) -> torch.Tensor:
     
     spikes = (torch.rand_like(prob_matrix) < prob_matrix).float()
     return spikes
+
+
+import cv2
+import numpy as np
+
+
+class WebcamSpikeAdapter:
+    """
+    Adattatore OpenCV -> Spike Train per BioMGDBrain.
+    Usa MOG2 background subtraction per estrarre solo pixel modificati
+    (simula event-camera N-MNIST), poi rate-codes l'intensita in spike.
+    """
+    def __init__(self, target_size=(28, 28), threshold=30):
+        self.target_size = target_size
+        self.threshold = threshold
+        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
+            history=100, varThreshold=threshold, detectShadows=False
+        )
+
+    def process_frame(self, frame_bgr: np.ndarray):
+        """
+        Ritorna (spike_train_numpy, motion_density).
+        spike_train e' None se il frame non e' sufficientemente diverso dal precedente
+        (keyframe gate, evita bottleneck von Neumann).
+        """
+        fg_mask = self.bg_subtractor.apply(frame_bgr)
+        motion_density = float(np.mean(fg_mask > 0))
+
+        if motion_density < 0.02:
+            return None, motion_density
+
+        masked = cv2.bitwise_and(frame_bgr, frame_bgr, mask=fg_mask)
+        gray = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
+        resized = cv2.resize(gray, self.target_size)
+        normalized = resized.astype(np.float32) / 255.0
+        flat = normalized.flatten()  # (784,) for 28x28
+
+        # Poisson rate coding
+        spike_train = (np.random.rand(*flat.shape) < flat).astype(np.float32)
+        return spike_train, motion_density

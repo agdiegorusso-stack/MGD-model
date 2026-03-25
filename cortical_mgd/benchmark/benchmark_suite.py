@@ -896,7 +896,13 @@ class MGDBenchmarkSuite:
         # Fase 8: esponi gate I per verifica scalabilita nel test
         if "I_OverlapMGD" in gates:
             self._last_gate_I = gates["I_OverlapMGD"]
-        
+
+        _extra = {'K_TemporalHierarchy', 'L_PredictiveHierarchy', 'M_DendriticHierarchy',
+                  'E_CorticalBrain', 'F_HierarchicalBrain', 'G_BioMGDBrain'}
+        if hasattr(self, 'only_models') and not _extra.intersection(self.only_models):
+            self.results_df = pd.DataFrame(results)
+            return self.results_df
+
         # ----------------------------------------------------------------
         # K_TemporalHierarchy — L1/L2/L3 con deep sleep biologico
         # ----------------------------------------------------------------
