@@ -124,6 +124,63 @@ helpers = r'''  bool _hasPredicate061(List<String> tokens) {
     return out;
   }
 
+  Interpretation04? _interpretInverseRoleCopula061(
+    String raw, {
+    required String speaker,
+    required bool create,
+  }) {
+    final surfaces = lexicalTokens(raw);
+    if (surfaces.isEmpty) return null;
+    final ns = surfaces.map(normalizeText).toList();
+    final isQuestion =
+        normalizeText(raw).endsWith('?') || ns.any(_questionWords.contains);
+    if (isQuestion) return null;
+
+    final roleFamily = _roleFamilyIn(surfaces);
+    if (roleFamily == null) return null;
+
+    var copulaIndex = -1;
+    for (var i = 0; i < ns.length; i++) {
+      if ({'è', 'e', 'sono', 'sei', 'siamo', 'siete', 'era', 'sarà', 'sara'}
+          .contains(ns[i])) {
+        copulaIndex = i;
+        break;
+      }
+    }
+    if (copulaIndex <= 0) return null;
+
+    final roleIndex =
+        surfaces.indexWhere((t) => _semanticFamilyOf(t) == roleFamily);
+    if (roleIndex <= copulaIndex) return null;
+
+    final owner =
+        _resolveDeicticSubject(surfaces.sublist(copulaIndex + 1), speaker: speaker);
+    if (owner == null) return null;
+
+    final before = surfaces
+        .sublist(0, copulaIndex)
+        .where((t) => !_grammarStops.contains(normalizeText(t)))
+        .toList();
+    if (before.isEmpty) return null;
+    final objectText = _joinObject(before).trim();
+    if (objectText.isEmpty) return null;
+
+    final relationRaw = create
+        ? _ensureSemanticRelation(roleFamily, extraCues: surfaces)
+        : (_relationKeyToId['sem:' + roleFamily] ?? -1);
+    if (relationRaw < 0) return null;
+
+    return Interpretation04(
+      isQuestion: false,
+      subjectId: owner,
+      relationId: _canonicalRelation(relationRaw),
+      objectText: objectText,
+      objectKey: canonicalObject(objectText),
+      relationCues: ['sem:' + roleFamily],
+      confidence: 0.97,
+    );
+  }
+
   Interpretation04? _interpretCopularType061(
     String raw, {
     required String speaker,
@@ -234,6 +291,13 @@ new = """    if (surfaces.isEmpty) {
         confidence: 0,
       );
     }
+
+    final inverseRole = _interpretInverseRoleCopula061(
+      raw,
+      speaker: speaker,
+      create: create,
+    );
+    if (inverseRole != null) return inverseRole;
 
     final copularType = _interpretCopularType061(
       raw,
