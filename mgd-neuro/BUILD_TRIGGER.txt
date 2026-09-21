@@ -1,1 +1,1 @@
-MGD-Neuro 0.4.1 rebuild trigger after semantic binding fix.
+MGD-Neuro 0.5 final attractor architecture build trigger.
