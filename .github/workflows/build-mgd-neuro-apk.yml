@@ -23,6 +23,13 @@ jobs:
           mkdir -p mgd-neuro-app
           cat mgd-neuro/v05/v05s*.b64 | base64 -d > /tmp/mgd-neuro-src.tar.gz
           tar -xzf /tmp/mgd-neuro-src.tar.gz -C mgd-neuro-app
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("mgd-neuro-app/lib/plastic_language_brain_v04.dart")
+          s = p.read_text()
+          s = s.replace("'ha', 'ho', 'hai', 'hanno', 'aveva', 'hanno'", "'ha', 'ho', 'hai', 'hanno', 'aveva'")
+          p.write_text(s)
+          PY
 
       - name: Generate Android project
         working-directory: mgd-neuro-app
