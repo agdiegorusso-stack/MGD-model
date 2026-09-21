@@ -18,6 +18,19 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mgd-neuro-prototype-signing-v1
+
+      - name: Ensure stable Android signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v               -keystore "$HOME/.android/debug.keystore"               -storepass android               -alias androiddebugkey               -keypass android               -dname "CN=MGD Neuro Prototype,O=MGD Neuro,C=IT"               -keyalg RSA -keysize 2048 -validity 10000
+          fi
+
       - name: Restore and patch app sources
         run: |
           mkdir -p mgd-neuro-app
@@ -30,6 +43,16 @@ jobs:
         run: |
           flutter create . --platforms=android --project-name=mgd_neuro_mobile --org=it.diegorusso
           rm -f test/widget_test.dart
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle.kts")
+          s = p.read_text()
+          s = s.replace(
+              'applicationId = "it.diegorusso.mgd_neuro_mobile"',
+              'applicationId = "it.diegorusso.mgdneurostable"'
+          )
+          p.write_text(s)
+          PY
 
       - name: Get dependencies
         working-directory: mgd-neuro-app
@@ -50,6 +73,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.5.1-Android
+          name: MGD-Neuro-0.5.1-Stable-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
