@@ -165,9 +165,12 @@ helpers = r'''  bool _hasPredicate061(List<String> tokens) {
     final objectText = _joinObject(before).trim();
     if (objectText.isEmpty) return null;
 
-    final relationRaw = create
-        ? _ensureSemanticRelation(roleFamily, extraCues: surfaces)
-        : (_relationKeyToId['sem:' + roleFamily] ?? -1);
+    var relationRaw = _relationKeyToId['latent:' + roleFamily] ?? -1;
+    if (relationRaw < 0) {
+      relationRaw = create
+          ? _ensureSemanticRelation(roleFamily, extraCues: surfaces)
+          : (_relationKeyToId['sem:' + roleFamily] ?? -1);
+    }
     if (relationRaw < 0) return null;
 
     return Interpretation04(
