@@ -9,6 +9,29 @@ test_path = root / 'test' / 'plastic_language_brain_v04_test.dart'
 
 s = brain_path.read_text()
 
+# Carry forward the validated 0.5 compiler/runtime fixes that lived in the
+# previous build pipeline rather than in the archived source tarball.
+s = s.replace("'ha', 'ho', 'hai', 'hanno', 'aveva', 'hanno'", "'ha', 'ho', 'hai', 'hanno', 'aveva'")
+s = s.replace("margin >= 0.045 || bestScore >= 0.72", "margin >= 0.010 || bestScore >= 0.68")
+if "frame:deictic-bare" not in s:
+    s = s.replace(
+        "    if (feature == 'ctx:deictic') return 0.45;",
+        "    if (feature == 'ctx:deictic') return 0.45;\n"
+        "    if (feature == 'frame:deictic-bare') return 1.10;"
+    )
+    s = s.replace(
+        "    if (hasDeictic || subjectId == userId || subjectId == selfId) {\n"
+        "      candidates.add('ctx:deictic');\n"
+        "    }\n\n"
+        "    for (var i = 0; i + 1 < contentForBigrams.length; i++) {",
+        "    if (hasDeictic || subjectId == userId || subjectId == selfId) {\n"
+        "      candidates.add('ctx:deictic');\n"
+        "      final hasLexicalRole = candidates.any((f) => f.startsWith('lex:'));\n"
+        "      if (!hasLexicalRole) candidates.add('frame:deictic-bare');\n"
+        "    }\n\n"
+        "    for (var i = 0; i + 1 < contentForBigrams.length; i++) {"
+    )
+
 # 0.5.1 schema version: force one-time repair of states saved by 0.5/0.4.1.
 s = s.replace('static const int version = 5;', 'static const int version = 6;')
 
