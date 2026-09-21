@@ -48,9 +48,12 @@ helpers = r'''  bool _hasPredicate061(List<String> tokens) {
     List<String> current,
   ) {
     if (current.isEmpty) return '';
-    if (_findVerbIndex(current, isQuestion: false) >= 0) {
-      return current.join(' ');
-    }
+    final currentNs = current.map(normalizeText).toList();
+    const explicitCopulas = {'è', 'e', 'sono', 'sei', 'siamo', 'siete', 'era', 'sarà', 'sara'};
+    final hasExplicitPredicate =
+        currentNs.any(explicitCopulas.contains) ||
+        current.any((t) => _semanticFamilyOf(t) == 'name');
+    if (hasExplicitPredicate) return current.join(' ');
 
     final currentSubject =
         _resolveDeicticSubject(current, speaker: 'user');
