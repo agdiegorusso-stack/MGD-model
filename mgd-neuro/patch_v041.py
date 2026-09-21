@@ -19,7 +19,6 @@ semantic = """  String? _semanticFamilyOf(String raw) {
     final n = normalizeText(raw);
     final stem = _stem(n);
 
-    // Exact surface forms win: figlia, figlio and figli are distinct.
     final exactSurface = <String>{};
     for (final entry in _semanticCueFamilies.entries) {
       if (entry.value.contains(n)) exactSurface.add(entry.key);
@@ -27,7 +26,6 @@ semantic = """  String? _semanticFamilyOf(String raw) {
     if (exactSurface.length == 1) return exactSurface.first;
     if (exactSurface.length > 1) return null;
 
-    // Stemming is accepted only when the stem is an explicit registered cue.
     final exactStem = <String>{};
     for (final entry in _semanticCueFamilies.entries) {
       if (entry.value.contains(stem)) exactStem.add(entry.key);
@@ -35,8 +33,6 @@ semantic = """  String? _semanticFamilyOf(String raw) {
     if (exactStem.length == 1) return exactStem.first;
     if (exactStem.length > 1) return null;
 
-    // Conservative productive-root completion. The +2 guard prevents
-    // figlia from matching the plural cue figli by prefix.
     final forward = <String>{};
     for (final entry in _semanticCueFamilies.entries) {
       for (final cue in entry.value) {
@@ -51,7 +47,6 @@ semantic = """  String? _semanticFamilyOf(String raw) {
     if (forward.length == 1) return forward.first;
     if (forward.length > 1) return null;
 
-    // Legacy truncated roots such as compan -> partner.
     if (n.length >= 5 || stem.length >= 5) {
       final reverse = <String>{};
       for (final entry in _semanticCueFamilies.entries) {
@@ -67,4 +62,35 @@ semantic = """  String? _semanticFamilyOf(String raw) {
   }
 """
 s = s[:start] + semantic + s[end:]
+
+# Migration/retrieval fallback: old 0.4 relations such as rel:compan can still
+# be matched to their new semantic family even if a legacy slot escaped
+# normalization. This makes persisted user brains forward-compatible.
+old = """    if (ra.key.startsWith('sem:') && ra.key == rb.key) return 1.0;
+    final ca = ra.cues.keys.toSet();
+"""
+new = """    if (ra.key.startsWith('sem:') && ra.key == rb.key) return 1.0;
+
+    String? semanticFamily(RelationMemory04 r) {
+      if (r.key.startsWith('sem:')) return r.key.substring(4);
+      final byLabel = _semanticFamilyOf(r.label);
+      if (byLabel != null) return byLabel;
+      final found = <String>{};
+      for (final cue in r.cues.keys) {
+        final family = _semanticFamilyOf(cue);
+        if (family != null) found.add(family);
+      }
+      return found.length == 1 ? found.first : null;
+    }
+
+    final fa = semanticFamily(ra);
+    final fb = semanticFamily(rb);
+    if (fa != null && fb != null && fa == fb) return 1.0;
+
+    final ca = ra.cues.keys.toSet();
+"""
+if old not in s:
+    raise SystemExit("relation similarity anchor not found")
+s = s.replace(old, new, 1)
+
 p.write_text(s)
