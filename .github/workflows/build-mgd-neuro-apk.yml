@@ -49,6 +49,16 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Upload restored source
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.5-source
+          path: |
+            mgd-neuro-app/lib
+            mgd-neuro-app/test
+            mgd-neuro-app/pubspec.yaml
+          retention-days: 7
+
       - name: Generate Android project
         working-directory: mgd-neuro-app
         run: |
