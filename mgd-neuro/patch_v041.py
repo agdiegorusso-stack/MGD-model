@@ -94,3 +94,50 @@ if old not in s:
 s = s.replace(old, new, 1)
 
 p.write_text(s)
+
+
+# Force explicit migration of the short relation labels emitted by 0.4.
+# This is deliberately isolated to restore-time repair, so it does not
+# weaken the stricter runtime parser.
+start = s.index("  String? _legacyFamilyForRelation(")
+end = s.index("\n  void repairSemanticMemory()", start)
+legacy = """  String? _legacyFamilyForRelation(
+    RelationMemory04 relation,
+    List<RelationSlot04> relationSlots,
+  ) {
+    if (relation.key.startsWith('sem:')) return relation.key.substring(4);
+
+    final evidence = <String>[
+      relation.key,
+      relation.label,
+      ...relation.cues.keys,
+    ].map(normalizeText).join(' ');
+
+    // Exact legacy 0.4 stems.
+    if (evidence.contains('compan')) return 'partner';
+    if (evidence.contains('chiam') || evidence.contains('nomin')) return 'name';
+
+    final direct = _semanticFamilyOf(relation.label);
+    if (direct != null) return direct;
+    for (final cue in relation.cues.keys) {
+      final family = _semanticFamilyOf(cue);
+      if (family != null) return family;
+    }
+
+    final looksLikeFigl = evidence.contains('figl');
+    if (looksLikeFigl) {
+      if (evidence.contains('figli') || evidence.contains('figlie')) {
+        return 'children';
+      }
+      for (final slot in relationSlots) {
+        for (final c in slot.candidates.values) {
+          if (_splitObjectValues(c.display).length > 1) return 'children';
+        }
+      }
+    }
+    return null;
+  }
+"""
+s = s[:start] + legacy + s[end:]
+
+p.write_text(s)
