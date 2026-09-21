@@ -296,7 +296,11 @@ p = p.replace('version: 0.8.1+13', 'version: 0.8.2+14')
 pubspec_path.write_text(p)
 
 t = test_path.read_text()
-t = t.replace(\n    \"(f) => f.relation == 'is_a' && f.object.toLowerCase() == 'animale',\",\n    \"(f) => f.relation == 'è' && f.object.toLowerCase() == 'animale',\",\n)\nif "teacher is_a answers natural Italian yes-no query" not in t:
+t = t.replace(
+    "(f) => f.relation == 'is_a' && f.object.toLowerCase() == 'animale',",
+    "(f) => f.relation == 'è' && f.object.toLowerCase() == 'animale',",
+)
+if "teacher is_a answers natural Italian yes-no query" not in t:
     tests = r'''
 
   test('teacher is_a answers natural Italian yes-no query', () {
