@@ -111,6 +111,11 @@ def main() -> None:
     ap.add_argument("--projection-dim", type=int, default=64)
     ap.add_argument("--max-new-tokens", type=int, default=220)
     ap.add_argument("--trust-remote-code", action="store_true")
+    ap.add_argument(
+        "--use-model-knowledge",
+        action="store_true",
+        help="Treat each item as a topic and ask the teacher to use knowledge encoded in its training.",
+    )
     args = ap.parse_args()
 
     try:
@@ -203,20 +208,37 @@ def main() -> None:
         code = pooled.float().cpu().numpy().astype(np.float32) @ projection
         vectors[item] = normalize(code)
 
-        prompt = (
-            "You are distilling factual knowledge into a small relational world model.\n"
-            "Given the SOURCE below, return ONLY a JSON array of up to "
-            + str(args.triples_per_item)
-            + " short factual triples.\n"
-            "Each item must be: "
-            '{"subject":"...","relation":"...","object":"...","confidence":0.0}.\n'
-            "Use compact reusable relations such as is_a, part_of, has_property, "
-            "used_for, located_in, causes, capable_of, related_to. "
-            "Do not invent facts not supported by the SOURCE.\n\n"
-            "SOURCE:\n"
-            + item
-            + "\n"
-        )
+        if args.use_model_knowledge:
+            prompt = (
+                "You are distilling factual knowledge already encoded in your trained parameters "
+                "into a small relational world model.\n"
+                "For the TOPIC below, return ONLY a JSON array of up to "
+                + str(args.triples_per_item)
+                + " short, high-confidence factual triples.\n"
+                "Each item must be: "
+                '{"subject":"...","relation":"...","object":"...","confidence":0.0}.\n'
+                "Use compact reusable relations such as is_a, part_of, has_property, "
+                "used_for, located_in, causes, capable_of, related_to. "
+                "Prefer basic facts you are highly confident about.\n\n"
+                "TOPIC:\n"
+                + item
+                + "\n"
+            )
+        else:
+            prompt = (
+                "You are distilling factual knowledge into a small relational world model.\n"
+                "Given the SOURCE below, return ONLY a JSON array of up to "
+                + str(args.triples_per_item)
+                + " short factual triples.\n"
+                "Each item must be: "
+                '{"subject":"...","relation":"...","object":"...","confidence":0.0}.\n'
+                "Use compact reusable relations such as is_a, part_of, has_property, "
+                "used_for, located_in, causes, capable_of, related_to. "
+                "Do not invent facts not supported by the SOURCE.\n\n"
+                "SOURCE:\n"
+                + item
+                + "\n"
+            )
 
         enc = tokenizer(
             prompt,
