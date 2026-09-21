@@ -1,0 +1,47 @@
+name: Distill Open LLM to MGD Pack
+
+on:
+  push:
+    branches: [ mgd-neuro-mobile ]
+    paths:
+      - mgd-neuro/teacher_seed.txt
+  workflow_dispatch:
+
+jobs:
+  distill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install distillation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers accelerate numpy sentencepiece safetensors
+
+      - name: Distill SmolLM2 teacher priors
+        run: |
+          python mgd-neuro/tools/distill_llm_to_mgd.py \
+            --model HuggingFaceTB/SmolLM2-360M-Instruct \
+            --concepts mgd-neuro/teacher_seed.txt \
+            --use-model-knowledge \
+            --max-items 30 \
+            --triples-per-item 4 \
+            --top-k-links 4 \
+            --min-similarity 0.52 \
+            --max-new-tokens 140 \
+            --output MGD-Teacher-SmolLM2-360M.json
+
+      - name: Upload teacher pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Teacher-SmolLM2-360M
+          path: MGD-Teacher-SmolLM2-360M.json
+          retention-days: 30
