@@ -32,6 +32,7 @@ jobs:
             --model HuggingFaceTB/SmolLM2-360M-Instruct \
             --concepts mgd-neuro/teacher_seed.txt \
             --use-model-knowledge \
+            --skip-facts \
             --max-items 30 \
             --triples-per-item 4 \
             --top-k-links 4 \
