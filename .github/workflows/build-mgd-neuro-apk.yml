@@ -1,0 +1,52 @@
+name: Build MGD-Neuro Android APK
+
+on:
+  push:
+    branches: [ mgd-neuro-mobile ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Restore app sources
+        run: |
+          mkdir -p mgd-neuro-app
+          base64 -d mgd-neuro/source.tar.gz.b64 > /tmp/mgd-neuro-src.tar.gz
+          tar -xzf /tmp/mgd-neuro-src.tar.gz -C mgd-neuro-app
+
+      - name: Generate Android project
+        working-directory: mgd-neuro-app
+        run: flutter create . --platforms=android --project-name=mgd_neuro_mobile --org=it.diegorusso
+
+      - name: Get dependencies
+        working-directory: mgd-neuro-app
+        run: flutter pub get
+
+      - name: Test
+        working-directory: mgd-neuro-app
+        run: flutter test
+
+      - name: Analyze
+        working-directory: mgd-neuro-app
+        run: flutter analyze
+
+      - name: Build release APK
+        working-directory: mgd-neuro-app
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-Android
+          path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
