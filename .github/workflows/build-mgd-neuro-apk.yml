@@ -26,7 +26,9 @@ jobs:
 
       - name: Generate Android project
         working-directory: mgd-neuro-app
-        run: flutter create . --platforms=android --project-name=mgd_neuro_mobile --org=it.diegorusso
+        run: |
+          flutter create . --platforms=android --project-name=mgd_neuro_mobile --org=it.diegorusso
+          rm -f test/widget_test.dart
 
       - name: Get dependencies
         working-directory: mgd-neuro-app
