@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from cortical_mgd.architecture.cortical_column import CorticalColumn
 from cortical_mgd.architecture.modular_gate import ModularGate
 from cortical_mgd.continual.replay_buffer import MGDReplayBuffer
+from cortical_mgd.continual.relational_prior_memory import RelationalPriorMemory
 from cortical_mgd.core.mgd_metrics import compute_S_RT_torch
 
 class BioMGDBrain(nn.Module):
@@ -39,6 +40,10 @@ class BioMGDBrain(nn.Module):
         self.task_novelty = {}
         
         self.hip_spike_mean = 0.0
+
+        # Knowledge transferred from an LLM is stored as a weak, plastic prior.
+        # Online/lived evidence can strengthen or contradict every relation.
+        self.relational_memory = RelationalPriorMemory(teacher_prior_cap=0.45)
         
     def to(self, device):
         self.hippocampus.to(device)
@@ -49,6 +54,31 @@ class BioMGDBrain(nn.Module):
         self.cortex_L2.to(device)
         self.L3.to(device)
         return self
+
+    def load_teacher_prior_pack(self, pack: dict) -> int:
+        """Load a distilled LLM pack as weak, fully plastic relation priors."""
+        return self.relational_memory.ingest_teacher_pack(pack)
+
+    def observe_relation(
+        self,
+        source: str,
+        relation: str,
+        target: str,
+        supported: bool = True,
+        weight: float = 1.0,
+    ):
+        """Update a relation from new experience, including contradictions."""
+        return self.relational_memory.observe(
+            source,
+            relation,
+            target,
+            supported=supported,
+            weight=weight,
+        )
+
+    def recall_relation(self, source: str, relation: str, limit: int = 5):
+        """Return the current best relation targets after prior + experience."""
+        return self.relational_memory.best_targets(source, relation, limit=limit)
 
     def compute_novelty(self, x):
         h_hip = self.hippocampus(x)
