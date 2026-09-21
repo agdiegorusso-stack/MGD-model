@@ -28,6 +28,7 @@ jobs:
           p = Path("mgd-neuro-app/lib/plastic_language_brain_v04.dart")
           s = p.read_text()
           s = s.replace("'ha', 'ho', 'hai', 'hanno', 'aveva', 'hanno'", "'ha', 'ho', 'hai', 'hanno', 'aveva'")
+          s = s.replace("margin >= 0.045 || bestScore >= 0.72", "margin >= 0.010 || bestScore >= 0.68")
           p.write_text(s)
           PY
 
