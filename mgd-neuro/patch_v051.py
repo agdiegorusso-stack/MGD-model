@@ -126,6 +126,11 @@ if "v0.5 corrupted child memory is repaired from episodic experience" not in s:
     slots.removeWhere((slot) => slot['relationId'] == son);
 
     final migrated = PlasticLanguageBrain04.fromJson(json);
+    print('MIG_FACTS ' + migrated.strongestFacts().toString());
+    print('MIG_RELATIONS ' + migrated.relations.map((r) => '${r.id}:${r.key}:${r.label}:${migrated.relationRedirect[r.id]}').toList().toString());
+    print('MIG_SLOTS ' + migrated.slots.values.map((x) => '${x.subjectId}::${x.relationId}=${x.candidates.values.map((c) => c.display).toList()}').toList().toString());
+    final debugQ = migrated.interpret('come si chiama mio figlio?', speaker: 'user', create: false);
+    print('MIG_Q sid=${debugQ.subjectId} rid=${debugQ.relationId} cues=${debugQ.relationCues}');
     final sonAnswer = migrated.respond('come si chiama mio figlio?').toLowerCase();
     final daughterAnswer = migrated.respond('come si chiama mia figlia?').toLowerCase();
     final childrenAnswer = migrated.respond('come si chiamano i miei figli?').toLowerCase();
