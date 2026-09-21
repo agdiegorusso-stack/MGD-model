@@ -30,6 +30,21 @@ jobs:
           s = s.replace("'ha', 'ho', 'hai', 'hanno', 'aveva', 'hanno'", "'ha', 'ho', 'hai', 'hanno', 'aveva'")
           s = s.replace("margin >= 0.045 || bestScore >= 0.72", "margin >= 0.010 || bestScore >= 0.68")
           p.write_text(s)
+
+          t = Path("mgd-neuro-app/test/plastic_language_brain_v04_test.dart")
+          ts = t.read_text()
+          ts = ts.replace(
+              "    b.learnEvent('Tu ti chiami Jarvis.');\n\n    expect(b.respond('come mi chiamo?')",
+              "    b.learnEvent('Tu ti chiami Jarvis.');\n"
+              "    print('DEBUG_FACTS: \${b.strongestFacts()}');\n"
+              "    for (final q in ['come mi chiamo?', 'io chi sono?', 'come ti chiami?', 'tu chi sei?']) {\n"
+              "      final qi = b.interpret(q, speaker: 'user', create: false);\n"
+              "      final label = qi.relationId == null ? 'null' : b.relations[qi.relationId!].label;\n"
+              "      print('DEBUG_Q: \$q sid=\${qi.subjectId} rid=\${qi.relationId} rel=\$label cues=\${qi.relationCues}');\n"
+              "    }\n\n"
+              "    expect(b.respond('come mi chiamo?')"
+          )
+          t.write_text(ts)
           PY
 
       - name: Generate Android project
