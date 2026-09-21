@@ -1,4 +1,4 @@
-name: Build MGD-Neuro 0.8 Android APK
+name: Build MGD-Neuro 0.8.1 Android APK
 
 on:
   push:
@@ -58,6 +58,7 @@ jobs:
           python3 /tmp/patch_v070.py mgd-neuro-app
           python3 mgd-neuro/patch_v071.py mgd-neuro-app
           python3 mgd-neuro/patch_v080.py mgd-neuro-app
+          python3 mgd-neuro/patch_v081.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
@@ -97,7 +98,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.8-source
+          name: MGD-Neuro-0.8.1-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -119,6 +120,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.8-Android
+          name: MGD-Neuro-0.8.1-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
