@@ -72,7 +72,7 @@ s = s.replace(
     "if (storedVersion != 4 && storedVersion != 5 && storedVersion != 6) return PlasticLanguageBrain04();",
 )
 old = """    if (storedVersion == 4) {\n      b.repairSemanticMemory();\n    }\n    b._developmentalPriorsInstalled = false;\n    b._installDevelopmentalPriors();\n    b.discoverConcepts();\n    return b;\n"""
-new = """    final needsMigration = storedVersion < version;\n    if (needsMigration) {\n      b.repairSemanticMemory();\n    }\n    b._developmentalPriorsInstalled = false;\n    b._installDevelopmentalPriors();\n    if (needsMigration) {\n      b._rebuildSemanticFactsFromEpisodes();\n      b.repairSemanticMemory();\n    }\n    b.discoverConcepts();\n    return b;\n"""
+new = """    final needsMigration = storedVersion < version;\n    if (needsMigration) {\n      b.repairSemanticMemory();\n    }\n    b._developmentalPriorsInstalled = false;\n    b._installDevelopmentalPriors();\n    if (needsMigration) {\n      b._rebuildSemanticFactsFromEpisodes();\n      b.repairSemanticMemory();\n      // repairSemanticMemory can redirect latent relations to canonical\n      // semantic IDs. Re-prime the MGD feature edges on those final anchors.\n      b._developmentalPriorsInstalled = false;\n      b._installDevelopmentalPriors();\n    }\n    b.discoverConcepts();\n    return b;\n"""
 if old not in s:
     raise SystemExit('fromJson migration anchor not found')
 s = s.replace(old, new, 1)
@@ -126,11 +126,6 @@ if "v0.5 corrupted child memory is repaired from episodic experience" not in s:
     slots.removeWhere((slot) => slot['relationId'] == son);
 
     final migrated = PlasticLanguageBrain04.fromJson(json);
-    print('MIG_FACTS ' + migrated.strongestFacts().toString());
-    print('MIG_RELATIONS ' + migrated.relations.map((r) => '${r.id}:${r.key}:${r.label}:${migrated.relationRedirect[r.id]}').toList().toString());
-    print('MIG_SLOTS ' + migrated.slots.values.map((x) => '${x.subjectId}::${x.relationId}=${x.candidates.values.map((c) => c.display).toList()}').toList().toString());
-    final debugQ = migrated.interpret('come si chiama mio figlio?', speaker: 'user', create: false);
-    print('MIG_Q sid=${debugQ.subjectId} rid=${debugQ.relationId} cues=${debugQ.relationCues}');
     final sonAnswer = migrated.respond('come si chiama mio figlio?').toLowerCase();
     final daughterAnswer = migrated.respond('come si chiama mia figlia?').toLowerCase();
     final childrenAnswer = migrated.respond('come si chiamano i miei figli?').toLowerCase();
