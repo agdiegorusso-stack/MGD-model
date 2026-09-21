@@ -21,7 +21,7 @@ jobs:
       - name: Restore app sources
         run: |
           mkdir -p mgd-neuro-app
-          cat mgd-neuro/source.part*.b64 | base64 -d > /tmp/mgd-neuro-src.tar.gz
+          cat mgd-neuro/v05s000.b64 mgd-neuro/v05s001.b64 mgd-neuro/v05s002.b64 mgd-neuro/v05s003.b64 mgd-neuro/v05s0040.b64 mgd-neuro/v05s0041.b64 mgd-neuro/v05s005.b64 mgd-neuro/v05s006.b64 mgd-neuro/v05s007.b64 mgd-neuro/v05s008.b64 mgd-neuro/source.part03.b64 mgd-neuro/source.part04.b64 | base64 -d > /tmp/mgd-neuro-src.tar.gz
           tar -xzf /tmp/mgd-neuro-src.tar.gz -C mgd-neuro-app
 
       - name: Generate Android project
