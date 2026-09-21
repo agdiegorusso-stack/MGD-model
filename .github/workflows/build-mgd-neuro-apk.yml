@@ -28,8 +28,8 @@ jobs:
           p = Path("mgd-neuro-app/lib/plastic_language_brain_v04.dart")
           if p.exists():
               s = p.read_text()
-              s = s.replace("      assemblies[id]\n        ..count++", "      assemblies[id]!\n        ..count++")
-              s = s.replace("    entities[subjectId]\n      ..mentions++", "    entities[subjectId]!\n      ..mentions++")
+              s = s.replace("      assemblies[id]\n        ..count++\n        ..lastSeen = step;", "      final assembly = assemblies[id]!;\n      assembly.count += 1;\n      assembly.lastSeen = step;")
+              s = s.replace("    entities[subjectId]\n      ..mentions++\n      ..lastSeen = step;", "    final subjectEntity = entities[subjectId]!;\n    subjectEntity.mentions += 1;\n    subjectEntity.lastSeen = step;")
               p.write_text(s)
           PY
 
