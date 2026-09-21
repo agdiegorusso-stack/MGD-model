@@ -268,7 +268,7 @@ if "natural self label grounds photo to user identity" not in t:
     final brain = PlasticLanguageBrain04();
     final world = MgdWorld06();
 
-    world.observeVisionBytes(solidPng(180, 120, 90));
+    world.observeVisionBytes(imageBytes(180, 120, 90));
     final canonical = world.bindLastNatural071(brain, 'sono io Diego');
 
     expect(canonical.toLowerCase(), 'diego');
@@ -290,7 +290,7 @@ if "natural self label grounds photo to user identity" not in t:
     final brain = PlasticLanguageBrain04();
     final world = MgdWorld06();
 
-    final result = world.observeVisionBytes(solidPng(170, 110, 85));
+    final result = world.observeVisionBytes(imageBytes(170, 110, 85));
     final wrong = brain.ensureSemanticEntity06('sono io Diego');
     world.bindLast(label: 'sono io Diego', entityId: wrong);
 
@@ -312,7 +312,7 @@ if "natural self label grounds photo to user identity" not in t:
     final brain = PlasticLanguageBrain04();
     final world = MgdWorld06();
 
-    world.observeVisionBytes(solidPng(220, 30, 30));
+    world.observeVisionBytes(imageBytes(220, 30, 30));
     final canonical = world.bindLastNatural071(brain, 'questo è un cane');
     expect(canonical.toLowerCase(), 'cane');
     expect(world.lastPerceptionSummary().toLowerCase(), contains('cane'));
