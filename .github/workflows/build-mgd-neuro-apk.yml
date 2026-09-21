@@ -45,6 +45,13 @@ jobs:
           tar -xzf /tmp/mgd-v06.tar.gz -C /tmp/mgd-v06
           cp /tmp/mgd-v06/lib/sensory_world_v06.dart mgd-neuro-app/lib/
           cp /tmp/mgd-v06/lib/world_persistence_v06.dart mgd-neuro-app/lib/
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("mgd-neuro-app/lib/sensory_world_v06.dart")
+          s = p.read_text()
+          s = s.replace("class MgdWorld06 {\n  static const int version", "class MgdWorld06 {\n  MgdWorld06();\n\n  static const int version")
+          p.write_text(s)
+          PY
           python3 /tmp/mgd-v06/patch_v060.py mgd-neuro-app
 
       - name: Generate Android project and permissions
