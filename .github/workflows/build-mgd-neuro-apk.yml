@@ -18,7 +18,7 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Restore app sources
+      - name: Restore and patch app sources
         run: |
           mkdir -p mgd-neuro-app
           cat mgd-neuro/source.part*.b64 | base64 -d > /tmp/mgd-neuro-src.tar.gz
@@ -26,11 +26,71 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path("mgd-neuro-app/lib/plastic_language_brain_v04.dart")
-          if p.exists():
-              s = p.read_text()
-              s = s.replace("      assemblies[id]\n        ..count++\n        ..lastSeen = step;", "      final assembly = assemblies[id]!;\n      assembly.count += 1;\n      assembly.lastSeen = step;")
-              s = s.replace("    entities[subjectId]\n      ..mentions++\n      ..lastSeen = step;", "    final subjectEntity = entities[subjectId]!;\n    subjectEntity.mentions += 1;\n    subjectEntity.lastSeen = step;")
-              p.write_text(s)
+          s = p.read_text()
+
+          # Compatibility patches from the first 0.4 build.
+          s = s.replace(
+              "      assemblies[id]\n        ..count++\n        ..lastSeen = step;",
+              "      final assembly = assemblies[id];\n      assembly.count += 1;\n      assembly.lastSeen = step;",
+          )
+          s = s.replace(
+              "    entities[subjectId]\n      ..mentions++\n      ..lastSeen = step;",
+              "    final subjectEntity = entities[subjectId];\n    subjectEntity.mentions += 1;\n    subjectEntity.lastSeen = step;",
+          )
+
+          # 0.4.1: exact lexical role binding must precede fuzzy completion.
+          # This prevents figlia/figlio/figli from collapsing into one relation
+          # and consequently overwriting USER --name--> Diego with child names.
+          start = s.index("  String? _semanticFamilyOf(String raw) {")
+          end = s.index("\n  int _ensureSemanticRelation(", start)
+          semantic = r'''  String? _semanticFamilyOf(String raw) {
+    final n = normalizeText(raw);
+    final stem = _stem(n);
+
+    final exactSurface = <String>{};
+    for (final entry in _semanticCueFamilies.entries) {
+      if (entry.value.contains(n)) exactSurface.add(entry.key);
+    }
+    if (exactSurface.length == 1) return exactSurface.first;
+    if (exactSurface.length > 1) return null;
+
+    final exactStem = <String>{};
+    for (final entry in _semanticCueFamilies.entries) {
+      if (entry.value.contains(stem)) exactStem.add(entry.key);
+    }
+    if (exactStem.length == 1) return exactStem.first;
+    if (exactStem.length > 1) return null;
+
+    final forward = <String>{};
+    for (final entry in _semanticCueFamilies.entries) {
+      for (final cue in entry.value) {
+        if (cue.length < 4) continue;
+        final surfaceExtension =
+            n.startsWith(cue) && n.length >= cue.length + 2;
+        final stemExtension =
+            stem.startsWith(cue) && stem.length >= cue.length + 2;
+        if (surfaceExtension || stemExtension) forward.add(entry.key);
+      }
+    }
+    if (forward.length == 1) return forward.first;
+    if (forward.length > 1) return null;
+
+    if (n.length >= 5 || stem.length >= 5) {
+      final reverse = <String>{};
+      for (final entry in _semanticCueFamilies.entries) {
+        for (final cue in entry.value) {
+          if (cue.startsWith(n) || cue.startsWith(stem)) {
+            reverse.add(entry.key);
+          }
+        }
+      }
+      if (reverse.length == 1) return reverse.first;
+    }
+    return null;
+  }
+'''
+          s = s[:start] + semantic + s[end:]
+          p.write_text(s)
           PY
 
       - name: Generate Android project
