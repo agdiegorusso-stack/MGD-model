@@ -18,12 +18,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Restore and patch app sources
+      - name: Restore app sources
         run: |
           mkdir -p mgd-neuro-app
           cat mgd-neuro/source.part*.b64 | base64 -d > /tmp/mgd-neuro-src.tar.gz
           tar -xzf /tmp/mgd-neuro-src.tar.gz -C mgd-neuro-app
-          python3 mgd-neuro/patch_v041.py mgd-neuro-app/lib/plastic_language_brain_v04.dart
 
       - name: Generate Android project
         working-directory: mgd-neuro-app
