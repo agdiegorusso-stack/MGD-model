@@ -116,6 +116,11 @@ def main() -> None:
         action="store_true",
         help="Treat each item as a topic and ask the teacher to use knowledge encoded in its training.",
     )
+    ap.add_argument(
+        "--skip-facts",
+        action="store_true",
+        help="Transfer only latent semantic geometry, without generated triples.",
+    )
     args = ap.parse_args()
 
     try:
@@ -206,7 +211,10 @@ def main() -> None:
         else:
             pooled = h.mean(0)
         code = pooled.float().cpu().numpy().astype(np.float32) @ projection
-        vectors[item] = normalize(code)
+        vectors[item] = code
+
+        if args.skip_facts:
+            continue
 
         if args.use_model_knowledge:
             prompt = (
@@ -240,8 +248,23 @@ def main() -> None:
                 + "\n"
             )
 
+        if getattr(tokenizer, "chat_template", None):
+            rendered = tokenizer.apply_chat_template(
+                [
+                    {
+                        "role": "system",
+                        "content": "Return strict JSON only. Be concise and factual.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        else:
+            rendered = prompt
+
         enc = tokenizer(
-            prompt,
+            rendered,
             return_tensors="pt",
             truncation=True,
             max_length=512,
@@ -257,7 +280,18 @@ def main() -> None:
         new_tokens = generated[0, enc["input_ids"].shape[1] :]
         text = tokenizer.decode(new_tokens, skip_special_tokens=True)
         parsed = json_slice(text)
-        all_facts.extend(parse_facts(parsed, default_confidence=0.62))
+        extracted = parse_facts(
+            parsed,
+            default_confidence=0.52 if args.use_model_knowledge else 0.68,
+        )
+        for f in extracted:
+            if f.subject.casefold() == f.object.casefold() and f.relation.casefold() in {
+                "is_a", "part_of", "located_in"
+            }:
+                continue
+            if args.use_model_knowledge:
+                f = Fact(f.subject, f.relation, f.object, min(f.confidence, 0.72))
+            all_facts.append(f)
 
     facts = dedupe_facts(all_facts)
 
@@ -267,7 +301,15 @@ def main() -> None:
     labels = list(vectors.keys())
     links = []
     if labels:
-        matrix = np.stack([vectors[x] for x in labels], axis=0)
+        matrix = np.stack([vectors[x] for x in labels], axis=0).astype(np.float32)
+        # Transformer hidden states are strongly anisotropic. Centering and
+        # variance normalization are essential before cosine similarity;
+        # otherwise almost every concept looks ~1.0 similar to every other.
+        matrix = matrix - matrix.mean(axis=0, keepdims=True)
+        std = matrix.std(axis=0, keepdims=True)
+        matrix = matrix / np.where(std > 1e-5, std, 1.0)
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        matrix = matrix / np.maximum(norms, 1e-8)
         sims = matrix @ matrix.T
         for i, a in enumerate(labels):
             order = np.argsort(-sims[i])
