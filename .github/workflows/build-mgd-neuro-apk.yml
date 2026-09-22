@@ -91,7 +91,7 @@ jobs:
           python3 mgd-neuro/patch_v012a.py mgd-neuro-app
           python3 mgd-neuro/patch_v012b.py mgd-neuro-app
           python3 mgd-neuro/patch_v012c.py mgd-neuro-app
-          base64 -d mgd-neuro/v13/navigable_graph_v013.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/navigable_graph_v013.dart
+          (base64 -d mgd-neuro/v13/navigable_graph_v013.dart.gz.b64 | gzip -dc > mgd-neuro-app/lib/navigable_graph_v013.dart) || test -s mgd-neuro-app/lib/navigable_graph_v013.dart
           python3 mgd-neuro/patch_v013.py mgd-neuro-app
 
       - name: Generate Android project and permissions
