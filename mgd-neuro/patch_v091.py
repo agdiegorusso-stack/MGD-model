@@ -332,7 +332,7 @@ if "chat deictic self assertion binds last photo" not in t:
 
     // Simulate the exact old 0.9 failure: language episode says who the
     // person is, but the sensor and CURRENT_USER role were never unified.
-    brain.learnSurface('questo sono io Diego', reward: 0.3);
+    brain.respond('questo sono io Diego');
     expect(world.currentUserEntityId091, isNull);
 
     final repaired = world.repairCurrentUserFromHistory091(brain);
