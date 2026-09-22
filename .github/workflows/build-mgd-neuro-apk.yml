@@ -69,11 +69,6 @@ jobs:
           base64 -d mgd-neuro/v11/web_knowledge_explorer_v11_test.dart.gz.b64 | gzip -d > mgd-neuro-app/test/web_knowledge_explorer_v11_test.dart
           base64 -d mgd-neuro/patch_v011.py.gz.b64 | gzip -d > /tmp/patch_v011.py
           python3 /tmp/patch_v011.py mgd-neuro-app
-          base64 -d mgd-neuro/v11/web_knowledge_explorer_v11.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/web_knowledge_explorer_v11.dart
-          base64 -d mgd-neuro/v11/research_persistence_v11.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/research_persistence_v11.dart
-          base64 -d mgd-neuro/v11/web_knowledge_explorer_v11_test.dart.gz.b64 | gzip -d > mgd-neuro-app/test/web_knowledge_explorer_v11_test.dart
-          base64 -d mgd-neuro/patch_v011.py.gz.b64 | gzip -d > /tmp/patch_v011.py
-          python3 /tmp/patch_v011.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
