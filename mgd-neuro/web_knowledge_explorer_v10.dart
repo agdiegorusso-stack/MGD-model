@@ -289,6 +289,7 @@ class ResearchMemory10 {
         ((j['queryLastIso'] as Map?) ?? const {}).map(
           (k, v) => MapEntry(k.toString(), v.toString()),
         ),
+      ),
     );
     for (final raw in (j['evidence'] as List?) ?? const []) {
       if (raw is Map) {
@@ -297,13 +298,13 @@ class ResearchMemory10 {
         );
       }
     }
-    for (final raw in (j['claims'] as List?).. const []) {
+    for (final raw in (j['claims'] as List?) ?? const []) {
       if (raw is Map) {
         final c = ResearchClaim10.fromJson(Map<String, dynamic>.from(raw));
         if (c.key.isNotEmpty) out.claims[c.key] = c;
       }
     }
-    for (final raw in (j['sessions'] as List?).. const []) {
+    for (final raw in (j['sessions'] as List?) ?? const []) {
       if (raw is Map) {
         out.sessions.add(
           ResearchSession10.fromJson(Map<String, dynamic>.from(raw)),
@@ -467,7 +468,7 @@ class WebKnowledgeExplorer10 {
     // 3) Otherwise choose the concept with the greatest expected information
     // gain: uncertainty Õ relevance × curiosity × graph-bridge potential.
     final facts = brain.cognitiveFacts06();
-    final bySubject = <int, List<CognitiveFact06>{};
+    final bySubject = <int, List<CognitiveFact06>>{};
     for (final f in facts) {
       bySubject.putIfAbsent(f.subjectId, () => <CognitiveFact06>[]).add(f);
     }
