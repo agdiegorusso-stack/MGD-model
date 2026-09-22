@@ -1,4 +1,4 @@
-name: Build MGD-Neuro 0.9.1 Android APK
+name: Build MGD-Neuro 0.10 Android APK
 
 on:
   push:
@@ -63,6 +63,7 @@ jobs:
           base64 -d mgd-neuro/patch_v090.py.gz.b64 | gzip -d > /tmp/patch_v090.py
           python3 /tmp/patch_v090.py mgd-neuro-app
           python3 mgd-neuro/patch_v091.py mgd-neuro-app
+          python3 mgd-neuro/patch_v010.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
@@ -89,6 +90,12 @@ jobs:
                   '    <uses-permission android:name="android.permission.CAMERA" />\n'
                   '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'
               )
+          if 'android.permission.INTERNET' not in m:
+              m = m.replace(
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                  '    <uses-permission android:name="android.permission.INTERNET" />'
+              )
           manifest.write_text(m)
           PY
 
@@ -102,7 +109,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.9.1-source
+          name: MGD-Neuro-0.10-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -124,6 +131,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.9.1-Android
+          name: MGD-Neuro-0.10-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
