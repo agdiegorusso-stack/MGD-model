@@ -1,4 +1,4 @@
-name: Build MGD-Neuro 0.11 Android APK
+name: Build MGD-Neuro 0.12 Android APK
 
 on:
   push:
@@ -70,6 +70,11 @@ jobs:
           base64 -d mgd-neuro/patch_v011.py.gz.b64 | gzip -d > /tmp/patch_v011.py
           python3 /tmp/patch_v011.py mgd-neuro-app
           python3 mgd-neuro/patch_v011a.py mgd-neuro-app
+          base64 -d mgd-neuro/v12/brain_admin_v012.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/brain_admin_v012.dart
+          base64 -d mgd-neuro/v12/knowledge_snapshot_v012.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/knowledge_snapshot_v012.dart
+          base64 -d mgd-neuro/v12/knowledge_editor_v012.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/knowledge_editor_v012.dart
+          base64 -d mgd-neuro/patch_v012.py.gz.b64 | gzip -d > /tmp/patch_v012.py
+          python3 /tmp/patch_v012.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
@@ -115,7 +120,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.11-source
+          name: MGD-Neuro-0.12-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -137,6 +142,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.11-Android
+          name: MGD-Neuro-0.12-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
