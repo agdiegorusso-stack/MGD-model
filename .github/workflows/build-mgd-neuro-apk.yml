@@ -71,13 +71,14 @@ jobs:
           python3 /tmp/patch_v011.py mgd-neuro-app
           python3 mgd-neuro/patch_v011a.py mgd-neuro-app
           echo "Decoding brain_admin_v012"
-          base64 -d mgd-neuro/v12/brain_admin_v012.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/brain_admin_v012.dart
+          (base64 -d mgd-neuro/v12/brain_admin_v012.dart.gz.b64 | gzip -dc > mgd-neuro-app/lib/brain_admin_v012.dart) || test -s mgd-neuro-app/lib/brain_admin_v012.dart
           echo "Decoding knowledge_snapshot_v012"
-          base64 -d mgd-neuro/v12/knowledge_snapshot_v012.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/knowledge_snapshot_v012.dart
+          (base64 -d mgd-neuro/v12/knowledge_snapshot_v012.dart.gz.b64 | gzip -dc > mgd-neuro-app/lib/knowledge_snapshot_v012.dart) || test -s mgd-neuro-app/lib/knowledge_snapshot_v012.dart
           echo "Decoding knowledge_editor_v012"
-          base64 -d mgd-neuro/v12/knowledge_editor_v012.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/knowledge_editor_v012.dart
+          (base64 -d mgd-neuro/v12/knowledge_editor_v012.dart.gz.b64 | gzip -dc > mgd-neuro-app/lib/knowledge_editor_v012.dart) || test -s mgd-neuro-app/lib/knowledge_editor_v012.dart
           echo "Decoding patch_v012"
-          base64 -d mgd-neuro/patch_v012.py.gz.b64 | gzip -d > /tmp/patch_v012.py
+          (base64 -d mgd-neuro/patch_v012.py.gz.b64 | gzip -dc > /tmp/patch_v012.py) || test -s /tmp/patch_v012.py
+          python3 -m py_compile /tmp/patch_v012.py
           python3 /tmp/patch_v012.py mgd-neuro-app
 
       - name: Generate Android project and permissions
