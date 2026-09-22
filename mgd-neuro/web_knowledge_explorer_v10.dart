@@ -755,67 +755,100 @@ class WebKnowledgeExplorer10 {
     WebDocument10 doc,
   ) {
     final clean = sentence
-        .replaceAll(RegExp(r'\[[^\]]%s]*\]'), ' ')
+        .replaceAll(RegExp(r'\[[^\]]*\]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     if (clean.length < 10 || clean.length > 520) return null;
 
     final escaped = RegExp.escape(subject.trim());
     final start =
-        r"^(?:(?:il|lo|la|l'|un|uno|una)\\s+)?" + escaped + r'\\s+';
+        r"^(?:(?:il|lo|la|l'|un|uno|una)\s+)?" + escaped + r'\s+';
     final patterns = <({RegExp re, String relation, double quality})>[
       (
-        re: RegExp(start + r'(?:è|e)\s+(?:un|uno|una)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'(?:è|e)\s+(?:un|uno|una)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'tipo di',
         quality: 0.96,
       ),
       (
-        re: RegExp(start + r'(?:è|e)\s+compost[oa]\s+da\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'(?:è|e)\s+compost[oa]\s+da\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'composto da',
         quality: 0.92,
       ),
       (
-        re: RegExp(start + r'(?:è|e)\s+costituit[oa]\s+da\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'(?:è|e)\s+costituit[oa]\s+da\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'composto da',
         quality: 0.92,
       ),
       (
-        re: RegExp(start + r'fa\s+parte\s+(?:di|del|della|dei|degli|delle)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'fa\s+parte\s+(?:di|del|della|dei|degli|delle)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'parte di',
         quality: 0.92,
       ),
       (
-        re: RegExp(start + r'appartiene\s+(?:a|al|alla|ai|agli|alle)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'appartiene\s+(?:a|al|alla|ai|agli|alle)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'appartiene a',
         quality: 0.90,
       ),
       (
-        re: RegExp(start + r'(?:ha|possiede)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'(?:ha|possiede)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'ha',
         quality: 0.86,
       ),
       (
-        re: RegExp(start + r'vive\s+(?:in|nel|nella|nei|nelle)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'vive\s+(?:in|nel|nella|nei|nelle)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'vive in',
         quality: 0.88,
       ),
       (
-        re: RegExp(start + r'si\s+trova\s+(?:in|nel|nella|nei|nelle)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'si\s+trova\s+(?:in|nel|nella|nei|nelle)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'si trova in',
         quality: 0.88,
       ),
       (
-        re: RegExp(start + r'serve\s+(?:a|per)\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'serve\s+(?:a|per)\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'serve per',
         quality: 0.86,
       ),
       (
-        re: RegExp(start + r'può\s+(.+)', caseSensitive: false),
-        relation: 'puòi',
+        re: RegExp(
+          start + r'può\s+(.+)',
+          caseSensitive: false,
+        ),
+        relation: 'può',
         quality: 0.78,
       ),
       (
-        re: RegExp(start + r'comprende\s+(.+)', caseSensitive: false),
+        re: RegExp(
+          start + r'comprende\s+(.+)',
+          caseSensitive: false,
+        ),
         relation: 'comprende',
         quality: 0.80,
       ),
