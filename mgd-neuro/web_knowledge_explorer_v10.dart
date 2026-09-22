@@ -289,7 +289,6 @@ class ResearchMemory10 {
         ((j['queryLastIso'] as Map?) ?? const {}).map(
           (k, v) => MapEntry(k.toString(), v.toString()),
         ),
-      ),
     );
     for (final raw in (j['evidence'] as List?) ?? const []) {
       if (raw is Map) {
@@ -298,13 +297,13 @@ class ResearchMemory10 {
         );
       }
     }
-    for (final raw in (j['claims'] as List?) ?? const []) {
+    for (final raw in (j['claims'] as List?).. const []) {
       if (raw is Map) {
         final c = ResearchClaim10.fromJson(Map<String, dynamic>.from(raw));
         if (c.key.isNotEmpty) out.claims[c.key] = c;
       }
     }
-    for (final raw in (j['sessions'] as List?) ?? const []) {
+    for (final raw in (j['sessions'] as List?).. const []) {
       if (raw is Map) {
         out.sessions.add(
           ResearchSession10.fromJson(Map<String, dynamic>.from(raw)),
@@ -418,6 +417,8 @@ class WebKnowledgeExplorer10 {
     MgdWorld06 world,
     ResearchMemory10 memory,
   ) {
+    // 1) First revisit weak researched claims: knowledge should be checked,
+    // not simply accumulated forever.
     final now = DateTime.now();
     final weak = memory.claims.values.where((c) {
       if (c.confidence >= 0.62 || c.independentSourceCount >= 2) return false;
@@ -428,8 +429,7 @@ class WebKnowledgeExplorer10 {
       ..sort((a, b) => a.confidence.compareTo(b.confidence));
     if (weak.isNotEmpty) {
       final c = weak.first;
-      final q =
-          '${c.subject} ${c.relation} ${c.object} verifica fonti affidabili';
+      final q = '${c.subject} ${c.relation} ${c.object} verifica fonti affidabili';
       if (memory.canResearch(q, now: now)) {
         final sid = brain.entityIdForLabel06(c.subject);
         return ResearchGoal10(
@@ -443,14 +443,12 @@ class WebKnowledgeExplorer10 {
       }
     }
 
+    // 2) If MGD has already formulated a meaningful internal question, give
+    // the web a chance to answer before bothering the user again.
     final pending = world.pendingCuriosityQuestion09?.trim();
     if (pending != null && pending.isNotEmpty) {
       final q = pending.replaceAll(RegExp(r'[?]+$'), '').trim();
-      if (memory.canResearch(
-        q,
-        now: now,
-        repeatAfter: const Duration(hours: 3),
-      )) {
+      if (memory.canResearch(q, now: now, repeatAfter: const Duration(hours: 3))) {
         final labels = world.pendingCuriosityEntities09
             .where((id) => id >= 0 && id < brain.entities.length)
             .map((id) => brain.entities[id].label)
@@ -466,8 +464,10 @@ class WebKnowledgeExplorer10 {
       }
     }
 
+    // 3) Otherwise choose the concept with the greatest expected information
+    // gain: uncertainty Õ relevance × curiosity × graph-bridge potential.
     final facts = brain.cognitiveFacts06();
-    final bySubject = <int, List<CognitiveFact06>>{};
+    final bySubject = <int, List<CognitiveFact06>{};
     for (final f in facts) {
       bySubject.putIfAbsent(f.subjectId, () => <CognitiveFact06>[]).add(f);
     }
@@ -487,18 +487,15 @@ class WebKnowledgeExplorer10 {
       final nl = _norm(label);
       if (label.length < 2 ||
           {'utente', 'self', 'io', 'tu'}.contains(nl) ||
-          RegExp(r'^d+(?:[.,]d+)?$').hasMatch(label)) {
+          RegExp(r'^\d[^d]z+2([.,]\d+)?$').hasMatch(label)) {
         continue;
       }
 
-      final entityFacts =
-          bySubject[entity.id] ?? const <CognitiveFact06>[];
+      final entityFacts = bySubject[entity.id] ?? const <CognitiveFact06>[];
       final factCount = entityFacts.length;
       final avgConfidence = entityFacts.isEmpty
           ? 0.0
-          : entityFacts
-                  .map((f) => f.confidence)
-                  .reduce((a, b) => a + b) /
+          : entityFacts.map((f) => f.confidence).reduce((a, b) => a + b) /
               entityFacts.length;
       final uncertainty = factCount == 0
           ? 1.0
@@ -511,19 +508,13 @@ class WebKnowledgeExplorer10 {
               (brain.step - entity.lastSeen <= 60 ? 0.22 : 0.0))
           .clamp(0.25, 1.0)
           .toDouble();
-      final c =
-          max(0.35, max(world.curiosity, world.noveltyEma)).toDouble();
+      final c = max(0.35, max(world.curiosity, world.noveltyEma)).toDouble();
       final degree = graphDegree[entity.id] ?? 0;
-      final bridge = (0.38 + 0.14 * min(degree, 4))
-          .clamp(0.38, 0.94)
-          .toDouble();
-      final value = (uncertainty * relevance * c * bridge)
-          .clamp(0.0, 1.0)
-          .toDouble();
+      final bridge = (0.38 + 0.14 * min(degree, 4)).clamp(0.38, 0.94).toDouble();
+      final value = (uncertainty * relevance * c * bridge).clamp(0.0, 1.0).toDouble();
 
       if (value < 0.10) continue;
-      final q =
-          '$label definizione caratteristiche classificazione funzione';
+      final q = '$label definizione caratteristiche classificazione funzione';
       if (!memory.canResearch(q, now: now)) continue;
       final goal = ResearchGoal10(
         query: q,
@@ -563,11 +554,7 @@ class WebKnowledgeExplorer10 {
       for (final d in docs) {
         claims.addAll(_extractClaims(goal, d));
       }
-      return ResearchDraft10(
-        goal: goal,
-        documents: docs,
-        claims: claims,
-      );
+      return ResearchDraft10(goal: goal, documents: docs, claims: claims);
     } catch (e) {
       return ResearchDraft10(
         goal: goal,
@@ -597,7 +584,7 @@ class WebKnowledgeExplorer10 {
 
     if (draft.error != null) {
       session.status = 'errore';
-      session.completedAtIso = nowIso;
+      session.completedAtIso = nowIso ;
       memory.lastError = draft.error;
       memory.lastStatus = 'Ricerca fallita: ${draft.error}';
       memory.sessions.add(session);
@@ -621,14 +608,12 @@ class WebKnowledgeExplorer10 {
     for (final entry in grouped.entries) {
       final claims = entry.value;
       final first = claims.first;
-      final sourceFamilies =
-          claims.map((e) => e.document.sourceFamily).toSet();
+      final sourceFamilies = claims.map((e) => e.document.sourceFamily).toSet();
       final avgTrust = claims
               .map((e) => e.document.trust * e.patternQuality)
               .reduce((a, b) => a + b) /
           claims.length;
-      final corroborationBonus =
-          0.08 * max(0, sourceFamilies.length - 1);
+      final corroborationBonus = 0.08 * max(0, sourceFamilies.length - 1);
       var confidence = (0.36 + 0.16 * avgTrust + corroborationBonus)
           .clamp(0.38, 0.72)
           .toDouble();
@@ -656,13 +641,12 @@ class WebKnowledgeExplorer10 {
       claim.subject = first.subject;
       claim.relation = first.relation;
       claim.object = first.object;
-      claim.lastSeenIso = nowIso;
+      claim.lastSeenIso = nowIso ;
       claim.conflict = claim.conflict || existingConflict;
 
       for (var i = 0; i < claims.length; i++) {
         final c = claims[i];
-        final evId =
-            '${now.microsecondsSinceEpoch}:${entry.key.hashCode}:$i';
+        final evId = '${now.microsecondsSinceEpoch}:${entry.key.hashCode}:$i';
         final excerpt = c.sentence.length > 360
             ? '${c.sentence.substring(0, 360)}…'
             : c.sentence;
@@ -687,10 +671,10 @@ class WebKnowledgeExplorer10 {
       }
 
       claim.confidence = (0.36 +
-              0.10 * min(claim.evidenceCount, 3) +
-              0.08 * max(0, claim.independentSourceCount - 1))
-          .clamp(0.40, claim.conflict ? 0.48 : 0.70)
-          .toDouble();
+            0.10 * min(claim.evidenceCount, 3) +
+            0.08 * max(0, claim.independentSourceCount - 1))
+        .clamp(0.40, claim.conflict ? 0.48 : 0.70)
+        .toDouble();
       memory.claims[entry.key] = claim;
 
       if (claim.confidence < 0.40) continue;
@@ -718,31 +702,22 @@ class WebKnowledgeExplorer10 {
       }
       world.integrateLanguageExperience09(
         brain,
-        _claimSentence(
-          claim.subject,
-          claim.relation,
-          claim.object,
-        ),
+        _claimSentence(claim.subject, claim.relation, claim.object),
         reward: 0.12 + 0.18 * claim.confidence,
       );
       integrated++;
     }
 
     brain.discoverConcepts();
-    world.think(
-      brain,
-      cycles: 18,
-      seedText: draft.goal.focusLabel,
-    );
+    world.think(brain, cycles: 18, seedText: draft.goal.focusLabel);
     session.integratedClaims = integrated;
-    session.completedAtIso = nowIso;
-    session.status =
-        integrated > 0 ? 'integrata' : 'nessun fatto affidabile';
+    session.completedAtIso = nowIso ;
+    session.status = integrated > 0 ? 'integrata' : 'nessun fatto affidabile';
     memory.sessions.add(session);
     memory.lastError = null;
     memory.lastStatus = integrated > 0
         ? 'Ricerca autonoma: ${draft.goal.focusLabel.isEmpty ? draft.goal.query : draft.goal.focusLabel} • ${draft.documents.length} fonti • $integrated conoscenze integrate come prior deboli.'
-        : 'Ricerca completata su ${draft.goal.query}, ma non ho trovato fatti abbastanza strutturati da integrare.';
+        : 'Ricerca completata su ${draft.goal.query}, ma non ho trovato fatti bastanza strutturati da integrare.';
     memory.trim();
 
     return ResearchOutcome10(
@@ -779,106 +754,67 @@ class WebKnowledgeExplorer10 {
     WebDocument10 doc,
   ) {
     final clean = sentence
-        .replaceAll(RegExp(r'[[^]]*]'), ' ')
-        .replaceAll(RegExp(r's+'), ' ')
+        .replaceAll(RegExp(r'\[[^\]]%s]*\]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     if (clean.length < 10 || clean.length > 520) return null;
 
     final escaped = RegExp.escape(subject.trim());
     final start =
-        r'^(?:(?:il|lo|la|l'|un|uno|una)s+)?' +
-            escaped +
-            r's+';
-    final patterns =
-        <({RegExp re, String relation, double quality})>[
+        r'^(?:(?:il|lo|la|l\x'25|un|uno|una)\s+)?' + escaped + r'\s+';
+    final patterns = <({RegExp re, String relation, double quality})>[
       (
-        re: RegExp(
-          start + r'(?:è|e)s+(?:un|uno|una)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'(?:è|e)\s+(?:un|uno|una)\s+(.+)', caseSensitive: false),
         relation: 'tipo di',
         quality: 0.96,
       ),
       (
-        re: RegExp(
-          start + r'(?:è|e)s+compost[oa]s+das+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'(?:è|e)\s+compost[oa]\s+da\s+(.+)', caseSensitive: false),
         relation: 'composto da',
         quality: 0.92,
       ),
       (
-        re: RegExp(
-          start + r'(?:è|e)s+costituit[oa]s+das+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'(?:è|e)\s+costituit[oa]\s+da\s+(.+)', caseSensitive: false),
         relation: 'composto da',
         quality: 0.92,
       ),
       (
-        re: RegExp(
-          start +
-              r'fas+partes+(?:di|del|della|dei|degli|delle)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'fa\s+parte\s+(?:di|del|della|dei|degli|delle)\s+(.+)', caseSensitive: false),
         relation: 'parte di',
         quality: 0.92,
       ),
       (
-        re: RegExp(
-          start +
-              r'appartienes+(?:a|al|alla|ai|agli|alle)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'appartiene\s+(?:a|al|alla|ai|agli|alle)\s+(.+)', caseSensitive: false),
         relation: 'appartiene a',
         quality: 0.90,
       ),
       (
-        re: RegExp(
-          start + r'(?:ha|possiede)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'(?:ha|possiede)\s+(.+)', caseSensitive: false),
         relation: 'ha',
         quality: 0.86,
       ),
       (
-        re: RegExp(
-          start + r'vives+(?:in|nel|nella|nei|nelle)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'vive\s+(?:in|nel|nella|nei|nelle)\s+(.+)', caseSensitive: false),
         relation: 'vive in',
         quality: 0.88,
       ),
       (
-        re: RegExp(
-          start +
-              r'sis+trovas+(?:in|nel|nella|nei|nelle)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'si\s+trova\s+(?:in|nel|nella|nei|nelle)\s+(.+)', caseSensitive: false),
         relation: 'si trova in',
         quality: 0.88,
       ),
       (
-        re: RegExp(
-          start + r'serves+(?:a|per)s+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'serve\s+(?:a|per)\s+(.+)', caseSensitive: false),
         relation: 'serve per',
         quality: 0.86,
       ),
       (
-        re: RegExp(
-          start + r'puòs+(.+)',
-          caseSensitive: false,
-        ),
-        relation: 'può',
+        re: RegExp(start + r'può\s+(.+)', caseSensitive: false),
+        relation: 'puòi',
         quality: 0.78,
       ),
       (
-        re: RegExp(
-          start + r'comprendes+(.+)',
-          caseSensitive: false,
-        ),
+        re: RegExp(start + r'comprende\s+(.+)', caseSensitive: false),
         relation: 'comprende',
         quality: 0.80,
       ),
@@ -920,7 +856,7 @@ class WebKnowledgeExplorer10 {
         ((raw['query'] as Map?)?['pages'] as List?) ?? const [];
     final out = <WebDocument10>[];
     for (final x in pages) {
-      if (x is! Map) continue;
+      if (x is !Map) continue;
       final j = Map<String, dynamic>.from(x);
       final text = (j['extract'] ?? '').toString().trim();
       if (text.length < 20) continue;
@@ -964,8 +900,7 @@ class WebKnowledgeExplorer10 {
         provider: 'Wikidata',
         sourceFamily: 'wikimedia',
         title: label,
-        url: (j['concepturi'] ??
-                'https://www.wikidata.org/wiki/$id')
+        url: (j['concepturi'] ?? 'https://www.wikidata.org/wiki/$id')
             .toString(),
         text: '$label è un $desc.',
         trust: 0.80,
@@ -988,8 +923,7 @@ class WebKnowledgeExplorer10 {
     if (text.length < 20) return const <WebDocument10>[];
     final title = (raw['Heading'] ?? '').toString().trim();
     final url = (raw['AbstractURL'] ?? '').toString().trim();
-    final source =
-        (raw['AbstractSource'] ?? 'DuckDuckGo').toString().trim();
+    final source = (raw['AbstractSource'] ?? 'DuckDuckGo').toString().trim();
     String family = 'duckduckgo';
     try {
       final host = Uri.parse(url).host.toLowerCase();
@@ -1014,19 +948,14 @@ class WebKnowledgeExplorer10 {
   }
 
   Future<Map<String, dynamic>> _getJson(Uri uri) async {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 7);
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 7);
     try {
-      final req =
-          await client.getUrl(uri).timeout(const Duration(seconds: 8));
+      final req = await client.getUrl(uri).timeout(const Duration(seconds: 8));
       req.headers.set(HttpHeaders.userAgentHeader, _userAgent);
       req.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      final response =
-          await req.close().timeout(const Duration(seconds: 10));
+      final response = await req.close().timeout(const Duration(seconds: 10));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException(
-          'HTTP ${response.statusCode} da ${uri.host}',
-        );
+        throw HttpException('HTTP ${response.statusCode} da ${uri.host}');
       }
       final body = await response
           .transform(utf8.decoder)
@@ -1037,9 +966,7 @@ class WebKnowledgeExplorer10 {
       }
       final decoded = jsonDecode(body);
       if (decoded is! Map) {
-        throw const FormatException(
-          'Risposta web non JSON-oggetto.',
-        );
+        throw const FormatException('Risposta web non JSON-oggetto.');
       }
       return Map<String, dynamic>.from(decoded);
     } finally {
@@ -1064,44 +991,37 @@ class WebKnowledgeExplorer10 {
     final sid = brain.entityIdForLabel06(subject);
     if (sid == null) return false;
     for (final f in brain.cognitiveFacts06()) {
-      if (f.subjectId != sid ||
-          _norm(f.relation) != _norm(relation)) {
-        continue;
-      }
-      if (_norm(f.object) != _norm(object) && f.confidence >= 0.55) {
-        return true;
-      }
+      if (f.subjectId != sid || _norm(f.relation) != _norm(relation)) continue;
+      if (_norm(f.object) != _norm(object) && f.confidence >= 0.55) return true;
     }
     return false;
   }
 
   static List<String> _sentences(String text) => text
-      .replaceAll('
-', ' ')
-      .replaceAll(RegExp(r's+'), ' ')
-      .split(RegExp(r'(?<=[.!?])s+'))
+      .replaceAll('\n', ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .split(RegExp(r'(?<=[.!?])\s+'))
       .map((e) => e.trim())
       .where((e) => e.length >= 8)
       .toList();
 
   static String _cleanObject(String raw) {
     var x = raw
-        .replaceAll(RegExp(r'([^)]*)'), ' ')
-        .replaceAll(RegExp(r's+'), ' ')
+        .replaceAll(RegExp(r'\([^)]*\)'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     final breakers = <RegExp>[
-      RegExp(
-        r's+(?:che|dove|quando|mentre|poiché|perché|sebbene)s+',
+      RegExp(r'\s+(?:che|dove|quando|mentre|poiché|perché|sebbene)\s+',
         caseSensitive: false,
       ),
-      RegExp(r's*;s*'),
+      RegExp(r'\s*;\s*'),
     ];
     for (final b in breakers) {
       final m = b.firstMatch(x);
       if (m != null) x = x.substring(0, m.start).trim();
     }
     x = x.replaceAll(RegExp(r'[,:;.]+$'), '').trim();
-    final words = x.split(RegExp(r's+'));
+    final words = x.split(RegExp(r'\s+'));
     if (words.length > 10) x = words.take(10).join(' ');
     return x;
   }
@@ -1109,17 +1029,13 @@ class WebKnowledgeExplorer10 {
   static bool _validObject(String subject, String object) {
     if (object.length < 2 || object.length > 120) return false;
     if (_norm(object) == _norm(subject)) return false;
-    if (RegExp(
-      r'^(questo|questa|esso|essa|lui|lei)$',
-      caseSensitive: false,
-    ).hasMatch(object)) {
-      return false;
-    }
+    if (RegExp(r'^(questo|questa|esso|essa|lui|lei)$', caseSensitive: false)
+        .hasMatch(object)) return false;
     return true;
   }
 
   static String _cleanTitle(String title) =>
-      title.replaceAll(RegExp(r's*([^)]*)s*'), ' ').trim();
+      title.replaceAll(RegExp(r'\s*\([^)]*\)\s*'), ' ').trim();
 
   static String _claimKey(String s, String r, String o) =>
       '${_norm(s)}|${_norm(r)}|${_norm(o)}';
@@ -1153,5 +1069,5 @@ class WebKnowledgeExplorer10 {
 String _norm(String x) => x
     .toLowerCase()
     .replaceAll(RegExp(r'[^a-z0-9àèéìòù]+'), ' ')
-    .replaceAll(RegExp(r's+'), ' ')
+    .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
