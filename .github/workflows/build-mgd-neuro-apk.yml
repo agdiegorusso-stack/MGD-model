@@ -31,7 +31,13 @@ jobs:
             keytool -genkeypair -v               -keystore "$HOME/.android/debug.keystore"               -storepass android               -alias androiddebugkey               -keypass android               -dname "CN=MGD Neuro Prototype,O=MGD Neuro,C=IT"               -keyalg RSA -keysize 2048 -validity 10000
           fi
           echo "Stable signing certificate:"
-          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E "Owner:|SHA256:"
+          SIGNING_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
+          echo "$SIGNING_INFO" | grep -E "Owner:|SHA256:"
+          EXPECTED_SHA256="BF:D6:E2:66:0A:3C:3A:6E:3B:37:D1:73:6E:16:19:77:7B:93:3E:97:6C:31:2C:5B:1C:6C:D3:8E:90:8F:15:89"
+          echo "$SIGNING_INFO" | grep -F "$EXPECTED_SHA256" >/dev/null || {
+            echo "ERROR: Android signing key changed. Refusing to build an APK that would break upgrades."
+            exit 1
+          }
 
       - name: Restore 0.5 base and apply 0.5.1 repair
         run: |
