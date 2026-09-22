@@ -58,10 +58,8 @@ m = m.replace('Cervello 0.12 ripristinato', 'Cervello 0.13 ripristinato')
 main.write_text(m)
 
 p = pubspec.read_text()
-if 'version: 0.12.1+19' in p:
-    p = p.replace('version: 0.12.1+19', 'version: 0.13.0+20')
-elif 'version: 0.12.0+18' in p:
-    p = p.replace('version: 0.12.0+18', 'version: 0.13.0+20')
-else:
-    raise SystemExit('pubspec version anchor missing')
-pubspec.write_text(p)
+import re
+p2, n = re.subn(r'(?m)^version:\\s*[^\\n]+, 'version: 0.13.0+20', p, count=1)
+if n != 1:
+    raise SystemExit('pubspec version line missing')
+pubspec.write_text(p2)
