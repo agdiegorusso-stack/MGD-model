@@ -67,4 +67,4 @@ for i, line in enumerate(lines):
         break
 if not changed:
     raise SystemExit('pubspec version line missing')
-pubspec.write_text('\\n'.join(lines) + '\\n')
+pubspec.write_text('\n'.join(lines) + '\n')
