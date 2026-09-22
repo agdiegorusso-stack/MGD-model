@@ -1,4 +1,4 @@
-name: Build MGD-Neuro 0.12 Android APK
+name: Build MGD-Neuro 0.12.1 Android APK
 
 on:
   push:
@@ -30,6 +30,8 @@ jobs:
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -v               -keystore "$HOME/.android/debug.keystore"               -storepass android               -alias androiddebugkey               -keypass android               -dname "CN=MGD Neuro Prototype,O=MGD Neuro,C=IT"               -keyalg RSA -keysize 2048 -validity 10000
           fi
+          echo "Stable signing certificate:"
+          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E "Owner:|SHA256:"
 
       - name: Restore 0.5 base and apply 0.5.1 repair
         run: |
@@ -97,6 +99,23 @@ jobs:
               'applicationId = "it.diegorusso.mgdneurostable"'
           )
           s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
+          stable_signing = '''
+    signingConfigs {
+        create("mgdStable") {
+            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
+'''
+          if 'create("mgdStable")' not in s:
+              s = s.replace('    buildTypes {', stable_signing + '    buildTypes {', 1)
+          s = s.replace(
+              'signingConfig = signingConfigs.getByName("debug")',
+              'signingConfig = signingConfigs.getByName("mgdStable")'
+          )
           gradle.write_text(s)
 
           manifest = Path("android/app/src/main/AndroidManifest.xml")
@@ -127,7 +146,7 @@ jobs:
       - name: Upload patched source snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.12-source
+          name: MGD-Neuro-0.12.1-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -149,6 +168,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.12-Android
+          name: MGD-Neuro-0.12.1-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
