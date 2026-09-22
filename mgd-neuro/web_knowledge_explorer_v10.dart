@@ -762,7 +762,7 @@ class WebKnowledgeExplorer10 {
 
     final escaped = RegExp.escape(subject.trim());
     final start =
-        r"^(?:(?:il|lo|la|l'|un|uno|una)\s+)?" + escaped + r'\s+';
+        r"^(?:(?:il|lo|la|un|uno|una)\s+|l')?" + escaped + r'\s+';
     final patterns = <({RegExp re, String relation, double quality})>[
       (
         re: RegExp(
