@@ -100,17 +100,16 @@ jobs:
               'applicationId = "it.diegorusso.mgdneurostable"'
           )
           s = s.replace('minSdk = flutter.minSdkVersion', 'minSdk = 24')
-          stable_signing = '''
-    signingConfigs {
-        create("mgdStable") {
-            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
-    }
-
-'''
+          stable_signing = (
+              '    signingConfigs {\n'
+              '        create("mgdStable") {\n'
+              '            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")\n'
+              '            storePassword = "android"\n'
+              '            keyAlias = "androiddebugkey"\n'
+              '            keyPassword = "android"\n'
+              '        }\n'
+              '    }\n\n'
+          )
           if 'create("mgdStable")' not in s:
               s = s.replace('    buildTypes {', stable_signing + '    buildTypes {', 1)
           s = s.replace(
