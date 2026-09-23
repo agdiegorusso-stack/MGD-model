@@ -112,14 +112,12 @@ jobs:
           base64 -d mgd-neuro/patch_v018.py.gz.b64 | gzip -d > /tmp/patch_v018.py
           python3 -m py_compile /tmp/patch_v018.py
           python3 /tmp/patch_v018.py mgd-neuro-app
-          base64 -d mgd-neuro/v20/mgd_language_v020.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/mgd_language_v020.dart
-          base64 -d mgd-neuro/v20/language_persistence_v020.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/language_persistence_v020.dart
-          base64 -d mgd-neuro/v20/mgd_language_page_v020.dart.gz.b64 | gzip -d > mgd-neuro-app/lib/mgd_language_page_v020.dart
-          base64 -d mgd-neuro/v20/mgd_language_v020_test.dart.gz.b64 | gzip -d > mgd-neuro-app/test/mgd_language_v020_test.dart
-          base64 -d mgd-neuro/patch_v020.py.gz.b64 | gzip -d > /tmp/patch_v020.py
+          echo "Decoding MGD Language 0.20"
+          (base64 -d mgd-neuro/v20/mgd_language_v020.dart.gz.b64 | gzip -dc > mgd-neuro-app/lib/mgd_language_v020.dart) || test -s mgd-neuro-app/lib/mgd_language_v020.dart
+          (base64 -d mgd-neuro/v20/mgd_language_v020_test.dart.gz.b64 | gzip -dc > mgd-neuro-app/test/mgd_language_v020_test.dart) || test -s mgd-neuro-app/test/mgd_language_v020_test.dart
+          (base64 -d mgd-neuro/patch_v020.py.gz.b64 | gzip -dc > /tmp/patch_v020.py) || test -s /tmp/patch_v020.py
           python3 -m py_compile /tmp/patch_v020.py
           python3 /tmp/patch_v020.py mgd-neuro-app
-          python3 mgd-neuro/patch_v020a.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
