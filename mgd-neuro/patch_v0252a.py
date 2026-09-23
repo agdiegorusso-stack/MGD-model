@@ -4,7 +4,7 @@ root=Path(sys.argv[1])
 p=root/'lib'/'plastic_language_brain_v04.dart'
 s=p.read_text()
 
-# Remove the over-broad semantic interception inserted by 0.25.2.
+# Undo the over-broad semantic interception from patch_v0252.
 global_block="""    // Semantic/deictic families must win before generic predicate attractors.
     // Without this call the dedicated partner/child/name parser was dead code:
     // "chi è la mia compagna?" could collapse onto USER identity.
@@ -20,53 +20,120 @@ global_block="""    // Semantic/deictic families must win before generic predica
 if global_block in s:
     s=s.replace(global_block,'',1)
 
-# For answering, only relational-role questions (partner, daughter, son, etc.)
-# get the dedicated semantic parser. All other existing attractor behavior stays intact.
-old="""    final interpretation = interpret(prompt, speaker: 'user', create: false);
-    final report = learnSurface(prompt, reward: 0.20);"""
-new="""    final promptSurfaces0252 = lexicalTokens(prompt);
-    final roleFamily0252 = _roleFamilyIn(promptSurfaces0252);
-    final semanticRole0252 = roleFamily0252 == null
-        ? null
-        : _semanticInterpretation(
-            promptSurfaces0252,
-            speaker:'user',
-            create:false,
-            isQuestion:promptIsQuestion,
-          );
-    final interpretation = semanticRole0252 ?? interpret(prompt, speaker: 'user', create: false);
-    final report = learnSurface(prompt, reward: 0.20);"""
-if old not in s: raise SystemExit('respond interpretation anchor missing')
-s=s.replace(old,new,1)
+# Keep the original attractor interpretation untouched. After an explicit
+# correction, additionally write relational roles (partner/daughter/son/etc.)
+# into their dedicated semantic slot and train that attractor strongly.
+anchor="""    if (interpretation.isQuestion && interpretation.subjectId != null && interpretation.relationId != null) {
+      _putFact(
+        subjectId: interpretation.subjectId!,
+        relationId: interpretation.relationId!,
+        objectText: answer,
+        reward: reward,
+        episodeId: ep.id,
+      );
+      _linkParaphraseByAnswer(
+        subjectId: interpretation.subjectId!,
+        relationId: interpretation.relationId!,
+        objectText: answer,
+      );
+    } else {
+      final statement = interpret(answer, speaker: 'agent', create: true);
+      _learnDeclarativeFrame(answer, statement, reward: reward, episodeId: ep.id);
+    }
+    discoverConcepts();"""
+replacement="""    if (interpretation.isQuestion && interpretation.subjectId != null && interpretation.relationId != null) {
+      _putFact(
+        subjectId: interpretation.subjectId!,
+        relationId: interpretation.relationId!,
+        objectText: answer,
+        reward: reward,
+        episodeId: ep.id,
+      );
+      _linkParaphraseByAnswer(
+        subjectId: interpretation.subjectId!,
+        relationId: interpretation.relationId!,
+        objectText: answer,
+      );
+    } else {
+      final statement = interpret(answer, speaker: 'agent', create: true);
+      _learnDeclarativeFrame(answer, statement, reward: reward, episodeId: ep.id);
+    }
 
-# One-shot correction must store the answer in the semantic role slot, not USER/name.
-old="""  void teachResponse(String prompt, String answer, {double reward = 1.0}) {
-    final interpretation = interpret(prompt, speaker: 'user', create: true);"""
-new="""  void teachResponse(String prompt, String answer, {double reward = 1.0}) {
-    final teachSurfaces0252 = lexicalTokens(prompt);
-    final teachNormalized0252 = teachSurfaces0252.map(normalizeText).toList();
-    final teachIsQuestion0252 =
-        normalizeText(prompt).endsWith('?') || teachNormalized0252.any(_questionWords.contains);
-    final teachRoleFamily0252 = _roleFamilyIn(teachSurfaces0252);
-    final semanticTeach0252 = teachRoleFamily0252 == null
-        ? null
-        : _semanticInterpretation(
-            teachSurfaces0252,
-            speaker:'user',
-            create:true,
-            isQuestion:teachIsQuestion0252,
-          );
-    final interpretation = semanticTeach0252 ?? interpret(prompt, speaker: 'user', create: true);"""
-if old not in s: raise SystemExit('teachResponse anchor missing')
-s=s.replace(old,new,1)
+    // Supplemental semantic-role binding. It never replaces the established
+    // generic interpretation, so existing identity/coordination behavior stays
+    // unchanged; it only prevents a role correction from being swallowed by
+    // USER/name when that attractor is already stronger.
+    final roleSurfaces0252 = lexicalTokens(prompt);
+    final roleFamily0252 = _roleFamilyIn(roleSurfaces0252);
+    if(roleFamily0252 != null){
+      final roleNormalized0252 = roleSurfaces0252.map(normalizeText).toList();
+      final roleIsQuestion0252 =
+          normalizeText(prompt).endsWith('?') || roleNormalized0252.any(_questionWords.contains);
+      final semanticRole0252 = _semanticInterpretation(
+        roleSurfaces0252,
+        speaker:'user',
+        create:true,
+        isQuestion:roleIsQuestion0252,
+      );
+      if(semanticRole0252 != null &&
+          semanticRole0252.subjectId != null &&
+          semanticRole0252.relationId != null){
+        _putFact(
+          subjectId:semanticRole0252.subjectId!,
+          relationId:semanticRole0252.relationId!,
+          objectText:answer,
+          reward:max(0.95,reward),
+          episodeId:ep.id,
+        );
+        _trainRelationAttractor(
+          semanticRole0252.relationId!,
+          semanticRole0252.relationCues,
+          max(0.95,reward),
+        );
+        _linkParaphraseByAnswer(
+          subjectId:semanticRole0252.subjectId!,
+          relationId:semanticRole0252.relationId!,
+          objectText:answer,
+        );
+      }
+    }
+    discoverConcepts();"""
+if anchor not in s: raise SystemExit('teach supplemental role anchor missing')
+s=s.replace(anchor,replacement,1)
 
-# Restrict migration of old one-shot corrections to explicit relational-role prompts.
+# Migration of old one-shot corrections only touches relational-role prompts,
+# and reinforces both the fact and its role attractor.
 old="""      final surfaces=lexicalTokens(ep.userText);
       if(surfaces.isEmpty)continue;
       final ns=surfaces.map(normalizeText).toList();"""
 new="""      final surfaces=lexicalTokens(ep.userText);
       if(surfaces.isEmpty || _roleFamilyIn(surfaces)==null)continue;
       final ns=surfaces.map(normalizeText).toList();"""
+if old in s:
+    s=s.replace(old,new,1)
+
+old="""      _putFact(
+        subjectId:i.subjectId!,
+        relationId:relationId,
+        objectText:answer,
+        reward:1.0,
+        episodeId:ep.id,
+      );
+      repaired++;"""
+new="""      _putFact(
+        subjectId:i.subjectId!,
+        relationId:relationId,
+        objectText:answer,
+        reward:1.0,
+        episodeId:ep.id,
+      );
+      _trainRelationAttractor(relationId,i.relationCues,1.0);
+      _linkParaphraseByAnswer(
+        subjectId:i.subjectId!,
+        relationId:relationId,
+        objectText:answer,
+      );
+      repaired++;"""
 if old in s:
     s=s.replace(old,new,1)
 
