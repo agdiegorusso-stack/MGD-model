@@ -18,7 +18,7 @@ new="""    String? answer;
     // such as compagna/partner/figlia/figlio/madre/padre.
     final roleSurfaces0252b = lexicalTokens(prompt);
     final roleFamily0252b = _roleFamilyIn(roleSurfaces0252b);
-    if(roleFamily0252b != null){
+    if(roleFamily0252b == 'partner'){
       final roleNormalized0252b = roleSurfaces0252b.map(normalizeText).toList();
       final roleIsQuestion0252b =
           normalizeText(prompt).endsWith('?') ||
