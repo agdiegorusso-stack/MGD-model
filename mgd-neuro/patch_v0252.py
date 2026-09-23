@@ -94,7 +94,7 @@ s=s.replace(insert_anchor,method+insert_anchor,1)
 p=root/'lib'/'main.dart'
 s=p.read_text()
 anchor="""      _brain = loaded?.brain ?? PlasticLanguageBrain04();\n      _world = world ?? MgdWorld06();"""
-replacement="""      _brain = loaded?.brain ?? PlasticLanguageBrain_v04();\n      final repairedSemanticCorrections252 = _brain.repairSemanticCorrections0252();\n      _world = world ?? MgdWorld06();""
+replacement="""      _brain = loaded?.brain ?? PlasticLanguageBrain04();\n      final repairedSemanticCorrections252 = _brain.repairSemanticCorrections0252();\n      _world = world ?? MgdWorld06();"""
 if anchor not in s: raise SystemExit('main brain load anchor missing')
 s=s.replace(anchor,replacement,1)
 
