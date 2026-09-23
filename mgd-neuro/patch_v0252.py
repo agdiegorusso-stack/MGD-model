@@ -90,6 +90,7 @@ method=r'''  int repairSemanticCorrections0252(){
 '''
 if insert_anchor not in s: raise SystemExit('repair insertion anchor missing')
 s=s.replace(insert_anchor,method+insert_anchor,1)
+p.write_text(s)
 
 p=root/'lib'/'main.dart'
 s=p.read_text()
