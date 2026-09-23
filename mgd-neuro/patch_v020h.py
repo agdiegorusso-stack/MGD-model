@@ -97,8 +97,8 @@ if old_bytes not in s:
     raise SystemExit('corpus byte-read anchor missing')
 s=s.replace(old_bytes,new_bytes,1)
 
-state_anchor="class _MgdLanguageLab20State extends State<MgdLanguageLab20>{
-  final text=TextEditingController(); bool busy=false; String status='';"
+state_anchor="""class _MgdLanguageLab20State extends State<MgdLanguageLab20>{
+  final text=TextEditingController(); bool busy=false; String status='';"""
 state_repl="""class _MgdLanguageLab20State extends State<MgdLanguageLab20>{
   final text=TextEditingController(); bool busy=false; String status='';
 
