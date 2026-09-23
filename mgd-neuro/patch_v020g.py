@@ -20,7 +20,7 @@ new_train = r'''  Future<void> train(String data,{String? sourceName})async{
         if(end<raw.length){
           final searchStart=max(start,end-8000);
           final tail=raw.substring(searchStart,end);
-          final cuts=RegExp(r'[.!?]\\s+|\\n+').allMatches(tail).toList();
+          final cuts=RegExp(r'[.!?]\s+|\n+').allMatches(tail).toList();
           if(cuts.isNotEmpty)end=searchStart+cuts.last.end;
         }
         if(end<=start)end=min(start+chunkSize,raw.length);
