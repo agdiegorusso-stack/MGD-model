@@ -89,11 +89,11 @@ method=r'''  int repairSemanticCorrections0252(){
 
 '''
 if insert_anchor not in s: raise SystemExit('repair insertion anchor missing')
-s=s.replace(insert_anchor,method+insert_anchor,q)
+s=s.replace(insert_anchor,method+insert_anchor,1)
 
 p=root/'lib'/'main.dart'
 s=p.read_text()
-anchor="""      _brain = loaded?.brain ?? PlasticLanguageBrain_v04();\n      _world = world ?? MgdWorld06();"""
+anchor="""      _brain = loaded?.brain ?? PlasticLanguageBrain04();\n      _world = world ?? MgdWorld06();"""
 replacement="""      _brain = loaded?.brain ?? PlasticLanguageBrain_v04();\n      final repairedSemanticCorrections252 = _brain.repairSemanticCorrections0252();\n      _world = world ?? MgdWorld06();""
 if anchor not in s: raise SystemExit('main brain load anchor missing')
 s=s.replace(anchor,replacement,1)
@@ -110,7 +110,7 @@ s=s.replace(anchor,replacement,1)
 s=s.replace("MGD Neuro 0.25.1","MGD Neuro 0.25.2")
 p.write_text(s)
 
-p=root/test/'plastic_language_brain_v04_test.dart'
+p=root/'test'/'plastic_language_brain_v04_test.dart'
 s=p.read_text()
 insert="""\n  test('semantic partner correction does not collapse onto user identity', () {\n    final brain = PlasticLanguageBrain04();\n    brain.teachResponse('come mi chiamo?', 'Diego', reward: 1.0);\n    brain.teachResponse('chi è la mia compagna?', 'Alessandra', reward: 1.0);\n\n    expect(brain.respond('come mi chiamo?').toLowerCase(), contains('diego'));\n    expect(brain.respond('chi è la mia compagna?').toLowerCase(), contains('alessandra'));\n  });\n"""
 pos=s.rfind('}')
