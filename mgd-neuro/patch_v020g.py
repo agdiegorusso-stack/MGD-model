@@ -71,4 +71,10 @@ if old_train not in s:
 if old_pick not in s:
     raise SystemExit('pick() anchor missing')
 s=s.replace(old_train,new_train,1).replace(old_pick,new_pick,1)
+s=s.replace("label:const Text('Importa corpus .txt/.md')","label:const Text('Importa libro/corpus .txt/.md')",1)
 p.write_text(s)
+
+pub = root / 'pubspec.yaml'
+ps = pub.read_text()
+ps = ps.replace('version: 0.20.0+27', 'version: 0.20.1+28')
+pub.write_text(ps)
