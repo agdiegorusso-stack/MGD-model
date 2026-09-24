@@ -41,7 +41,13 @@ elif mode=='source':
         raise SystemExit('Inspector nested-map anchor missing')
     source=source.replace(old,new,1)
     destination.write_text(source)
-    shutil.copyfile(folder/'knowledge_inspector_v0315_test.dart','mgd-neuro-app/test/knowledge_inspector_v0315_test.dart')
+    # SelectableText has its own Scrollable; target the outer page ListView.
+    tests=(folder/'knowledge_inspector_v0315_test.dart').read_text()
+    old_scroll=',200);await tester.pumpAndSettle();'
+    if tests.count(old_scroll)!=2:
+        raise SystemExit('Expected two widget-test scroll targets')
+    tests=tests.replace(old_scroll,',200,scrollable:find.byType(Scrollable).first);await tester.pumpAndSettle();')
+    Path('mgd-neuro-app/test/knowledge_inspector_v0315_test.dart').write_text(tests)
     Path('mgd-neuro-app/BUILD-COMMIT.txt').write_text(subprocess.check_output(['git','rev-parse','HEAD'],text=True))
 elif mode=='platform':
     original_step('Generate Android project and permissions','mgd-neuro-app')
