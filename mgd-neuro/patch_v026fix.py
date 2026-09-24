@@ -6,3 +6,9 @@ s=p.read_text()
 if "import 'dart:async';" not in s:
     s=s.replace("import 'dart:convert';","import 'dart:async';\nimport 'dart:convert';",1)
 p.write_text(s)
+
+p=root/'lib'/'persistence.dart'
+x=p.read_text()
+if "import 'dart:async';" not in x:
+    x=x.replace("import 'dart:convert';","import 'dart:async';\nimport 'dart:convert';",1)
+p.write_text(x)
