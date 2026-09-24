@@ -34,4 +34,15 @@ with tempfile.TemporaryDirectory(prefix='mgd-inspector-') as temp:
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(work / relative, target)
+
+# SelectableText contains its own scrollables. Test the outer detail list,
+# not an ambiguous match across the nested text widgets.
+test = root / 'test/inspector315_test.dart'
+s = test.read_text()
+outer = "find.descendant(of:find.byType(InspectorDetail315),matching:find.byType(Scrollable)).first"
+s = s.replace('tester.scrollUntilVisible(sourceGroup,250)',
+    'tester.scrollUntilVisible(sourceGroup,250,scrollable:' + outer + ')')
+s = s.replace('tester.scrollUntilVisible(excerpt,200)',
+    'tester.scrollUntilVisible(excerpt,200,scrollable:' + outer + ')')
+test.write_text(s)
 print('MGD Neuro 0.31.5 inspector overlay installed and integrity verified')
