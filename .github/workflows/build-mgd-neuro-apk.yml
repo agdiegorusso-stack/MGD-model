@@ -148,6 +148,9 @@ jobs:
           python3 mgd-neuro/patch_v0252.py mgd-neuro-app
           python3 mgd-neuro/patch_v0252a.py mgd-neuro-app
           python3 mgd-neuro/patch_v0252b.py mgd-neuro-app
+          gzip -dc mgd-neuro/patch_v026.py.gz > /tmp/patch_v026.py
+          python3 -m py_compile /tmp/patch_v026.py
+          python3 /tmp/patch_v026.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
