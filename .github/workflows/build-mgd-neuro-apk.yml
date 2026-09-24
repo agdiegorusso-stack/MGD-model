@@ -173,6 +173,8 @@ jobs:
           patch -p1 -d mgd-neuro-app < /tmp/patch_v031.diff
           python3 mgd-neuro/patch_v031fix.py mgd-neuro-app
           python3 mgd-neuro/patch_v031fix2.py mgd-neuro-app
+          base64 -d mgd-neuro/patch_v031fix3.py.b64 > /tmp/patch_v031fix3.py
+          python3 /tmp/patch_v031fix3.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
