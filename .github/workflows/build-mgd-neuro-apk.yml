@@ -181,6 +181,7 @@ jobs:
           python3 mgd-neuro/patch_v0311fix2.py mgd-neuro-app
           python3 mgd-neuro/patch_v0312.py mgd-neuro-app
           python3 mgd-neuro/patch_v0312fix.py mgd-neuro-app
+          python3 mgd-neuro/patch_v0312fix2.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
