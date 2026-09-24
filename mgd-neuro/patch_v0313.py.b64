@@ -1,0 +1,154 @@
+ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCBzeXMKcm9vdD1QYXRoKHN5cy5hcmd2WzFdIGlmIGxlbihzeXMuYXJndik+MSBlbHNlICcvbW50L2RhdGEvbWdkMDMxMnN1Y2Nlc3MnKQpwPXJvb3QvJ2xpYicvJ3dlYl9rbm93bGVkZ2VfZXhwbG9yZXJfdjExLmRhcnQnCnM9cC5yZWFkX3RleHQoKQoKIyAxLiBEbyBub3QgdmVyaWZ5IHRoZSBub2lzaWVzdC9sb3dlc3QgY29uZmlkZW5jZSBjbGFpbSBmaXJzdC4gUHJpb3JpdGl6ZSBjbGFpbXMKIyBjbG9zZSB0byBjb25zb2xpZGF0aW9uIGFuZCBwZW5hbGl6ZSBzZW50ZW5jZSBmcmFnbWVudHMgLyBvdmVybG9uZyBvYmplY3RzLgpvbGQ9IiIiICAgIGZpbmFsIHdlYWsgPSBtZW1vcnkuY2xhaW1zLnZhbHVlcy53aGVyZSgoYykgewogICAgICBpZigheydkdWJiaWEnLCdpcG90ZXNpX21nZCd9LmNvbnRhaW5zKGMuc3RhdHVzKXx8Yy5jb25maWRlbmNlPj0wLjc0KXJldHVybiBmYWxzZTsKICAgICAgZmluYWwgY29ycHVzT25seT1jLnNvdXJjZUZhbWlsaWVzLmlzTm90RW1wdHkmJmMuc291cmNlRmFtaWxpZXMuZXZlcnkoKGYpPT5mLnN0YXJ0c1dpdGgoJ2NvcnB1czonKXx8Zi5zdGFydHNXaXRoKCdtYW51YWxlOicpKTsKICAgICAgcmV0dXJuICFjb3JwdXNPbmx5OwogICAgfSkudG9MaXN0KCkuLnNvcnQoKGEsYik9PmEuY29uZmlkZW5jZS5jb21wYXJlVG8oYi5jb25maWRlbmNlKSk7CiIiIgpuZXc9IiIiICAgIGZpbmFsIHdlYWsgPSBtZW1vcnkuY2xhaW1zLnZhbHVlcy53aGVyZSgoYykgewogICAgICBpZigheydkdWJiaWEnLCdpcG90ZXNpX21nZCd9LmNvbnRhaW5zKGMuc3RhdHVzKSlyZXR1cm4gZmFsc2U7CiAgICAgIGlmKGMuc291cmNlRmFtaWxpZXMubGVuZ3RoPj0yICYmIGMuY29uZmlkZW5jZT49MC43NClyZXR1cm4gZmFsc2U7CiAgICAgIGZpbmFsIGNvcnB1c09ubHk9Yy5zb3VyY2VGYW1pbGllcy5pc05vdEVtcHR5JiZjLnNvdXJjZUZhbWlsaWVzLmV2ZXJ5KChmKT0+Zi5zdGFydHNXaXRoKCdjb3JwdXM6Jyl8fGYuc3RhcnRzV2l0aCgnbWFudWFsZTonKSk7CiAgICAgIHJldHVybiAhY29ycHVzT25seSAmJiBfdmVyaWZpY2F0aW9uRWxpZ2libGUwMzEzKGMpOwogICAgfSkudG9MaXN0KCkKICAgICAgLi5zb3J0KChhLGIpPT5fdmVyaWZpY2F0aW9uUHJpb3JpdHkwMzEzKGIpLmNvbXBhcmVUbyhfdmVyaWZpY2F0aW9uUHJpb3JpdHkwMzEzKGEpKSk7CiIiIgppZiBvbGQgbm90IGluIHM6IHJhaXNlIFN5c3RlbUV4aXQoJzAzMTMgd2VhayBzZWxlY3RvciBhbmNob3IgbWlzc2luZycpCnM9cy5yZXBsYWNlKG9sZCxuZXcsMSkKCiMgMi4gS2VlcCBhbGlhc2VzIGZvciBib3RoIHJldHJpZXZhbCBBTkQgZXh0cmFjdGlvbiAvIHZlcmlmaWNhdGlvbi4Kb2xkPSIiIiAgICAgIGZpbmFsIHNjaWVudGlmaWNRdWVyaWVzMDMxMj08U3RyaW5nPntnb2FsLnF1ZXJ5LnRyaW0oKX07CiAgICAgIGlmKGdvYWwuZGl2ZXJzaXR5VmVyaWZpY2F0aW9uMDMxICYmIGdvYWwudmVyaWZ5U3ViamVjdDAzMSE9bnVsbCl7CiAgICAgICAgZmluYWwgc3ViamVjdD1nb2FsLnZlcmlmeVN1YmplY3QwMzEhLnRyaW0oKTsKICAgICAgICBpZihzdWJqZWN0LmlzTm90RW1wdHkpc2NpZW50aWZpY1F1ZXJpZXMwMzEyLmFkZChzdWJqZWN0KTsKICAgICAgICB0cnl7CiAgICAgICAgICBmaW5hbCBhbGlhc2VzPWF3YWl0IF93aWtpZGF0YUxleGljYWxBbGlhc2VzMDMxMihzdWJqZWN0KTsKICAgICAgICAgIGZvcihmaW5hbCBhIGluIGFsaWFzZXMudGFrZSgyKSl7CiAgICAgICAgICAgIGlmKGEudHJpbSgpLmlzTm90RW1wdHkpc2NpZW50aWZpY1F1ZXJpZXMwMzEyLmFkZChhLnRyaW0oKSk7CiAgICAgICAgICB9CiAgICAgICAgfWNhdGNoKF8pe30KICAgICAgfQoiIiIKbmV3PSIiIiAgICAgIGZpbmFsIHNjaWVudGlmaWNRdWVyaWVzMDMxMj08U3RyaW5nPntnb2FsLnF1ZXJ5LnRyaW0oKX07CiAgICAgIGZpbmFsIHN1YmplY3RBbGlhc2VzMDMxMz08U3RyaW5nPnt0b3BpY307CiAgICAgIGlmKGdvYWwuZGl2ZXJzaXR5VmVyaWZpY2F0aW9uMDMxICYmIGdvYWwudmVyaWZ5U3ViamVjdDAzMSE9bnVsbCl7CiAgICAgICAgZmluYWwgc3ViamVjdD1nb2FsLnZlcmlmeVN1YmplY3QwMzEhLnRyaW0oKTsKICAgICAgICBpZihzdWJqZWN0LmlzTm90RW1wdHkpewogICAgICAgICAgc2NpZW50aWZpY1F1ZXJpZXMwMzEyLmFkZChzdWJqZWN0KTsKICAgICAgICAgIHN1YmplY3RBbGlhc2VzMDMxMy5hZGQoc3ViamVjdCk7CiAgICAgICAgfQogICAgICAgIHRyeXsKICAgICAgICAgIGZpbmFsIGFsaWFzZXM9YXdhaXQgX3dpa2lkYXRhTGV4aWNhbEFsaWFzZXMwMzEyKHN1YmplY3QpOwogICAgICAgICAgZm9yKGZpbmFsIGEgaW4gYWxpYXNlcy50YWtlKDQpKXsKICAgICAgICAgICAgaWYoYS50cmltKCkuaXNOb3RFbXB0eSl7CiAgICAgICAgICAgICAgc2NpZW50aWZpY1F1ZXJpZXMwMzEyLmFkZChhLnRyaW0oKSk7CiAgICAgICAgICAgICAgc3ViamVjdEFsaWFzZXMwMzEzLmFkZChhLnRyaW0oKSk7CiAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICB9Y2F0Y2goXyl7fQogICAgICB9CiIiIgppZiBvbGQgbm90IGluIHM6IHJhaXNlIFN5c3RlbUV4aXQoJzAzMTMgYWxpYXNlcyBhbmNob3IgbWlzc2luZycpCnM9cy5yZXBsYWNlKG9sZCxuZXcsMSkKCiMgMy4gRXh0cmFjdCBFbmdsaXNoL2FsaWFzIGNsYWltcyBhbmQgcmV3cml0ZSBzdWJqZWN0IHRvIHRoZSBjYW5vbmljYWwgdG9waWMuCm9sZD0iIiIgICAgICAgICAgZmluYWwgZXh0cmFjdGVkID0gZXh0cmFjdENsYWltc0Zyb21TZW50ZW5jZSh0b3BpYywgc2VudGVuY2UsIGRvYywgYWxsb3dJbXBsaWNpdFN1YmplY3Q6IGkgPCA0KTsKICAgICAgICAgIGlmIChleHRyYWN0ZWQuaXNOb3RFbXB0eSkgewogICAgICAgICAgICBjbGFpbXMuYWRkQWxsKGV4dHJhY3RlZCk7CiAgICAgICAgICB9IGVsc2UgaWYgKF9wYXNzYWdlUmVsZXZhbnQodG9waWMsIHNlbnRlbmNlKSkgewoiIiIKbmV3PSIiIiAgICAgICAgICB2YXIgZXh0cmFjdGVkID0gZXh0cmFjdENsYWltc0Zyb21TZW50ZW5jZSh0b3BpYywgc2VudGVuY2UsIGRvYywgYWxsb3dJbXBsaWNpdFN1YmplY3Q6IGkgPCA0KTsKICAgICAgICAgIGlmKGV4dHJhY3RlZC5pc0VtcHR5ICYmIHN1YmplY3RBbGlhc2VzMDMxMy5sZW5ndGg+MSl7CiAgICAgICAgICAgIGZvcihmaW5hbCBhbGlhcyBpbiBzdWJqZWN0QWxpYXNlczAzMTMpewogICAgICAgICAgICAgIGlmKF9uMTEoYWxpYXMpPT1fbjExKHRvcGljKSljb250aW51ZTsKICAgICAgICAgICAgICBmaW5hbCBhbHQ9ZXh0cmFjdENsYWltc0Zyb21TZW50ZW5jZShhbGlhcywgc2VudGVuY2UsIGRvYywgYWxsb3dJbXBsaWNpdFN1YmplY3Q6IGkgPCA0KTsKICAgICAgICAgICAgICBpZihhbHQuaXNFbXB0eSljb250aW51ZTsKICAgICAgICAgICAgICBleHRyYWN0ZWQ9YWx0Lm1hcCgoYyk9PkV4dHJhY3RlZENsYWltMTEoCiAgICAgICAgICAgICAgICBzdWJqZWN0OnRvcGljLAogICAgICAgICAgICAgICAgcmVsYXRpb246Yy5yZWxhdGlvbiwKICAgICAgICAgICAgICAgIG9iamVjdDpjLm9iamVjdCwKICAgICAgICAgICAgICAgIHNlbnRlbmNlOmMuc2VudGVuY2UsCiAgICAgICAgICAgICAgICBzb3VyY2U6Yy5zb3VyY2UsCiAgICAgICAgICAgICAgICBxdWFsaXR5OmMucXVhbGl0eSowLjk4LAogICAgICAgICAgICAgICAgc3ViamVjdFNlbnNlS2V5OmMuc3ViamVjdFNlbnNlS2V5LAogICAgICAgICAgICAgICAgc3ViamVjdFNlbnNlTGFiZWw6Yy5zdWJqZWN0U2Vuc2VMYWJlbCwKICAgICAgICAgICAgICAgIHN1YmplY3RTZW5zZUdsb3NzOmMuc3ViamVjdFNlbnNlR2xvc3MsCiAgICAgICAgICAgICAgKSkudG9MaXN0KCk7CiAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICAgIGlmIChleHRyYWN0ZWQuaXNOb3RFbXB0eSkgewogICAgICAgICAgICBjbGFpbXMuYWRkQWxsKGV4dHJhY3RlZCk7CiAgICAgICAgICB9IGVsc2UgaWYgKF9wYXNzYWdlUmVsZXZhbnQodG9waWMsIHNlbnRlbmNlKSkgewoiIiIKaWYgb2xkIG5vdCBpbiBzOiByYWlzZSBTZXR1cEV4aXQoJzAzMTMgZXh0cmFjdGlvbiBhbGlhcyBhbmNob3IgbWlzc2luZycpCnM9cy5yZXBsYWNlKG9sZCxuZXcsMSkKCiMgNC4gVGFyZ2V0IHZlcmlmaWNhdGlvbiBjYW4gZ3JvdW5kIHRoZSBzdWJqZWN0IGZyb20gdGl0bGUvYWxpYXNlcyB3aGlsZSByZWxhdGlvbitvYmplY3QKIyBhcHBlYXIgaW4gdGhlIGFic3RyYWN0IHNlbnRlbmNlLgpvbGQ9IiIiICAgICAgICAgICAgaWYoIV92ZXJpZmljYXRpb25TZW50ZW5jZVN1cHBvcnRzMDMxKAogICAgICAgICAgICAgIHNlbnRlbmNlLAogICAgICAgICAgICAgIHN1YmplY3Q6dGFyZ2V0U3ViamVjdCwKICAgICAgICAgICAgICByZWxhdGlvbjp0YXJnZXRSZWxhdGlvbiwKICAgICAgICAgICAgICBvYmplY3Q6dGFyZ2V0T2JqZWN0LAogICAgICAgICAgICApKSBjb250aW51ZTsKIiIiCm5ldz0iIiIgICAgICAgICAgICBpZighX3ZlcmlmaWNhdGlvbkV2aWRlbmNlU3VwcG9ydHMwMzEzKAogICAgICAgICAgICAgIHNlbnRlbmNlLAogICAgICAgICAgICAgIGRvY3VtZW50VGl0bGU6ZG9jLnRpdGxlLAogICAgICAgICAgICAgIHN1YmplY3Q6dGFyZ2V0U3ViamVjdCwKICAgICAgICAgICAgICBzdWJqZWN0QWxpYXNlczpzdWJqZWN0QWxpYXNlczAzMTMsCiAgICAgICAgICAgICAgcmVsYXRpb246dGFyZ2V0UmVsYXRpb24sCiAgICAgICAgICAgICAgb2JqZWN0OnRhcmdldE9iamVjdCwKICAgICAgICAgICAgKSkgY29udGludWU7CiIiCmlmIG9sZCBub3QgaW4gczogcmFpc2UgU3lzdGVtRXhpdCgnMDMxMyB0YXJnZXRlZCB2ZXJpZmllciBhbmNob3IgbWlzc2luZycpCnM9cy5yZXBsYWNlKG9sZCxuZXcsMSkKCiMgNS4gR3JvdXAgc2VtYW50aWNhbGx5IGVxdWl2YWxlbnQgb2JqZWN0IHBocmFzZXMsIG5vdCBvbmx5IGJ5dGUtaWRlbnRpY2FsIHRleHQuCm9sZD0iIiIgICAgZmluYWwgZ3JvdXBlZCA9IDxTdHJpbmcsIExpc3Q8RXh0cmFjdGVkQ2xhaW0xMT4+e307CiAgICBmb3IgKGZpbmFsIGMgaW4gZHJhZnQuY2xhaW1zKSB7CiAgICAgIGdyb3VwZWQucHV0SWZBYnNlbnQoX2NsYWltS2V5MDI4KGMpLCAoKSA9PiA8RXh0cmFjdGVkQ2xhaW0xMT5bXSkuYWRkKGMpOwogICAgfQoiIiIKbmV3PSIiIiAgICBmaW5hbCBncm91cGVkID0gPFN0cmluZywgTGlzdDxFeHRyYWN0ZWRDbGFpbTExPj57fTsKICAgIGZvciAoZmluYWwgYyBpbiBkcmFmdC5jbGFpbXMpIHsKICAgICAgZ3JvdXBlZC5wdXRJZkFic2VudChfY2xhaW1TZW1hbnRpY0tleTAzMTMoYyksICgpID0+IDxFeHRyYWN0ZWRDbGFpbTExPltdKS5hZGQoYyk7CiAgICB9CiIiIgppZiBvbGQgbm90IGluIHM6IHJhaXNlIFN5c3RlbUV4aXQoJzAzMTMgZ3JvdXBlZCBhbmNob3IgbWlzc2luZycpCnM9cy5yZXBsYWNlKG9sZCxuZXcsMSkKCiMgNi4gUmV1c2UgYSBsZWdhY3kgZXhhY3Qta2V5IGNsYWltIHdoZW4gc2VtYW50aWNhbGx5IGVxdWl2YWxlbnQgc28gZXhpc3RpbmcKIyBldmlkZW5jZSBpcyBub3Qgc3RyYW5kZWQgYWZ0ZXIgdXBncmFkaW5nLgpvbGQ9IiIiICAgICAgZmluYWwgY3VycmVudEZhbWlsaWVzID0geHMubWFwKCh4KSA9PiB4LnNvdXJjZS5mYW1pbHkpLnRvU2V0KCk7CiAgICAgIGZpbmFsIGN1cnJlbnRQcm92aWRlcnMgPSB4cy5tYXAoKHgpID0+IHguc291cmNlLnByb3ZpZGVyKS50b1NldCgpOwogICAgICBmaW5hbCBwcmV2aW91cyA9IG1lbW9yeS5jbGFpbXNbZW50cnkua2V5XTsKICAgICAgZmluYWwgY29tYmluZWRGYW1pbGllcyA9IDxTdHJpbmc+ey4uLj9wcmV2aW91cz8uc291cmNlRmFtaWxpZXMsIC4uLmN1cnJlbnRGYW1pbGllc307CiIiIgpuZXc9IiIiICAgICAgZmluYWwgY3VycmVudEZhbWlsaWVzID0geHMubWFwKCh4KSA9PiB4LnNvdXJjZS5mYW1pbHkpLnRvU2V0KCk7CiAgICAgIGZpbmFsIGN1cnJlbnRQcm92aWRlcnMgPSB4cy5tYXAoKHgpID0+IHguc291cmNlLnByb3ZpZGVyKS50b1NldCgpOwogICAgICBTdHJpbmcgc3RvcmFnZUtleT1lbnRyeS5rZXk7CiAgICAgIFJlc2VhcmNoQ2xhaW0xMT8gcHJldmlvdXM9bWVtb3J5LmNsYWltc1tzdG9yYWdlS2V5XTsKICAgICAgaWYocHJldmlvdXM9PW51bGwpewogICAgICAgIGZvcihmaW5hbCBsZWdhY3kgaW4gbWVtb3J5LmNsYWltcy5lbnRyaWVzKXsKICAgICAgICAgIGlmKF9jbGFpbUVxdWl2YWxlbnQwMzEzVG9NZW1vcnkoZmlyc3QsbGVnYWN5LnZhbHVlKSl7CiAgICAgICAgICAgIHN0b3JhZ2VLZXk9bGVnYWN5LmtleTsKICAgICAgICAgICAgcHJldmlvdXM9bGVnYWN5LnZhbHVlOwogICAgICAgICAgICBicmVhazsKICAgICAgICAgIH0KICAgICAgICB9CiAgICAgIH0KICAgICAgZmluYWwgY29tYmluZWRGYW1pbGllcyA9IDxTdHJpbmc+ey4uLj9wcmV2aW91cz8uc291cmNlRmFtaWxpZXMsIC4uLmN1cnJlbnRGYW1pbGllc307CiIiIgppZiBvbGQgbm90IGluIHM6IHJhaXNlIFN5c3RlbUV4aXQoJzAzMTMgcHJldmlvdXMgYW5jaG9yIG1pc3NpbmcnKQpzPXMucmVwbGFjZShvbGQsbmV3LDEpCgpvbGQ9IiIiICAgICAgZmluYWwgY2xhaW0gPSBwcmV2aW91cyA/PyBSZXNlYXJjaENsYWltMTEoCiAgICAgICAga2V5OiBlbnRyeS5rZXksCiIiIgpuZXc9IiIiICAgICAgZmluYWwgY2xhaW0gPSBwcmV2aW91cyA/PyBSZXNlYXJjaENsYWltMTEoCiAgICAgICAga2V5OiBzdG9yYWdlS2V5LAoiIiIgaWYgb2xkIG5vdCBpbiBzOiByYWlzZSBTZXR1cEV4aXQoJzAzMTMgY2xhaW0ga2V5IGFuY2hvciBtaXNzaW5nJykKcz1zLnJlcGxhY2Uob2xkLG5ldywxKQoKb2xkPSIiIiAgICAgIG1lbW9yeS5jbGFpbXNbZW50cnkua2V5XSA9IGNsYWltOwoiIiIKbmV3PSIiIiAgICAgIG1lbW9yeS5jbGFpbXNbc3RvcmFnZUtleV0gPSBjbGFpbTsKIiIiCmlmIG9sZCBub3QgaW4gczogcmFpc2UgU3lzdGVtRXhpdCgnMDMxMyBzdG9yZSBrZXkgYW5jaG9yIG1pc3NpbmcnKQpzPXMucmVwbGFjZShvbGQsbmV3LDEpCgojIDcuIEFkZCBwcmlvcml0eSwgc2VtYW50aWMta2V5LCBlcXVpdmFsZW5jZSBhbmQgdmVyaWZpZXIgaGVscGVycyBiZWZvcmUgc3VzcGljaW91cyBmaWx0ZXIuCmFuY2hvcj0iIiIgIHN0YXRpYyBib29sIF9zdXNwaWNpb3VzS25vd2xlZGdlMTIoU3RyaW5nIHN1YmplY3QsIFN0cmluZyByZWxhdGlvbiwgU3RyaW5nIG9iamVjdCkgewoiIiIKaGVscGVyPSIiIiAgc3RhdGljIGJvb2wgX3ZlcmlmaWNhdGlvbkVsaWdpYmxlMDMxMyhSZXNlYXJjaENsYWltMTEgYykgewogICAgaWYoYy5jb25mbGljdCB8fCBfc3VzcGljaW91c0tub3dsZWRnZTEyKGMuc3ViamVjdCxjLnJlbGF0aW9uLGMub2JqZWN0KSlyZXR1cm4gZmFsc2U7CiAgICBmaW5hbCBzdz1jLnN1YmplY3QudHJpbSgpLnNwbGl0KFJlZ0V4cChyJ1xccysnKSkud2hlcmUoKHgpPT54LmlzTm90RW1wdHkpLmxlbmd0aDsKICAgIGZpbmFsIG93PWMub2JqZWN0LnRyaW0oKS5zcGxpdChSZWdFeHAocidcXHMrJykpLndoZXJlKCh4KT0+eC5pc05vdEVtcHR5KS5sZW5ndGg7CiAgICBpZihzdz09MCB8fCBzdz43IHx8IG93PT0wIHx8IG93PjEwKXJldHVybiBmYWxzZTsKICAgIGZpbmFsIGxhc3Q9X24xMShjLm9iamVjdCkuc3BsaXQoJyAnKS53aGVyZSgoeCk9PnguaXNOb3RFbXB0eSkudG9MaXN0KCk7CiAgICBpZi(last.isNotEmpty && {'e','ed','di','del','della','dei','degli','delle','da','con','per','and','of','to','with'}.contains(last.last))return false;
+    return true;
+  }
+
+  static double _verificationPriority0313(ResearchClaim11 c) {
+    final missingFamily=c.sourceFamilies.length<2?1.0:0.0;
+    final evidence=min(6,c.evidenceCount).toDouble();
+    final provider=min(4,c.providerCount).toDouble();
+    final objectWords=c.object.trim().split(RegExp(r'\\s+')).where((x)=>x.isNotEmpty).length;
+    return 4.0*missingFamily + 3.0*c.confidence + 0.65*evidence + 0.25*provider - 0.06*objectWords;
+  }
+
+  static String _semanticStem0313(String raw){
+    var x=_root0311(raw);
+    if(x.length>5 && x.endsWith('ies'))x='${x.substring(0,x.length-3)}y';
+    else if(x.length>5 && x.endsWith('es'))x=x.substring(0,x.length-2);
+    else if(x.length>4 && x.endsWith('s'))x=x.substring(0,x.length-1);
+    return x;
+  }
+
+  static String _semanticObjectKey0313(String object){
+    final roots=_contentRoots0311(object)
+        .map(_semanticStem0313)
+        .where((x)=>x.length>=3)
+        .map((x)=>x.length>6?x.substring(0,6):x)
+        .toSet()
+        .toList()..sort();
+    return roots.join(':');
+  }
+
+  static String _claimSemanticKey0313(ExtractedClaim11 c) =>
+      '${_n11(c.subject)}|${_n11(c.relation)}|${_semanticObjectKey0313(c.object)}|${_n11(c.subjectSenseKey??'')}';
+
+  static bool _objectsEquivalent0313(String a,String b){
+    final ar=_contentRoots0311(a).map(_semanticStem0313).toSet();
+    final br=_contentRoots0311(b).map(_semanticStem0313).toSet();
+    if(ar.isEmpty || br.isEmpty)return false;
+    var hits=0;
+    for(final x in ar){
+      if(br.any((y)=>_rootCompatible0311(x,y)))hits++;
+    }
+    final score=hits/max(ar.length,br.length);
+    return score>=0.67;
+  }
+
+  static bool _claimEquivalent0313ToMemory(ExtractedClaim11 a,ResearchClaim11 b){
+    return _n11(a.subject)==_n11(b.subject) &&
+        _n11(a.relation)==_n11(b.relation) &&
+        _objectsEquivalent0313(a.object,b.object);
+  }
+
+  static bool _verificationEvidenceSupports0313(
+    String sentence,{
+    required String documentTitle,
+    required String subject,
+    required Set<String> subjectAliases,
+    required String relation,
+    required String object,
+  }){
+    final subjectOk=_mentions0311(sentence,subject,ratio:0.50) ||
+        subjectAliases.any((a)=>_mentions0311(sentence,a,ratio:0.50)) ||
+        _mentions0311(documentTitle,subject,ratio:0.50) ||
+        subjectAliases.any((a)=>_mentions0311(documentTitle,a,ratio:0.50));
+    return subjectOk && _mentions0311(sentence,object,ratio:0.60) && _relationCue0311(sentence,relation);
+  }
+
+"""
+if anchor not in s: raise SystemExit('0313 helper anchor missing')
+s=s.replace(anchor,helper+anchor,1)
+
+old="""    if (RegExp(r'\\bthe\\b|\\busing\\b|\\bsomething\\b|\\bfilm del 2025\\b').hasMatch(text)) return true;
+    return false;
+"""
+new="""    if (RegExp(r'\\bthe\\b|\\busing\\b|\\bsomething\\b|\\bfilm del 2025\\b').hasMatch(text)) return true;
+    final o=_n11(object).trim();
+    final parts=o.split(' ').where((x)=>x.isNotEmpty).toList();
+    if(parts.isNotEmpty && {'e','ed','di','del','della','dei','degli','delle','da','con','per','and','of','to','with'}.contains(parts.last))return true;
+    return false;
+"""
+if old not in s: raise SystemExit('0313 suspicious anchor missing')
+s=s.replace(old,new,1)
+
+p.write_text(s)
+
+p=root/'lib'/'main.dart'
+s=p.read_text()
+s=s.replace('MGD Neuro 0.31.2','MGD Neuro 0.31.3')
+s=s.replace('Memorie MGD 0.31.2','Memorie MGD 0.31.3')
+old="""                            '${c.status == 'accettata' ? 'CONSOLIDATA' : c.status == 'ipotesi_mgd' ? 'IPOTESI MGD' : c.status == 'quarantena' ? 'QUARANTENA' : 'RICERCATO'} • ${c.providerCount} provider • ${c.independentSourceCount} famiglie • ${c.evidenceCount} evidenze • indip. ${c.independenceScore030.toStringAsFixed(2)}${c.conflict ? ' • conflitto aperto' : ''}',
+"""
+new="""                            '${c.status == 'accettata' ? 'CONSOLIDATA' : c.status == 'ipotesi_mgd' ? 'IPOTESI MGD' : c.status == 'quarantena' ? 'QUARANTENA' : 'RICERCATO'} • ${c.providerCount} provider • ${c.independentSourceCount} famiglie • ${c.evidenceCount} evidenze • indip. ${c.independenceScore030.toStringAsFixed(2)}${c.status == 'ipotesi_mgd' && c.independentSourceCount < 2 ? ' • gate: manca 1 famiglia' : ''}${c.conflict ? ' • conflitto aperto' : ''}',
+"""
+if old not in s: raise SystemExit('0313 UI claim subtitle anchor missing')
+s=s.replace(old,new,1)
+p.write_text(s)
+
+p=root/'pubspec.yaml'
+s=p.read_text()
+if 'version: 0.31.2+51' not in s: raise SystemExit('0313 pubspec anchor missing')
+s=s.replace('version: 0.31.2+51','version: 0.31.3+52',1)
+p.write_text(s)
+
+p=root/'test'/'web_knowledge_explorer_v11_test.dart'
+s=p.read_text()
+insert=r'''
+
+  test('0.31.3 verification prioritizes a near-gate claim over a noisy fragment', () {
+    final brain=PlasticLanguageBrain04();
+    final world=MgdWorld06();
+    final memory=ResearchMemory11();
+    final now=DateTime.now().toIso8601String();
+    memory.claims['noise']=ResearchClaim11(
+      key:'noise',subject:'Organismi',relation:'composto da',
+      object:'due componenti in stretta relazione la prima rappresentata dagli organismi viventi e',
+      confidence:0.34,conflict:false,status:'ipotesi_mgd',lastSeenIso:now,
+      evidenceIds:<String>{'n1'},sourceFamilies:<String>{'wikimedia'},sourceProviders:<String>{'Wikidata'},
+    );
+    memory.claims['good']=ResearchClaim11(
+      key:'good',subject:'Nucleotide',relation:'tipo di',object:'monomero degli acidi nucleici',
+      confidence:0.64,conflict:false,status:'ipotesi_mgd',lastSeenIso:now,
+      evidenceIds:<String>{'g1','g2','g3','g4'},sourceFamilies:<String>{'wikimedia'},sourceProviders:<String>{'Wikipedia IT'},
+    );
+    final goal=WebKnowledgeExplorer11().selectGoal(brain,world,memory,force:true);
+    expect(goal,isNotNull);
+    expect(goal!.verifySubject031,'Nucleotide');
+    expect(goal.verifyObject031,'monomero degli acidi nucleici');
+  });
+
+  test('0.31.3 semantic claim key merges scientific cognate paraphrases', () {
+    const wiki=WebDocument11(provider:'Wikipedia IT',family:'wikimedia',title:'Nucleotide',url:'https://it.wikipedia.org/wiki/Nucleotide',text:'x',trust:0.9);
+    const paper=WebDocument11(provider:'Europe PMC',family:'paper:doi:10.1/x',title:'Nucleotide',url:'https://doi.org/10.1/x',text:'x',trust:0.93);
+    final brain=PlasticLanguageBrain04();
+    final world=MgdWorld06();
+    final memory=ResearchMemory11();
+    const goal=ResearchGoal11(query:'Nucleotide',topic:'Nucleotide',reason:'test',value:1);
+    final out=WebKnowledgeExplorer11().integrate(
+      brain,world,memory,
+      ResearchDraft11(goal:goal,documents:[wiki,paper],claims:const [
+        ExtractedClaim11(subject:'Nucleotide',relation:'tipo di',object:'monomero degli acidi nucleici',sentence:'Il nucleotide è un monomero degli acidi nucleici.',source:wiki,quality:0.95),
+        ExtractedClaim11(subject:'Nucleotide',relation:'tipo di',object:'monomers of nucleic acids',sentence:'Nucleotides are monomers of nucleic acids.',source:paper,quality:0.90),
+      ],passages:const [],sentencesRead:2),
+    );
+    expect(out.integrated,1);
+    expect(memory.claims.values.where((c)=>c.status=='accettata').length,1);
+    expect(memory.claims.values.single.independentSourceCount,2);
+  });
+'''
+idx=s.rfind('\n}')
+if idx<0: raise SystemExit('0313 test closing brace missing')
+if '0.31.3 verification prioritizes a near-gate claim' not in s:
+    s=s[:idx]+insert+s[idx:]
+p.write_text(s)
+
+print('MGD Neuro 0.31.3 semantic corroboration and curriculum patch applied')
