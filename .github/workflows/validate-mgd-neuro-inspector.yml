@@ -9,22 +9,28 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download exact source used for compiled APK
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '10830247524'
+          run-id: 36050639867
+          github-token: ${{ github.token }}
+          path: mgd-neuro-app
+          merge-multiple: true
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.5'
           channel: stable
           cache: true
-      - name: Reconstruct unchanged production source
-        run: python3 mgd-neuro/v0315/ci.py source
-      - name: Verify production source matches already compiled APK
+      - name: Fix only the test scroll finder and verify production source identity
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -37,17 +43,25 @@ jobs:
           actual=h.hexdigest()
           if actual!=expected:
               raise SystemExit(f'Production source changed: {actual} != {expected}')
+          test=root/'test/knowledge_inspector_v0315_test.dart'
+          s=test.read_text()
+          old=',200);await tester.pumpAndSettle();'
+          if s.count(old)!=2:
+              raise SystemExit('Expected two test scroll targets')
+          s=s.replace(old,',200,scrollable:find.byType(Scrollable).first);await tester.pumpAndSettle();')
+          test.write_text(s)
           report=('Production source SHA256: '+actual+'\n'
                   'APK SHA256: bc9c993c82b07322a1c30b73f49de38f17a0732d8b7bc4cc1d219ab8d7ef6164\n'
                   'APK build run: 36050639867\n'
+                  'Source artifact: 10830247524\n'
                   'Version: 0.31.5+54\n'
-                  'Only widget-test scroll targeting and CI error propagation changed.\n')
+                  'Only widget-test scroll targeting changed; app source is byte-identical.\n')
           print(report)
           (root/'SOURCE-IDENTITY.txt').write_text(report)
           PY
-      - name: Get dependencies
+      - name: Get locked dependencies
         working-directory: mgd-neuro-app
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Run complete tests with strict exit status
         working-directory: mgd-neuro-app
         run: |
