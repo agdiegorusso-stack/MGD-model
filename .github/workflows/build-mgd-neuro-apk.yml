@@ -185,6 +185,9 @@ jobs:
           cat mgd-neuro/patch_v0313.small.00 mgd-neuro/patch_v0313.small.01 mgd-neuro/patch_v0313.small.02 mgd-neuro/patch_v0313.small.03 mgd-neuro/patch_v0313.small.04 mgd-neuro/patch_v0313.small.05 | base64 -d > /tmp/patch_v0313.py
           python3 -m py_compile /tmp/patch_v0313.py
           python3 /tmp/patch_v0313.py mgd-neuro-app
+          python3 mgd-neuro/patch_v0314a.py mgd-neuro-app
+          python3 mgd-neuro/patch_v0314b.py mgd-neuro-app
+          python3 mgd-neuro/patch_v0314c.py mgd-neuro-app
 
       - name: Generate Android project and permissions
         working-directory: mgd-neuro-app
