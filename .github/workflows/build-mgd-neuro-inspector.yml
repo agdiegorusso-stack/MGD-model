@@ -1,0 +1,90 @@
+name: MGD Neuro 0.31.5 - Inspectable Memory
+
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths:
+      - 'mgd-neuro/v0315/**'
+      - '.github/workflows/build-mgd-neuro-inspector.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mgd-inspector-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mgd-neuro-prototype-signing-v1
+      - name: Verify stable signing certificate
+        run: python3 mgd-neuro/v0315/ci.py signing
+      - name: Reconstruct baseline and apply inspector
+        run: python3 mgd-neuro/v0315/ci.py source
+      - name: Generate Android project and permissions
+        run: python3 mgd-neuro/v0315/ci.py platform
+      - name: Get dependencies
+        working-directory: mgd-neuro-app
+        run: flutter pub get
+      - name: Upload exact source
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.5-source
+          path: |
+            mgd-neuro-app/lib
+            mgd-neuro-app/test
+            mgd-neuro-app/pubspec.yaml
+            mgd-neuro-app/pubspec.lock
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
+      - name: Tests including tap-to-inspect regression
+        working-directory: mgd-neuro-app
+        run: flutter test --reporter expanded 2>&1 | tee tests-0.31.5.log
+      - name: Analyze
+        working-directory: mgd-neuro-app
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.31.5.log
+      - name: Build release APK
+        working-directory: mgd-neuro-app
+        run: flutter build apk --release
+      - name: Verify APK version and digest
+        run: |
+          APK=mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" | head -1 > mgd-neuro-app/APK-VERSION.txt
+          cat mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionName='0.31.5'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionCode='54'" mgd-neuro-app/APK-VERSION.txt
+          sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.5-Android
+          path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+      - name: Upload test and build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.5-reports
+          path: |
+            mgd-neuro-app/tests-0.31.5.log
+            mgd-neuro-app/analyze-0.31.5.log
+            mgd-neuro-app/APK-VERSION.txt
+            mgd-neuro-app/APK-SHA256.txt
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
