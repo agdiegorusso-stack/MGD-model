@@ -30,9 +30,10 @@ new="""  String? composeSemantic031({required String subject,required String rel
     for(final e in relationSurfaceFrames031.entries){
       for(final surface in e.value.keys){
         final n=normalizeText(surface);
-        final first=n.split(' ').where((x)=>x.isNotEmpty).firstOrNull;
+        final parts=n.split(' ').where((x)=>x.isNotEmpty).toList();
+        final first=parts.isEmpty?null:parts.first;
         if(n==relationNeedle ||
-            n.split(' ').contains(relationNeedle) ||
+            parts.contains(relationNeedle) ||
             (first!=null && _stem(first)==wantedStem)){
           rid=_canonicalRelation(e.key);
           best=0.96;
