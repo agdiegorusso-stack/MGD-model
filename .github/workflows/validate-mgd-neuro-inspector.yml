@@ -1,0 +1,83 @@
+name: MGD Neuro 0.31.5 - Release validation
+
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths:
+      - '.github/workflows/validate-mgd-neuro-inspector.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Reconstruct unchanged production source
+        run: python3 mgd-neuro/v0315/ci.py source
+      - name: Verify production source matches already compiled APK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root=Path('mgd-neuro-app')
+          h=hashlib.sha256()
+          for p in sorted(list((root/'lib').rglob('*.dart'))+[root/'pubspec.yaml']):
+              h.update(str(p.relative_to(root)).encode()+b'\0'+p.read_bytes()+b'\0')
+          expected='83b04b363cd884af49cac989cec5219b6f59bc606ca50b2c1395833cfb987070'
+          actual=h.hexdigest()
+          if actual!=expected:
+              raise SystemExit(f'Production source changed: {actual} != {expected}')
+          report=('Production source SHA256: '+actual+'\n'
+                  'APK SHA256: bc9c993c82b07322a1c30b73f49de38f17a0732d8b7bc4cc1d219ab8d7ef6164\n'
+                  'APK build run: 36050639867\n'
+                  'Version: 0.31.5+54\n'
+                  'Only widget-test scroll targeting and CI error propagation changed.\n')
+          print(report)
+          (root/'SOURCE-IDENTITY.txt').write_text(report)
+          PY
+      - name: Get dependencies
+        working-directory: mgd-neuro-app
+        run: flutter pub get
+      - name: Run complete tests with strict exit status
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee tests-0.31.5-validated.log
+      - name: Analyze with strict exit status
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.31.5-validated.log
+      - name: Upload validated source and tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.5-validated-source
+          path: |
+            mgd-neuro-app/lib
+            mgd-neuro-app/test
+            mgd-neuro-app/pubspec.yaml
+            mgd-neuro-app/pubspec.lock
+            mgd-neuro-app/BUILD-COMMIT.txt
+            mgd-neuro-app/SOURCE-IDENTITY.txt
+          retention-days: 30
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.5-validation
+          path: |
+            mgd-neuro-app/tests-0.31.5-validated.log
+            mgd-neuro-app/analyze-0.31.5-validated.log
+            mgd-neuro-app/BUILD-COMMIT.txt
+            mgd-neuro-app/SOURCE-IDENTITY.txt
+          retention-days: 30
