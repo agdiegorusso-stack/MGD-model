@@ -1,6 +1,4 @@
-"""Reuse the verified 0.31.4 reconstruction and Android configuration commands.
-The baseline workflow remains unchanged. New source files are plain UTF-8.
-"""
+"""Reuse verified baseline commands and materialize plain UTF-8 inspector sources."""
 from pathlib import Path
 import subprocess
 import sys
@@ -30,7 +28,19 @@ elif mode=='source':
     folder=Path('mgd-neuro/v0315')
     subprocess.run([sys.executable,'-m','py_compile',str(folder/'apply.py')],check=True)
     subprocess.run([sys.executable,str(folder/'apply.py'),'mgd-neuro-app'],check=True)
-    shutil.copyfile(folder/'knowledge_inspector_v0315.dart','mgd-neuro-app/lib/knowledge_inspector_v0315.dart')
+    destination=Path('mgd-neuro-app/lib/knowledge_inspector_v0315.dart')
+    source=(folder/'knowledge_inspector_v0315.dart').read_text()
+    source=source.replace("['titolo','title','sourceTitle','label','topic','text','userText','hypothesis','term','id','key']", "['titolo','title','sourceTitle','label','topic','text','userText','hypothesis','term','t','id','key','valore']",1)
+    source=source.replace("  return 'Elemento';", "  if(m['a']!=null && m['b']!=null)return '${m['a']} → ${m['b']}';\n  return 'Elemento';",1)
+    old="""        final rows=value is List?value.map(_map315).toList():[ _map315(value) ];
+        return _list(ctx,title,()=>rows);"""
+    new="""        if(value is Map)return _record(ctx,{'titolo':title,..._map315(value)});
+        final rows=value is List?value.map(_map315).toList():[ _map315(value) ];
+        return _list(ctx,title,()=>rows);"""
+    if old not in source:
+        raise SystemExit('Inspector nested-map anchor missing')
+    source=source.replace(old,new,1)
+    destination.write_text(source)
     shutil.copyfile(folder/'knowledge_inspector_v0315_test.dart','mgd-neuro-app/test/knowledge_inspector_v0315_test.dart')
     Path('mgd-neuro-app/BUILD-COMMIT.txt').write_text(subprocess.check_output(['git','rev-parse','HEAD'],text=True))
 elif mode=='platform':
