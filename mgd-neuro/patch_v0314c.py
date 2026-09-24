@@ -122,3 +122,7 @@ if '0.31.4 generic topic research can consolidate an existing weak claim' not in
 p.write_text(s)
 
 print('MGD Neuro 0.31.4 version and regression tests applied')
+
+# The preceding baseline is preserved; apply the integrity-checked 0.31.5 overlay.
+import subprocess
+subprocess.run([sys.executable, str(Path(__file__).with_name('install_v0315.py')), str(root)], check=True)
