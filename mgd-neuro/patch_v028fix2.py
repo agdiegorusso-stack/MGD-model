@@ -22,16 +22,18 @@ old = """class ResponseSlot028 {
         'candidates': candidates.values.map((e) => e.toJson()).toList(),
       };
 
-  factory ResponseSlot028.fromJson(Map<String, dynamic> j) => ResponseSlot028(
-        promptKey: (j['promptKey'] ?? '').toString(),
-        promptSurface: (j['promptSurface'] ?? '').toString(),
-        candidates: {
-          for (final raw in ((j['candidates'] as List?) ?? const []))
-            if (raw is Map)
-              ResponseCandidate028.fromJson(Map<String, dynamic>.from(raw)).key:
-                  ResponseCandidate028.fromJson(Map<String, dynamic>.from(raw)),
-        },
-      );
+  factory ResponseSlot028.fromJson(Map<String, dynamic> j) {
+    final out = ResponseSlot028(
+      promptKey: (j['promptKey'] ?? '').toString(),
+      promptSurface: (j['promptSurface'] ?? '').toString(),
+    );
+    for (final raw in (j['candidates'] as List?) ?? const []) {
+      if (raw is! Map) continue;
+      final c = ResponseCandidate028.fromJson(Map<String, dynamic>.from(raw));
+      if (c.key.isNotEmpty) out.candidates[c.key] = c;
+    }
+    return out;
+  }
 }
 """
 
@@ -56,20 +58,22 @@ new = """class ResponseSlot028 {
       };
 
   factory ResponseSlot028.fromJson(Map<String, dynamic> j) {
-    final parsed = <String, ResponseCandidate028>{};
-    for (final raw in ((j['candidates'] as List?) ?? const [])) {
-      if (raw is! Map) continue;
-      final candidate = ResponseCandidate028.fromJson(Map<String, dynamic>.from(raw));
-      parsed[candidate.key] = candidate;
-    }
-    final storedTick = (j['responseTick'] as num?)?.toInt() ?? 0;
-    final maxUsed = parsed.values.fold<int>(0, (m, c) => c.lastUsed > m ? c.lastUsed : m);
-    return ResponseSlot028(
+    final out = ResponseSlot028(
       promptKey: (j['promptKey'] ?? '').toString(),
       promptSurface: (j['promptSurface'] ?? '').toString(),
-      candidates: parsed,
-      responseTick: storedTick > maxUsed ? storedTick : maxUsed,
+      responseTick: (j['responseTick'] as num?)?.toInt() ?? 0,
     );
+    for (final raw in (j['candidates'] as List?) ?? const []) {
+      if (raw is! Map) continue;
+      final c = ResponseCandidate028.fromJson(Map<String, dynamic>.from(raw));
+      if (c.key.isNotEmpty) out.candidates[c.key] = c;
+    }
+    final maxUsed = out.candidates.values.fold<int>(
+      0,
+      (m, c) => c.lastUsed > m ? c.lastUsed : m,
+    );
+    if (maxUsed > out.responseTick) out.responseTick = maxUsed;
+    return out;
   }
 }
 """
@@ -103,9 +107,9 @@ new = """  String? _responseFromAttractor028(String prompt) {
     if (slot == null || slot.candidates.isEmpty) return null;
     final q = _responseCues028(prompt);
 
-    // Response attractors have their own entropic clock. The language-learning
-    // step is advanced by token edges and is therefore the wrong timebase for
-    // lateral inhibition between alternative replies.
+    // Separate response-time geometry from token-learning time. A recently
+    // emitted state is transiently inhibited so another plausible attractor
+    // can become active without declaring the alternatives contradictory.
     slot.responseTick++;
     final tick = slot.responseTick;
 
@@ -117,8 +121,6 @@ new = """  String? _responseFromAttractor028(String prompt) {
             : q.intersection(x.contextCues).length /
                 max(1, q.union(x.contextCues).length);
         final age = max(0, tick - x.lastUsed);
-        // Short refractory period: a recently emitted attractor is temporarily
-        // inhibited, allowing other plausible states to become active.
         final recencyPenalty = age <= 1
             ? 0.30
             : (age <= 3 ? 0.14 : (age <= 6 ? 0.05 : 0.0));
