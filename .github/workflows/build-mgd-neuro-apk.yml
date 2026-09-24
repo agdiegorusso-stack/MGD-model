@@ -163,7 +163,7 @@ jobs:
           python3 /tmp/patch_v028.py mgd-neuro-app
           python3 mgd-neuro/patch_v028fix.py mgd-neuro-app
           python3 mgd-neuro/patch_v028fix2.py mgd-neuro-app
-          base64 -d mgd-neuro/patch_v029.py.gz.b64 | gzip -dc > /tmp/patch_v029.py
+          cat mgd-neuro/patch_v029.py.gz.b64.* | base64 -d | gzip -dc > /tmp/patch_v029.py
           python3 -m py_compile /tmp/patch_v029.py
           python3 /tmp/patch_v029.py mgd-neuro-app
 
