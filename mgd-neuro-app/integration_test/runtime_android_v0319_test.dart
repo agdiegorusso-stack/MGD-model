@@ -217,13 +217,21 @@ void main() {
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Impara / esplora lingua'), 300,
         scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.text('Impara / esplora lingua'));
+    // ensureVisible can jump the scroll position; the live Android binding
+    // must lay out the following frame before a tap uses the new coordinates.
     await tester.pumpAndSettle();
+    expect(find.text('Impara / esplora lingua').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('Impara / esplora lingua').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
     await tester.enterText(find.byType(TextField),
         'Il talverio è una sottoclasse di lorvante. Il lorvante è una sottoclasse di zermante.');
-    await tester.pump();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Impara testo incollato'));
-    await tester.tap(find.text('Impara testo incollato'));
+    await tester.pumpAndSettle();
+    expect(find.text('Impara testo incollato').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('Impara testo incollato').hitTestable());
     for (var n = 0; n < 150; n++) {
       await tester.pump(const Duration(milliseconds: 200));
       if (find
@@ -239,6 +247,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byType(TextField), 'Cosa puoi dedurre sul talverio?');
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_upward));
     for (var n = 0; n < 150; n++) {
       await tester.pump(const Duration(milliseconds: 100));
