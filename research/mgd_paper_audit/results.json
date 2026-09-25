@@ -1,0 +1,235 @@
+{
+  "dateEuropeRome": "2026-09-26",
+  "allAssertionsPassed": true,
+  "scope": "Targeted analytic witnesses and arithmetic checks; not exhaustive peer review.",
+  "findings": {
+    "negativeDriftNotAbsorption": {
+      "p": 0.9,
+      "p_c": 0.25,
+      "meanUnreflectedDrift": -0.65,
+      "zeroRunWeights": [
+        0.1,
+        0.35,
+        0.6,
+        0.85,
+        1.1
+      ],
+      "probabilityOfEachIndependentFourZeroBlock": 0.0001,
+      "expectedIncrementAtFloor": 0.025,
+      "analyticConclusion": "Independent disjoint zero blocks occur infinitely often almost surely; each forces the edge above epsilon."
+    },
+    "localizedGeometry": {
+      "combBallFormulaForIntegerRadiusAtLeastOne": "6*r-1",
+      "combDoublingRates": [
+        1.0121747139461021,
+        1.0012037506254379,
+        1.0000120226089566
+      ],
+      "radii": [
+        10,
+        100,
+        10000
+      ],
+      "verticalOnlyComponentSize": 3,
+      "verticalOnlyMacrodimension": 0,
+      "assumption": "Uniform finite initial weights, nearest-neighbour lattice; off-axis nonincident edges become inactive."
+    },
+    "verticalMemoryEndpoint": {
+      "actualMeanDrift": 0.15000000000000002,
+      "printedSymmetricDrift": 0.10000000000000003
+    },
+    "levelVersusIncrement": {
+      "base": [
+        2.0,
+        2.1,
+        2.2
+      ],
+      "correctedWithConstantMaterial": [
+        1.7,
+        1.8,
+        1.9000000000000001
+      ],
+      "correctedIncrements": [
+        0.10000000000000009,
+        0.10000000000000009
+      ],
+      "claimedExtraDriftMinusEta": -0.3,
+      "bound": "For S5 with M in [0,1]: |full_weight-base_weight|<=eta_M."
+    },
+    "minimumDrift": {
+      "initialFields": [
+        0.0,
+        0.0
+      ],
+      "possibleNextFields": [
+        [
+          0.0,
+          0.19999999999999996
+        ],
+        [
+          0.19999999999999996,
+          0.0
+        ]
+      ],
+      "actualExpectedMinimumIncrement": 0.0,
+      "claimedPositiveLowerBoundUsingCorrectRoot": 0.03333333333333334,
+      "meaning": "Counterexample also holds using any positive printed threshold."
+    },
+    "ifsBelowHalf": {
+      "alpha": 0.49,
+      "window": [
+        0.4,
+        0.6
+      ],
+      "cylinders": [
+        {
+          "prefix": [
+            0,
+            1,
+            1,
+            1
+          ],
+          "lower": 0.43235199,
+          "upper": 0.49
+        },
+        {
+          "prefix": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "lower": 0.51,
+          "upper": 0.56764801
+        }
+      ],
+      "rigorousProbabilityLowerBound": 0.125,
+      "printedProbability": 0.0
+    },
+    "ifsDensityLowerBound": {
+      "alpha": 0.75,
+      "normalizedBeta": 0.25,
+      "interval": [
+        0.0,
+        0.078310546875
+      ],
+      "actualProbabilityAtMost": 0.03125,
+      "claimedProbabilityAtLeast": 0.0391552734375
+    },
+    "complementaryMemories": {
+      "stationarySum": 1.0,
+      "varianceEach": 0.06250000000000001,
+      "covariance": -0.06250000000000001,
+      "correlation": -1.0,
+      "meaning": "The joint stationary law is not the product of its nondegenerate marginals."
+    },
+    "julia": [
+      {
+        "xi": 0.05,
+        "correctMandelbrotParameter": 0.239375,
+        "maxConjugacyResidual": 1.1102230246251565e-16,
+        "criticalOrbitAfter10000": 0.39692235935955833,
+        "analyticCertificate": "For 0<=c<=1/4, [0,1/2] is forward invariant for w^2+c."
+      },
+      {
+        "xi": 0.1,
+        "correctMandelbrotParameter": 0.2375,
+        "maxConjugacyResidual": 5.551115123125783e-17,
+        "criticalOrbitAfter10000": 0.3881966011250103,
+        "analyticCertificate": "For 0<=c<=1/4, [0,1/2] is forward invariant for w^2+c."
+      },
+      {
+        "xi": 0.1183,
+        "correctMandelbrotParameter": 0.2365012775,
+        "maxConjugacyResidual": 0.0,
+        "criticalOrbitAfter10000": 0.383815997228534,
+        "analyticCertificate": "For 0<=c<=1/4, [0,1/2] is forward invariant for w^2+c."
+      }
+    ],
+    "gaussianStateSpace": {
+      "initialMaterial": 0.0,
+      "coupling": 0.0,
+      "p": 0.5,
+      "anyPositiveSigma": true,
+      "oneStepProbabilityOfNegativeMaterialAtLeast": 0.25,
+      "reason": "On U=0, M_next equals centered Gaussian noise; P(U=0,noise<0)=1/4."
+    },
+    "dobrushinArithmeticAndMetric": {
+      "rho": 0.8,
+      "alpha": 1.0,
+      "sigma": 0.03,
+      "printedEachCoefficient": 0.04999999999999999,
+      "sumOfFourPrintedCoefficients": 0.19999999999999996,
+      "printedRowSum": 0.7999999999999998,
+      "actualOneStepKernelTvCoefficientWithOwnStateFixed": 0.24978546983340158,
+      "actualFourNeighbourSumForThisKernel": 0.9991418793336063,
+      "scope": "These are transition-kernel sensitivities, not a proof about a stationary Gibbs specification or full temporal contraction."
+    },
+    "energyDensity": {
+      "boxSide": 3,
+      "initialHorizontalWeight": 100.0,
+      "gamma": 0.0,
+      "zeta": 0.0,
+      "allOtherEdgesInactive": true,
+      "actualInitialDensity": 22.200000000000003,
+      "printedUniformBound": 1.9,
+      "lineSupportedCollapsedDensityScale": "O((2*n+1)/(2*n+1)^2) -> 0, not a positive bulk density."
+    },
+    "minCutExpectation": {
+      "equiprobableCapacityStates": [
+        [
+          1.0,
+          0.1
+        ],
+        [
+          0.1,
+          1.0
+        ]
+      ],
+      "expectedMinCut": 0.1,
+      "minCutOfExpectedCapacities": 0.55,
+      "scope": "Counterexample to the interchange used in the proof, not a simulation of the full MGD stationary distribution.",
+      "rtNormalizedBoundaryCutUpperBound": 1.0,
+      "reportedNormalizedCutExamplesExceedingBound": [
+        1.47,
+        1.56,
+        1.4
+      ]
+    },
+    "kl": {
+      "deltas": [
+        0.1,
+        0.01,
+        0.001,
+        0.0001
+      ],
+      "klOverAbsoluteDisplacementAtMHalf": [
+        0.20410997260127586,
+        0.020004001066985765,
+        0.002000003999929993,
+        0.0002000000038877099
+      ],
+      "limit": 0.0,
+      "correctSigmaForRhoPoint8PHalf": 0.1,
+      "sigmaPrintedInC2Table7": 0.25,
+      "correctCubicCoefficientAtMQuarter": -4.7407407407407405,
+      "printedCubicCoefficientAtMQuarter": 4.7407407407407405
+    },
+    "proposedPrimitiveOnly": {
+      "updatesChecked": 1000,
+      "maximumErrorIdentityResidual": 1.3322676295501878e-15,
+      "currentObservationErrorIncreases": 0,
+      "materialRangeObserved": [
+        0.004658174818543335,
+        0.3110376457888062
+      ],
+      "NOTDemonstrated": [
+        "Improved future prediction",
+        "Noise robustness",
+        "Language learning",
+        "Advantage over a delta rule with another gate",
+        "Superiority to Transformers"
+      ]
+    }
+  }
+}
