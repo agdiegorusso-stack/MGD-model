@@ -1,0 +1,39 @@
+name: MGD 0.32.4 - Audit larger Transformer baseline
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths:
+      - 'tools/mgd_relational_audit_0324.py'
+      - '.github/workflows/evaluate-mgd-relational-0324.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify app and frozen dataset unchanged
+        run: git diff --exit-code a305498d59fc1933c3f40dff0dac6f79bcfc5eb1 HEAD -- mgd-neuro-app
+      - name: Install CPU model dependencies
+        run: |
+          python3 -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python3 -m pip install transformers==4.56.2
+      - name: Independent controls then fixed evaluation
+        env:
+          HF_HUB_DISABLE_TELEMETRY: '1'
+          TOKENIZERS_PARALLELISM: 'false'
+        run: |
+          set -o pipefail
+          python3 tools/mgd_relational_audit_0324.py 2>&1 | tee relational-audit-0.32.4.log
+      - name: Upload full audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.32.4-audited-comparison
+          path: |
+            relational-audit-0.32.4.json
+            relational-audit-0.32.4.log
+            tools/mgd_relational_audit_0324.py
+          retention-days: 30
