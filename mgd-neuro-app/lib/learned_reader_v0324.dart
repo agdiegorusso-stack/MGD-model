@@ -58,8 +58,12 @@ class LearnedReader324 {
     return f;
   }
   static bool handles(String text)=>tokens(text).any(predicates.containsKey);
-  static bool isQuestion(String text) => text.trim().endsWith('?') ||
-      tokens(text).contains('chi');
+  static bool isQuestion(String text) {
+    final ts=tokens(text);
+    return text.trim().endsWith('?') || ts.contains('chi') ||
+      (ts.isNotEmpty && const {'cosa','come','dove','quando','quale','quali',
+        'perché','perche','che','dimmi','spiega','spiegami'}.contains(ts.first));
+  }
   static List<({String token,String label,double margin})> tag(String text) {
     final ts=tokens(text);
     return List.generate(ts.length,(i) {
@@ -75,6 +79,10 @@ class LearnedReader324 {
   static Frame324? parse(String text,{String? antecedent}) {
     final ts=tokens(text);
     if(ts.length<3||ts.length>24||ts.any(blocked.contains)) return null;
+    // These question forms are recognized as questions but are outside this
+    // first reader's trained query vocabulary. Never turn them into assertions.
+    if(const {'cosa','come','dove','quando','quale','quali','perché','perche',
+      'dimmi','spiega','spiegami'}.contains(ts.first)) return null;
     if(ts.where(predicates.containsKey).length!=1) return null;
     if(ts.where((t)=>t=='non').length>1) return null;
     if(RegExp(r'[,;:"“”]').hasMatch(text)) return null;

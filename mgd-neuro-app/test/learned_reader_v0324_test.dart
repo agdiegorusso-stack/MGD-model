@@ -70,6 +70,16 @@ void main() {
     expect(jsonEncode(RelationalMemory324.rows(m)),before);
     expect(m.evidence,isEmpty);expect(m.claims,isEmpty);
   });
+  test('question wording without punctuation never creates invented facts',() {
+    final m=ResearchMemory11();
+    for(final text in ['Cosa contiene la cassa','Come aiuta il cane',
+      'Dimmi chi insegue il topo','Quale animale insegue il topo']) {
+      expect(LearnedReader324.isQuestion(text),isTrue,reason:text);
+      RelationalMemory324.learn(m,text);
+    }
+    expect(RelationalMemory324.rows(m),isEmpty);
+    expect(RelationalMemory324.answer(m,'Cosa contiene la cassa'),contains('Non interpreto'));
+  });
   test('negation and conflicting assertions do not become positive truth',() {
     final m=ResearchMemory11();
     RelationalMemory324.learn(m,'Il gatto non insegue il topo.');
