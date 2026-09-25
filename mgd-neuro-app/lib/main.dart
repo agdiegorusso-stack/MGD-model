@@ -29,6 +29,7 @@ import 'mgd_state_store_v026.dart';
 import 'memory_runtime_v0319.dart';
 import 'learning_service_v0321.dart';
 import 'reasoning_v0321.dart';
+import 'source_memory_page_v0323.dart';
 import 'knowledge_inspector_v0315.dart';
 import 'curiosity_actions_v0316.dart';
 
@@ -48,7 +49,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.32.2',
+      title: 'MGD Neuro 0.32.3',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -1060,7 +1061,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     });
     try {
       final n = await LearningService321.learnText(
-          _brain, _world, _language20, raw, passes: passes,
+          _brain, _world, _language20, raw, passes: passes, memory: _researchMemory,
           progress: (done, total) {
         if (mounted)
           setState(() {
@@ -1522,7 +1523,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.32.2')),
+          appBar: AppBar(title: const Text('MGD Neuro 0.32.3')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1601,7 +1602,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.32.2'),
+        title: const Text('MGD Neuro 0.32.3'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -2245,12 +2246,23 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.32.2',
+                          Text('Memorie MGD 0.32.3',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(
                               'Lingua: ${language20.stats().sentences} frasi · Episodica web: ${research.narrativeEpisodes.length} episodi (${research.narrativeSentencesSeen} frasi osservate) · Concettuale: ${research.emergentConcepts.length} cluster · Web: ${research.claims.values.where((c) => c.status == 'documentata').length} documentate + ${research.claims.values.where((c) => c.status == 'accettata').length} corroborate + ${research.claims.values.where((c) => c.status == 'ipotesi_mgd').length} ipotesi MGD.'),
                         ])))),
+        const SizedBox(height: 12),
+        Card(child: ListTile(
+          leading: const Icon(Icons.find_in_page_outlined),
+          title: Text(SourceMemory323.stats(research)['passages'].toString() +
+              ' passaggi consultabili'),
+          subtitle: Text(SourceMemory323.stats(research)['sources'].toString() +
+              ' fonti conservate · apri e cerca nel testo'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => SourceMemoryPage323(memory: research))),
+        )),
         const SizedBox(height: 12),
         FilledButton.tonalIcon(
           onPressed: busy || researchBusy ? null : onEdit,

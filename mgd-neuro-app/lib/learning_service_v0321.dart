@@ -11,7 +11,7 @@ import 'mgd_language_v020.dart';
 class LearningService321 {
   static Future<int> learnText(PlasticLanguageBrain04 brain, MgdWorld06 world,
       MgdLanguage20 language, String text,
-      {int passes = 1, void Function(int done, int total)? progress}) async {
+      {int passes = 1, ResearchMemory11? memory, void Function(int done, int total)? progress}) async {
     final chunks = text
         .split(RegExp(r'(?<=[.!?])\s+|\n+'))
         .map((s) => s.trim())
@@ -28,6 +28,12 @@ class LearningService321 {
         progress?.call(done, chunks.length * passes);
         await Future<void>.delayed(Duration.zero);
       }
+    }
+    if (memory != null) {
+      final id = ResearchSemantics317.digest(ResearchSemantics317.norm(text));
+      SourceMemory323.retain(memory, WebDocument11(provider: 'Testo insegnato',
+        family: 'locale:utente', title: 'Testo insegnato',
+        url: 'local://corpus/' + id, text: text, trust: .75));
     }
     brain.discoverConcepts();
     world.runtime319['lastLearning321'] = {

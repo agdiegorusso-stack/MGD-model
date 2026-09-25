@@ -374,7 +374,7 @@ class MemoryInspector315 {
       case 'Stato motore':
         return [
           {
-            'titolo': 'Motore e ripristino 0.32.2',
+            'titolo': 'Motore e ripristino 0.32.3',
             ...world.runtime319,
             'cicli conservati': world.thoughtCycles,
             'archi geometrici': world.edges.length,

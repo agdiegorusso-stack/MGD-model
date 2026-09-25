@@ -7,6 +7,7 @@ import 'plastic_language_brain_v04.dart';
 import 'sensory_world_v06.dart';
 import 'package:crypto/crypto.dart';
 part 'research_semantics_v0317.dart';
+part 'source_memory_v0323.dart';
 
 String _n11(String x) => x
     .toLowerCase()
@@ -514,9 +515,9 @@ class ResearchMemory11 {
   ResearchSession11? get lastSession => sessions.isEmpty ? null : sessions.last;
   int get unresolvedPassages => passages.where((p) => !p.structured).length;
   Iterable<ResearchPassage11> get pendingPassages321 => passages
-      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '322');
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '323');
   Iterable<ResearchPassage11> get uninterpretedPassages321 => passages
-      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '322');
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '323');
 
   int get requestsToday321 {
     final t = DateTime.now();
@@ -1391,7 +1392,7 @@ class WebKnowledgeExplorer11 {
     for (final p in pending) {
       p.attempts++;
       p.lastAttemptIso = now;
-      p.meta318['extractorAttempt321'] = '322';
+      p.meta318['extractorAttempt321'] = '323';
       final doc = WebDocument11(
           provider: p.provider,
           family: p.sourceFamily,

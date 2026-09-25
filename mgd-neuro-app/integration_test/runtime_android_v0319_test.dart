@@ -151,7 +151,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.32.2'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.32.3'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;
@@ -356,5 +356,48 @@ void main() {
     await tester.pumpAndSettle();
     await store.clearAll();
     await store.close319();
+  });
+
+  testWidgets('Android unparsed source is answered in chat, inspectable and retained by SQLite', (tester) async {
+    final store=MgdStateStore26.instance;
+    await store.clearAll();
+    final b=PlasticLanguageBrain04(),w=MgdWorld06(),
+      r=ResearchMemory11(enabled:false),l=MgdLanguage20();
+    const text='Il norvente viene osservato soltanto quando il rilevatore è acceso.';
+    SourceMemory323.retain(r,const WebDocument11(provider:'Fonte Android',
+      family:'android',title:'Norvente',url:'https://example.invalid/norvente',
+      text:text,trust:.8));
+    r.state317.addAll({'migrationComplete':true,'recovery320Complete':true});
+    await MemoryCheckpoint319().save(b,w,r,l);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    await tester.enterText(find.byType(TextField),'Che cosa è il norvente?');
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    for(var n=0;n<150;n++) {
+      await tester.pump(const Duration(milliseconds:100));
+      if(find.textContaining('Passaggi pertinenti conservati').evaluate().isNotEmpty) break;
+    }
+    expect(find.textContaining('Passaggi pertinenti conservati'),findsOneWidget);
+    expect(find.textContaining(text),findsOneWidget);
+    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
+    expect(live.research.claims,isEmpty);
+    await tester.tap(find.text('Mente'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('1 passaggi consultabili'),250,
+      scrollable:find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1 passaggi consultabili').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.text('Passaggi e fonti'),findsOneWidget);
+    expect(find.text(text),findsOneWidget);
+    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle(); await store.close319();
+    final restored=await ResearchPersistence11().load();
+    expect(SourceMemory323.stats(restored!)['passages'],1);
+    expect(ResearchSemantics317.answer('Che cosa è il norvente?',restored),contains(text));
+    print('ANDROID323 '+jsonEncode({'sourceInChat':true,'sourceInspector':true,
+      'sqliteRestore':true,'noInventedClaim':restored.claims.isEmpty}));
+    await store.clearAll(); await store.close319();
   });
 }

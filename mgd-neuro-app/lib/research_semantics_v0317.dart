@@ -269,6 +269,8 @@ class ResearchSemantics317 {
         .trim();
     if (text.length < 8 || text.length > 1400 || _invalidSubject322(subject))
       return [];
+    final scoped323 = ScopedDefinition323.extract(subject, text, doc);
+    if (scoped323.isNotEmpty) return scoped323;
     // Parentheses may contain conditions; do not erase them from evidence.
     if (RegExp(
       r'\b(?:se|qualora|forse|potrebbe|potrebbero|might|may|could|if|unless)\b',
@@ -572,6 +574,7 @@ class ResearchSemantics317 {
         final q = Map<String, dynamic>.from(
           x.meta317['qualifiers'] as Map? ?? {},
         );
+        if (q.containsKey('descriptiveContext323')) continue;
         // A restricted subset cannot confirm an unrestricted universal claim.
         if (q.containsKey('scope') &&
             !{'tutti', 'tutte', 'all'}.contains(q['scope'])) continue;
@@ -728,7 +731,7 @@ class ResearchSemantics317 {
     session.providers = documents.values.map((d) => d.provider).toSet().length;
     session.families = documents.values.map(family).toSet().length;
     session.audit315.addAll({
-      'version': '0.32.2',
+      'version': '0.32.3',
       'documents': documents.values.map(docMap).toList(),
       'providerDiagnostics': draft.diagnostics318,
       'decisions': <Map<String, dynamic>>[],
@@ -943,6 +946,7 @@ class ResearchSemantics317 {
     );
     final done = Set<String>.from(m.state317['documentsRead'] as List? ?? []);
     for (final d in docs) {
+      SourceMemory323.retain(m, d);
       if (d.text.trim().isEmpty) continue;
       final key = digest([
         'reader320',
@@ -1597,7 +1601,7 @@ class ResearchSemantics317 {
       );
       return legacy
           ? 'Le fonti di questo argomento sono ancora in riesame. Non uso il vecchio consolidamento come conferma.'
-          : null;
+          : SourceMemory323.answer(question, m);
     }
     final senses =
         found.map((c) => c.subjectSenseKey).whereType<String>().toSet();
@@ -1616,10 +1620,12 @@ class ResearchSemantics317 {
       if (ev.isEmpty) continue;
       final e = ev.first;
       final conditions = c.meta317['qualifiers'];
+      final readableConditions = conditions is Map && conditions['descriptiveContext323'] != null
+          ? conditions['descriptiveContext323'].toString() : jsonEncode(conditions);
       final statement = realize?.call(c.subject, c.relation, c.object) ??
           '${c.subject} — ${c.relation} → ${c.object}.';
       lines.add(
-        '$statement\n${c.status == 'documentata' ? 'Documentata da una fonte' : 'Corroborata da ${c.sourceFamilies.length} gruppi di provenienza'}: ${e.sourceTitle} (${e.provider}).${conditions is Map && conditions.isNotEmpty ? '\nContesto/qualificatori della fonte: ${jsonEncode(conditions)}' : ''}\n${e.sourceUrl}',
+        '$statement\n${c.status == 'documentata' ? 'Documentata da una fonte' : 'Corroborata da ${c.sourceFamilies.length} gruppi di provenienza'}: ${e.sourceTitle} (${e.provider}).${conditions is Map && conditions.isNotEmpty ? '\nContesto/qualificatori della fonte: $readableConditions' : ''}\n${e.sourceUrl}',
       );
     }
     return lines.isEmpty ? null : lines.join('\n\n');
