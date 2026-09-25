@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: mgd-curiosity-${{ github.ref }}
@@ -25,6 +26,7 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.5'
           channel: stable
           cache: true
       - name: Restore stable Android signing key
@@ -34,10 +36,37 @@ jobs:
           key: mgd-neuro-prototype-signing-v1
       - name: Verify stable signing certificate
         run: python3 mgd-neuro/v0315/ci.py signing
-      - name: Reconstruct validated 0.31.5 and apply 0.31.6
+      - name: Download immutable 0.31.5 production source
+        uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.5-source
+          run-id: 36050639867
+          github-token: ${{ github.token }}
+          path: mgd-neuro-app
+      - name: Verify baseline and apply 0.31.6
         run: |
-          python3 mgd-neuro/v0315/ci.py source
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root = Path('mgd-neuro-app')
+          expected = {
+            'lib/main.dart': '8242810ceccca20c9e3440dbb65479dee78a240fcb774de1e409d604cbabfa99',
+            'lib/sensory_world_v06.dart': '803b24e4ea235fe4a3ab0676b82eb8b332b941aa4cc0bd30d00b126668afe04c',
+            'pubspec.yaml': '1edbcc83345f2bd80e01f24f120831c1b8263d81a65a28c5c1e91638b12321fe',
+          }
+          for name, digest in expected.items():
+            actual = hashlib.sha256((root/name).read_bytes()).hexdigest()
+            assert actual == digest, (name, actual, digest)
+          # Preserve the already validated inspector test scroll-target repair.
+          p = root/'test/knowledge_inspector_v0315_test.dart'
+          s = p.read_text()
+          s = s.replace(',200);await tester.pumpAndSettle();',
+            ',200,scrollable:find.byType(Scrollable).first);await tester.pumpAndSettle();')
+          p.write_text(s)
+          PY
+          python3 -m py_compile mgd-neuro/v0316/apply.py
           python3 mgd-neuro/v0316/apply.py mgd-neuro-app
+          git rev-parse HEAD > mgd-neuro-app/BUILD-COMMIT.txt
       - name: Generate Android project and permissions
         run: python3 mgd-neuro/v0315/ci.py platform
       - name: Get dependencies
@@ -66,7 +95,9 @@ jobs:
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.31.6.log
       - name: Build release APK
         working-directory: mgd-neuro-app
-        run: flutter build apk --release --build-name 0.31.6 --build-number 55
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-name 0.31.6 --build-number 55 2>&1 | tee build-0.31.6.log
       - name: Verify APK version signature and digest
         run: |
           set -euo pipefail
@@ -76,9 +107,11 @@ jobs:
           "$AAPT" dump badging "$APK" > mgd-neuro-app/APK-BADGING.txt
           head -1 mgd-neuro-app/APK-BADGING.txt > mgd-neuro-app/APK-VERSION.txt
           cat mgd-neuro-app/APK-VERSION.txt
+          grep -F "name='it.diegorusso.mgdneurostable'" mgd-neuro-app/APK-VERSION.txt
           grep -F "versionName='0.31.6'" mgd-neuro-app/APK-VERSION.txt
           grep -F "versionCode='55'" mgd-neuro-app/APK-VERSION.txt
-          "$APKSIGNER" verify --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
+          grep -Fi 'bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589' mgd-neuro-app/APK-SIGNATURE.txt
           sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -94,6 +127,7 @@ jobs:
           path: |
             mgd-neuro-app/tests-0.31.6.log
             mgd-neuro-app/analyze-0.31.6.log
+            mgd-neuro-app/build-0.31.6.log
             mgd-neuro-app/APK-VERSION.txt
             mgd-neuro-app/APK-SIGNATURE.txt
             mgd-neuro-app/APK-SHA256.txt
