@@ -1,4 +1,4 @@
-name: MGD Neuro 0.32.0 - Runtime and Android restart
+name: MGD Neuro 0.32.1 - Runtime and Android restart
 on:
   push:
     branches: [mgd-neuro-mobile]
@@ -41,12 +41,17 @@ jobs:
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter test --reporter expanded 2>&1 | tee tests-0.32.0.log
+          flutter test --reporter expanded 2>&1 | tee tests-0.32.1.log
+      - name: Measured one-pass learning benchmark
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          MGD_BENCHMARK_OUT=benchmark-0.32.1.json flutter test tool/learning_benchmark_v0321_test.dart --reporter expanded 2>&1 | tee benchmark-0.32.1.log
       - name: Static analysis
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.32.0.log
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.32.1.log
       - name: Enable Android KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -62,12 +67,12 @@ jobs:
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
-          script: cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-0.32.0.log'
+          script: cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-0.32.1.log'
       - name: Build signed release APK after Android passes
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter build apk --release --build-name 0.32.0 --build-number 59 2>&1 | tee build-0.32.0.log
+          flutter build apk --release --build-name 0.32.1 --build-number 60 2>&1 | tee build-0.32.1.log
       - name: Verify release identity and stable certificate
         run: |
           set -euo pipefail
@@ -76,22 +81,22 @@ jobs:
           SIGN=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
           "$AAPT" dump badging "$APK" | head -1 > mgd-neuro-app/APK-VERSION.txt
           grep -F "name='it.diegorusso.mgdneurostable'" mgd-neuro-app/APK-VERSION.txt
-          grep -F "versionName='0.32.0'" mgd-neuro-app/APK-VERSION.txt
-          grep -F "versionCode='59'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionName='0.32.1'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionCode='60'" mgd-neuro-app/APK-VERSION.txt
           "$SIGN" verify --verbose --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
           grep -Fi 'bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589' mgd-neuro-app/APK-SIGNATURE.txt
           sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
       - name: Upload verified APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.0-Android
+          name: MGD-Neuro-0.32.1-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
       - name: Upload exact sources
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.0-source
+          name: MGD-Neuro-0.32.1-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -105,9 +110,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.0-reports
+          name: MGD-Neuro-0.32.1-reports
           path: |
-            mgd-neuro-app/*-0.32.0.log
+            mgd-neuro-app/*-0.32.1.log
+            mgd-neuro-app/benchmark-0.32.1.json
             mgd-neuro-app/APK-*.txt
             mgd-neuro-app/BUILD-COMMIT.txt
           retention-days: 30

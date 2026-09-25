@@ -194,7 +194,8 @@ class ThoughtStep06 {
         focus: ((j['focus'] as List?) ?? const [])
             .map((e) => e.toString())
             .toList(),
-        hypothesis: j['hypothesis'] as String? ?? '',
+        hypothesis: (j['hypothesis'] as String? ?? '')
+            .replaceFirst(RegExp(r'^Ipotesi:'), 'Richiamo:'),
         coherence: (j['coherence'] as num?)?.toDouble() ?? 0,
       );
 }
@@ -1685,7 +1686,7 @@ class MgdWorld06 {
           final subject = f.subjectId < brain.entities.length
               ? brain.entities[f.subjectId].label
               : 'entità ${f.subjectId}';
-          hypothesis = 'Ipotesi: $subject —${f.relation}→ ${f.object}';
+          hypothesis = 'Richiamo: $subject —${f.relation}→ ${f.object}';
           if (exploratoryKey != null) {
             hypothesisFatigue011[exploratoryKey] =
                 (hypothesisFatigue011[exploratoryKey] ?? 0.0) + 1.0;
@@ -1837,6 +1838,12 @@ class MgdWorld06 {
         'observations': observations.map((e) => e.toJson()).toList(),
         'thoughts': thoughts.map((e) => e.toJson()).toList(),
         'lastObservationId': lastObservation?.id,
+        'lastThinkMetrics321': {
+          'micros': lastThinkMicros16,
+          'edges': lastThinkVisitedEdges16,
+          'facts': lastThinkVisitedFacts16,
+          'peakNodes': lastThinkPeakActiveNodes16
+        },
       };
 
   /// Apply only the state changed by a replay worker, retaining the world object
@@ -1865,6 +1872,10 @@ class MgdWorld06 {
     hypothesisFatigue011
       ..clear()
       ..addAll(n.hypothesisFatigue011);
+    lastThinkMicros16 = n.lastThinkMicros16;
+    lastThinkVisitedEdges16 = n.lastThinkVisitedEdges16;
+    lastThinkVisitedFacts16 = n.lastThinkVisitedFacts16;
+    lastThinkPeakActiveNodes16 = n.lastThinkPeakActiveNodes16;
     _curvatureDirty18.clear();
   }
 
@@ -1874,6 +1885,11 @@ class MgdWorld06 {
     final w = MgdWorld06();
     if (j['runtime319'] is Map)
       w.runtime319.addAll(Map<String, dynamic>.from(j['runtime319'] as Map));
+    final metrics = j['lastThinkMetrics321'] as Map? ?? {};
+    w.lastThinkMicros16 = (metrics['micros'] as num?)?.toInt() ?? 0;
+    w.lastThinkVisitedEdges16 = (metrics['edges'] as num?)?.toInt() ?? 0;
+    w.lastThinkVisitedFacts16 = (metrics['facts'] as num?)?.toInt() ?? 0;
+    w.lastThinkPeakActiveNodes16 = (metrics['peakNodes'] as num?)?.toInt() ?? 0;
     w.step = (j['step'] as num?)?.toInt() ?? 0;
     w.nextObservationId = (j['nextObservationId'] as num?)?.toInt() ?? 1;
     w.thoughtCycles = (j['thoughtCycles'] as num?)?.toInt() ?? 0;

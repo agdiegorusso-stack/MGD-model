@@ -104,7 +104,8 @@ void main() {
     explorer.integrate(brain, world, memory, const ResearchDraft11(goal:goal, documents:[wiki], claims:[], passages:[], sentencesRead:0));
     explorer.integrate(brain, world, memory, ResearchDraft11(goal:goal, documents:const [wiki], claims:[a], passages:const [], sentencesRead:1));
     final second = explorer.integrate(brain, world, memory, ResearchDraft11(goal:goal, documents:const [other], claims:[b], passages:const [], sentencesRead:1));
-    expect(second.integrated, 1);
+    expect(second.integrated, 0); // Already usable; only corroboration is new.
+    expect(memory.lastSession!.integrated, 1);
     expect(memory.claims.values.single.status, 'accettata');
   });
 

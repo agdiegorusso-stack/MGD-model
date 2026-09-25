@@ -8,16 +8,18 @@ import 'web_knowledge_explorer_v11.dart';
 import 'mgd_language_v020.dart';
 import 'mgd_state_store_v026.dart';
 
-const mgdAppVersion319 = '0.32.0';
+const mgdAppVersion319 = '0.32.1';
 
 /// Rehearsal changes graph familiarity, NEVER evidence or factual confidence.
 /// It only replays externally experienced/confirmed facts, not generated thoughts.
 class MemoryRuntime319 {
   static Future<({Map<String, dynamic> world, List<Concept04> concepts})>
-  compute320(PlasticLanguageBrain04 brain, MgdWorld06 world) => Isolate.run(() {
-    pulse(brain, world);
-    return (world: world.toJson(), concepts: brain.concepts);
-  });
+      compute320(PlasticLanguageBrain04 brain, MgdWorld06 world,
+              {int cycles = 2, String? seedText}) =>
+          Isolate.run(() {
+            pulse(brain, world, cycles: cycles, seedText: seedText);
+            return (world: world.toJson(), concepts: brain.concepts);
+          });
   static int pulse(
     PlasticLanguageBrain04 brain,
     MgdWorld06 world, {
@@ -37,8 +39,7 @@ class MemoryRuntime319 {
             c.epistemicStatus == 'consolidated' && c.sourceFamilies.isNotEmpty;
         if (!(experienced || sourced) ||
             c.confidence < .50 ||
-            c.contradictions > 0)
-          continue;
+            c.contradictions > 0) continue;
         final object = brain.entityIdForLabel06(c.display);
         if (object == null || object == slot.subjectId) continue;
         eligible.add((
@@ -91,7 +92,8 @@ class MemoryRuntime319 {
     state['lastPulseAt'] = DateTime.now().toIso8601String();
     state['lastPulseMicros'] = clock.elapsedMicroseconds;
     state['state'] = 'attivo';
-    state['note'] = 'Ripasso geometrico di fatti già acquisiti. Non aggiunge fonti, conferme o nuove affermazioni.';
+    state['note'] =
+        'Ripasso geometrico di fatti già acquisiti. Non aggiunge fonti, conferme o nuove affermazioni.';
     return replayed;
   }
 }

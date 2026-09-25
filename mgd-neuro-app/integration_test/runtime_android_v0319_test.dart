@@ -14,6 +14,7 @@ import 'package:mgd_neuro_mobile/knowledge_inspector_v0315.dart';
 import 'package:mgd_neuro_mobile/world_persistence_v06.dart';
 import 'package:mgd_neuro_mobile/persistence.dart';
 import 'package:mgd_neuro_mobile/research_persistence_v11.dart';
+import 'package:mgd_neuro_mobile/reasoning_v0321.dart';
 
 Future<void> waitBoot319(WidgetTester tester) async {
   for (var n = 0; n < 150; n++) {
@@ -130,7 +131,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.32.0'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.32.1'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;
@@ -192,6 +193,85 @@ void main() {
           'restart': true,
           'corruptionProtected': true,
           'sourcedAnswer': answer
+        })}');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.clearAll();
+    await store.close319();
+  });
+  testWidgets(
+      'Android real learning button, deduction in chat and cold restore',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    await MemoryCheckpoint319().save(
+        PlasticLanguageBrain04(),
+        MgdWorld06(),
+        ResearchMemory11(enabled: false)
+          ..state317
+              .addAll({'migrationComplete': true, 'recovery320Complete': true}),
+        MgdLanguage20());
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    await tester.tap(find.text('Mente'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Impara / esplora lingua'), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Impara / esplora lingua'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField),
+        'Il talverio è una sottoclasse di lorvante. Il lorvante è una sottoclasse di zermante.');
+    await tester.pump();
+    await tester.ensureVisible(find.text('Impara testo incollato'));
+    await tester.tap(find.text('Impara testo incollato'));
+    for (var n = 0; n < 150; n++) {
+      await tester.pump(const Duration(milliseconds: 200));
+      if (find
+          .textContaining('nuove utilizzabili con fonte')
+          .evaluate()
+          .isNotEmpty) break;
+    }
+    expect(
+        find.textContaining('2 nuove utilizzabili con fonte'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vivi'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.byType(TextField), 'Cosa puoi dedurre sul talverio?');
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    for (var n = 0; n < 150; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.textContaining('Deduzione condizionata').evaluate().isNotEmpty)
+        break;
+    }
+    expect(find.textContaining('Premesse:'), findsOneWidget);
+    final before = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    final answer =
+        Reasoning321.answer('Cosa puoi dedurre sul talverio?', before.research);
+    await MemoryCheckpoint319()
+        .save(before.brain, before.world, before.research, before.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.close319();
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    final after = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(
+        Reasoning321.answer('Cosa puoi dedurre sul talverio?', after.research),
+        answer);
+    expect(after.research.lastSession!.sentencesRead, 2);
+    expect(after.metricRows('Documentate').length, 2);
+    print('ANDROID321 ${jsonEncode({
+          'learnedFromButton': true,
+          'chatDeduction': true,
+          'restart': true,
+          'sentences': after.research.lastSession!.sentencesRead,
+          'documented': after.metricRows('Documentate').length
         })}');
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

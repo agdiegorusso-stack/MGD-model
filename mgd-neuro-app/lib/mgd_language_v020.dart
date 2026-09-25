@@ -14,6 +14,7 @@ import 'sensory_world_v06.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'corpus_semantic_bridge_v022.dart';
 import 'mgd_state_store_v026.dart';
+import 'knowledge_inspector_v0315.dart';
 
 String _encodeLanguageSnapshot21(Map<String, dynamic> x) => jsonEncode(x);
 
@@ -272,8 +273,6 @@ class MgdLanguage20 {
     if (sentences > 0) return;
     for (final ep in brain.episodes) {
       ingestText(ep.userText, reward: .25);
-      if (ep.agentText?.trim().isNotEmpty == true)
-        ingestText(ep.agentText!, reward: .30);
     }
   }
 
@@ -358,7 +357,8 @@ class MgdLanguage20 {
     final clock = Stopwatch()..start();
     lastVisitedEdges21 = 0;
     lastPeakFrontier21 = 0;
-    if({'è','sono','is a','classe di'}.contains(ResearchSemantics317.norm(relation)))relation='tipo di';
+    if ({'è', 'sono', 'is a', 'classe di'}
+        .contains(ResearchSemantics317.norm(relation))) relation = 'tipo di';
     final key = ResearchSemantics317.concept(subject);
     final number = plural ??
         subjectPlural320[key] ??
@@ -372,7 +372,8 @@ class MgdLanguage20 {
     final wanted = toks('$subject $object').toSet();
     final candidates = <({String text, double score})>[];
     for (final frame in bucket.entries) {
-      final text = '$subject ${frame.key} $object${RegExp(r"[.!?]$").hasMatch(object)?"":"."}';
+      final text =
+          '$subject ${frame.key} $object${RegExp(r"[.!?]$").hasMatch(object) ? "" : "."}';
       final ts = ['<bos>', ...toks(text), '<eos>'];
       var score = log(1 + frame.value);
       for (var i = 0; i < ts.length - 1; i++) {
@@ -729,12 +730,12 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
             : 'Sto importando $sourceName…';
       });
     try {
-      const chunkSize = 120000;
+      const chunkSize = 4000;
       var start = 0;
       while (start < raw.length) {
         var end = min(start + chunkSize, raw.length);
         if (end < raw.length) {
-          final searchStart = max(start, end - 8000);
+          final searchStart = max(start, end - 2000);
           final tail = raw.substring(searchStart, end);
           final cuts = RegExp(r'[.!?]\s+|\n+').allMatches(tail).toList();
           if (cuts.isNotEmpty) end = searchStart + cuts.last.end;
@@ -859,84 +860,90 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
   @override
   Widget build(BuildContext context) {
     final s = widget.language.stats();
-    return Scaffold(
-      appBar: AppBar(title: const Text('MGD Language — PURE')),
-      body: ListView(
-        padding: const EdgeInsets.all(14),
-        children: [
-          const Text(
-            'Zero LLM, zero embedding preaddestrati, zero POS tagger. Il testo grezzo modifica memoria, materia, costi e macro-sequenze MGD.',
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+    return PopScope(
+        canPop: !busy,
+        child: Scaffold(
+          appBar: AppBar(title: const Text('MGD Language')),
+          body: ListView(
+            padding: const EdgeInsets.all(14),
             children: [
-              _LMetric20('Vocabolario', '${s.tokens}'),
-              _LMetric20('Token visti', '${s.tokenOccurrences}'),
-              _LMetric20('Archi unici', '${s.edges}'),
-              _LMetric20('Passaggi', '${s.edgeUses}'),
-              _LMetric20('Macro-nodi', '${s.chunks}'),
-              _LMetric20('Frasi viste', '${s.sentences}'),
-              _LMetric20('Materia media', s.meanMaterial.toStringAsFixed(3)),
-              _LMetric20(
-                'Conoscenze',
-                '${widget.research.claims.values.where((c) => c.status == 'accettata' || c.status == 'validata_llm' || c.status == 'appresa_corpus').length}',
+              const Text(
+                'Zero LLM, zero embedding preaddestrati, zero POS tagger. Il testo grezzo modifica memoria, materia, costi e macro-sequenze MGD.',
               ),
-              _LMetric20(
-                'Ipotesi',
-                '${widget.research.claims.values.where((c) => c.status == 'dubbia').length}',
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _LMetric20('Vocabolario', '${s.tokens}'),
+                  _LMetric20('Token visti', '${s.tokenOccurrences}'),
+                  _LMetric20('Archi unici', '${s.edges}'),
+                  _LMetric20('Passaggi', '${s.edgeUses}'),
+                  _LMetric20('Macro-nodi', '${s.chunks}'),
+                  _LMetric20('Frasi viste', '${s.sentences}'),
+                  _LMetric20(
+                      'Materia media', s.meanMaterial.toStringAsFixed(3)),
+                  _LMetric20(
+                    'Conoscenze corroborate',
+                    '${widget.research.claims.values.where((c) => c.status == 'accettata' || c.status == 'validata_llm' || c.status == 'appresa_corpus').length}',
+                  ),
+                  _LMetric20(
+                    'Conoscenze documentate',
+                    '${widget.research.claims.values.where((c) => c.status == 'documentata').length}',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: text,
+                minLines: 6,
+                maxLines: 14,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText:
+                      'Incolla qui italiano grezzo: dialoghi, libri, articoli, trascrizioni…',
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.icon(
+                    onPressed: busy || text.text.trim().isEmpty
+                        ? null
+                        : () => train(text.text),
+                    icon: const Icon(Icons.psychology),
+                    label: const Text('Impara testo incollato'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: busy ? null : pick,
+                    icon: const Icon(Icons.file_open),
+                    label: const Text('Importa e impara libro/corpus'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Importa e impara libro/corpus è un’azione completa: dopo aver scelto il file MGD lo legge, lo incorpora e lo salva automaticamente. Non serve premere il pulsante del testo incollato.',
+                style: TextStyle(fontSize: 12),
+              ),
+              if (status.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(status)
+              ],
+              const SizedBox(height: 18),
+              const Text(
+                'Come vengono composte le risposte',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'Le transizioni ricorrenti abbassano il costo; la memoria lenta le stabilizza; la materia facilita la coerenza ma oltre M* introduce resistenza alla ripetizione. Sequenze ricorrenti di 2–5 token condensano in macro-nodi. Le risposte ricombinano forme osservate attorno a fatti disponibili. Le deduzioni per transitività mostrano le loro premesse e restano distinte dalle fonti.',
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: text,
-            minLines: 6,
-            maxLines: 14,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText:
-                  'Incolla qui italiano grezzo: dialoghi, libri, articoli, trascrizioni…',
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton.icon(
-                onPressed: busy || text.text.trim().isEmpty
-                    ? null
-                    : () => train(text.text),
-                icon: const Icon(Icons.psychology),
-                label: const Text('Impara testo incollato'),
-              ),
-              OutlinedButton.icon(
-                onPressed: busy ? null : pick,
-                icon: const Icon(Icons.file_open),
-                label: const Text('Importa e impara libro/corpus'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Importa e impara libro/corpus è un’azione completa: dopo aver scelto il file MGD lo legge, lo incorpora e lo salva automaticamente. Non serve premere il pulsante del testo incollato.',
-            style: TextStyle(fontSize: 12),
-          ),
-          if (status.isNotEmpty) ...[const SizedBox(height: 10), Text(status)],
-          const SizedBox(height: 18),
-          const Text(
-            'Come emerge la lingua',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const Text(
-            'Le transizioni ricorrenti abbassano il costo; la memoria lenta le stabilizza; la materia facilita la coerenza ma oltre M* introduce resistenza alla ripetizione. Sequenze ricorrenti di 2–5 token condensano in macro-nodi. La generazione percorre solo archi linguisticamente attivi e viene orientata dai concetti semantici presenti nel cervello.',
-          ),
-        ],
-      ),
-    );
+        ));
   }
 }
 
@@ -944,16 +951,5 @@ class _LMetric20 extends StatelessWidget {
   final String a, b;
   const _LMetric20(this.a, this.b);
   @override
-  Widget build(BuildContext c) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(b, style: Theme.of(c).textTheme.titleLarge),
-              Text(a),
-            ],
-          ),
-        ),
-      );
+  Widget build(BuildContext c) => InspectMetric315(a, b);
 }

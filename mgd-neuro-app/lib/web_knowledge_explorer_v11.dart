@@ -187,11 +187,11 @@ class ResearchPassage11 {
     required this.sourceUrl,
     required this.text,
     this.trust = 0.65,
-    this.meta318 = const {},
+    Map<String, dynamic> meta318 = const {},
     this.attempts = 0,
     this.structured = false,
     this.lastAttemptIso = '',
-  });
+  }) : meta318 = Map<String, dynamic>.from(meta318);
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -513,6 +513,36 @@ class ResearchMemory11 {
 
   ResearchSession11? get lastSession => sessions.isEmpty ? null : sessions.last;
   int get unresolvedPassages => passages.where((p) => !p.structured).length;
+  Iterable<ResearchPassage11> get pendingPassages321 => passages
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '321');
+  Iterable<ResearchPassage11> get uninterpretedPassages321 => passages
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '321');
+
+  int get requestsToday321 {
+    final t = DateTime.now();
+    final key =
+        '${t.year.toString().padLeft(4, '0')}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}';
+    return dayKey == key ? requestsToday : 0;
+  }
+
+  bool canStudyTopic321(String topic, {DateTime? now}) {
+    final history = state317['topicStudies321'] as Map? ?? {};
+    final record = history[ResearchSemantics317.concept(topic)] as Map?;
+    if (record == null) return true;
+    final last = DateTime.tryParse('${record['at'] ?? ''}');
+    return last == null ||
+        (now ?? DateTime.now()).difference(last) >= const Duration(minutes: 15);
+  }
+
+  void recordTopicStudy321(String topic, int newEvidence, {DateTime? now}) {
+    final history =
+        Map<String, dynamic>.from(state317['topicStudies321'] as Map? ?? {});
+    history[ResearchSemantics317.concept(topic)] = {
+      'at': (now ?? DateTime.now()).toIso8601String(),
+      'newEvidence': newEvidence
+    };
+    state317['topicStudies321'] = history;
+  }
 
   String cognitiveSourceKey030(
       {required String provider,
@@ -839,6 +869,7 @@ class WebKnowledgeExplorer11 {
     // claim is still inside its cooldown. Walk the ranked queue and verify the
     // next useful claim instead of falling back to generic topic exploration.
     for (final c in weak) {
+      if (!force && !memory.canStudyTopic321(c.subject, now: now)) continue;
       final q = '${c.subject} ${c.relation} ${c.object}';
       if (!force &&
           !memory.canResearch(q,
@@ -890,6 +921,7 @@ class WebKnowledgeExplorer11 {
     ResearchGoal11? best;
     for (final e in brain.entities) {
       final label = e.label.trim();
+      if (!force && !memory.canStudyTopic321(label, now: now)) continue;
       final n = _n11(label);
       final oneWordVerb = !label.contains(' ') &&
           RegExp(r'(are|ere|ire)$', caseSensitive: false).hasMatch(label);
@@ -1299,15 +1331,13 @@ class WebKnowledgeExplorer11 {
   int reprocessDuringSleep(
       PlasticLanguageBrain04 brain, MgdWorld06 world, ResearchMemory11 memory,
       {int limit = 16}) {
-    final pending = memory.passages
-        .where((p) => !p.structured && p.attempts < 6)
-        .take(limit)
-        .toList();
+    final pending = memory.pendingPassages321.take(limit).toList();
     var learned = 0;
     final now = DateTime.now().toIso8601String();
     for (final p in pending) {
       p.attempts++;
       p.lastAttemptIso = now;
+      p.meta318['extractorAttempt321'] = '321';
       final doc = WebDocument11(
           provider: p.provider,
           family: p.sourceFamily,
@@ -1319,21 +1349,11 @@ class WebKnowledgeExplorer11 {
       final xs = ResearchSemantics317.extractDocument318(p.topic, p.text, doc,
           first: true);
       if (xs.isEmpty) continue;
-      final draft = ResearchDraft11(
-          goal: ResearchGoal11(
-              query: p.topic,
-              topic: p.topic,
-              reason: 'rielaborazione durante il sonno',
-              value: 0.6),
-          documents: [doc],
-          claims: xs,
-          passages: const [],
-          sentencesRead: 1);
-      final out = integrate(brain, world, memory, draft);
-      if (out.integrated > 0) {
-        p.structured = true;
-        learned += out.integrated;
-      }
+      final newlyUsable =
+          ResearchSemantics317.observePassage321(brain, world, memory, p, xs);
+      // A parsed passage is structured even when its facts were already known.
+      p.structured = true;
+      learned += newlyUsable;
     }
     return learned;
   }

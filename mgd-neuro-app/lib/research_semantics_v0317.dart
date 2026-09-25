@@ -284,6 +284,27 @@ class ResearchSemantics317 {
     );
     final rules = <({String pattern, String rel})>[
       (
+        pattern: r'^(?:è|sono)\s+(?:(?:una|un)\s+)?sottoclass[ei]\s+di\s+(.+)',
+        rel: 'sottoclasse di'
+      ),
+      (
+        pattern: r'^(?:è|sono)\s+(?:(?:una|un)\s+)?istanz[ae]\s+di\s+(.+)',
+        rel: 'istanza di'
+      ),
+      (
+        pattern:
+            r'^(?:si trova|si trovano)\s+(?:in|nel|nella|nei|nelle)\s+(.+)',
+        rel: 'si trova in'
+      ),
+      (
+        pattern: r'^(?:vive|vivono)\s+(?:in|nel|nella|nei|nelle)\s+(.+)',
+        rel: 'vive in'
+      ),
+      (pattern: r'^(?:mangia|mangiano)\s+(.+)', rel: 'mangia'),
+      (pattern: r'^(?:studia|studiano)\s+(.+)', rel: 'studia'),
+      (pattern: r'^(?:produce|producono)\s+(.+)', rel: 'produce'),
+      (pattern: r'^(?:unisce|uniscono)\s+(.+)', rel: 'unisce'),
+      (
         pattern:
             r'^(?:è|sono|is|are)\s+(?:compost[oaie]|costituit[oaie]|format[oaie])\s+da\s+(.+)',
         rel: 'ha parte',
@@ -366,11 +387,38 @@ class ResearchSemantics317 {
             'polarity': negative ? -1 : 1,
             'qualifiers': qualifiers,
             'implicitSubject': implied,
+            'classRelation321': r.rel == 'sottoclasse di' ||
+                r.rel == 'istanza di' ||
+                (r.rel == 'tipo di' &&
+                    RegExp(r'^(?:è|sono|is|are)\s+(?:(?:un|una|a)\s+)?(?:tipo|tipi|classe|classi|type|kind|class)\s+',
+                            caseSensitive: false)
+                        .hasMatch(body)),
           },
         ),
       ];
     }
     return [];
+  }
+
+  /// Read explicit subjects in a multi-topic document. Never infer an omitted
+  /// subject from a previous sentence or remove a negation/condition.
+  static List<ExtractedClaim11> extractAny321(
+      String sentence, WebDocument11 doc) {
+    if (sentence.trim().endsWith('?')) return [];
+    final m = RegExp(
+            r'^(.{2,100}?)\s+(?=(?:non\s+)?(?:è|sono|ha|hanno|contiene|contengono|comprende|comprendono|serve|servono|consente|consentono|permette|permettono|fa|fanno|si trova|si trovano|vive|vivono|mangia|mangiano|studia|studiano|produce|producono|unisce|uniscono)\s)',
+            caseSensitive: false)
+        .firstMatch(sentence.trim());
+    if (m == null) return [];
+    final subject = m[1]!.replaceFirst(
+        RegExp(r'^(?:il|lo|la|i|gli|le|un|uno|una)\s+|^l[’\x27]',
+            caseSensitive: false),
+        '');
+    if (RegExp(
+            r'^(?:esso|essa|essi|esse|questo|questa|ciò|se|forse|alcuni|alcune)\b',
+            caseSensitive: false)
+        .hasMatch(subject)) return [];
+    return extract(subject, sentence, doc);
   }
 
   static List<String> queryForms318(String topic) {
@@ -602,7 +650,7 @@ class ResearchSemantics317 {
     session.providers = draft.documents.map((d) => d.provider).toSet().length;
     session.families = draft.documents.map(family).toSet().length;
     session.audit315.addAll({
-      'version': '0.31.8',
+      'version': '0.32.1',
       'documents': draft.documents.map(docMap).toList(),
       'providerDiagnostics': draft.diagnostics318,
       'decisions': <Map<String, dynamic>>[],
@@ -614,6 +662,16 @@ class ResearchSemantics317 {
       'nota':
           'Documentata = supporto diretto da una fonte; corroborata = gruppi di provenienza distinti, indipendenza scientifica non certificata.',
     });
+    // Count the actual preliminary reading as well as later queue work.
+    // The document/sentence key prevents counting the same reading twice.
+    var preliminary = draft.sentencesRead;
+    for (final d in draft.documents.take(10)) {
+      for (final sentence
+          in WebKnowledgeExplorer11._sentences(d.text).take(24)) {
+        if (preliminary-- <= 0) break;
+        recordSentence321(session, d, sentence, phase: 'lettura iniziale');
+      }
+    }
     memory.sessions.add(session);
     if (draft.error != null) {
       session.status = 'errore';
@@ -640,13 +698,31 @@ class ResearchSemantics317 {
     _summary(memory, session);
     memory.lastError = null;
     memory.trim();
-    final usable = session.audit315['documented'] as int? ?? 0;
     return ResearchOutcome11(
       memory.lastStatus,
-      session.integrated + usable,
+      session.audit315['newUsable321'] as int? ?? 0,
       session.doubtful,
       session.contradictions,
     );
+  }
+
+  static void recordSentence321(
+      ResearchSession11 s, WebDocument11 d, String text,
+      {required String phase}) {
+    final rows = s.audit315
+        .putIfAbsent('sentences', () => <Map<String, dynamic>>[]) as List;
+    final key = digest([canonicalUrl(d.url), text]);
+    if (!rows.whereType<Map>().any((x) => x['readingKey321'] == key)) {
+      rows.add({
+        'readingKey321': key,
+        'text': text,
+        'provider': d.provider,
+        'sourceTitle': d.title,
+        'sourceUrl': d.url,
+        'fase': phase
+      });
+    }
+    s.sentencesRead = rows.length;
   }
 
   static Map<String, dynamic> docMap(WebDocument11 d) => {
@@ -717,7 +793,8 @@ class ResearchSemantics317 {
       needsRecovery318(m) ||
       m.state317['migrationComplete'] != true ||
       getPending(m) > 0 ||
-      pendingLanguage320(m).isNotEmpty;
+      pendingLanguage320(m).isNotEmpty ||
+      m.pendingPassages321.isNotEmpty;
   static List<Map<String, dynamic>> uniqueDocuments320(ResearchMemory11 m) {
     final docs = <String, Map<String, dynamic>>{};
     for (final s in m.sessions.reversed) {
@@ -848,17 +925,7 @@ class ResearchSemantics317 {
       final text = sentences[i];
       if (q['extracted'] != true) {
         if (session != null) {
-          final ss = session.audit315.putIfAbsent(
-            'sentences',
-            () => <Map<String, dynamic>>[],
-          ) as List;
-          ss.add({
-            'text': text,
-            'provider': doc.provider,
-            'sourceTitle': doc.title,
-            'sourceUrl': doc.url,
-          });
-          session.sentencesRead = ss.length;
+          recordSentence321(session, doc, text, phase: 'lettura incrementale');
           final documents = session.audit315['documents'];
           if (documents is List) {
             for (final d in documents.whereType<Map>()) {
@@ -872,6 +939,7 @@ class ResearchSemantics317 {
           doc,
           first: i == 0,
         );
+        if (extracted.isEmpty) extracted.addAll(extractAny321(text, doc));
         if (extracted.isEmpty) {
           final aliases = m.claims.values
               .where((c) =>
@@ -885,9 +953,11 @@ class ResearchSemantics317 {
         for (final c in extracted) {
           _observe(brain, world, m, c, session);
         }
-        if (extracted.isNotEmpty) {
-          for (final p in m.passages) {
-            if (p.sourceUrl == doc.url && p.text == text) p.structured = true;
+        for (final p in m.passages) {
+          if (p.sourceUrl == doc.url && p.text == text) {
+            p.structured = extracted.isNotEmpty;
+            p.meta318['extractorAttempt321'] = '321';
+            p.lastAttemptIso = DateTime.now().toIso8601String();
           }
         }
         if (extracted.isEmpty &&
@@ -902,7 +972,7 @@ class ResearchSemantics317 {
               sourceUrl: doc.url,
               text: text,
               trust: doc.trust,
-              meta318: doc.meta318,
+              meta318: {...doc.meta318, 'extractorAttempt321': '321'},
             ),
           );
         }
@@ -1007,6 +1077,28 @@ class ResearchSemantics317 {
         c.subject,
         ...((c.meta317['queryAliases318'] as List?) ?? []).map((x) => '$x'),
       };
+
+  static int observePassage321(
+      PlasticLanguageBrain04 brain,
+      MgdWorld06 world,
+      ResearchMemory11 memory,
+      ResearchPassage11 passage,
+      List<ExtractedClaim11> claims) {
+    final session = memory.sessions
+        .where((s) => sameSubject(s.topic, passage.topic))
+        .lastOrNull;
+    final before = memory.claims.values
+        .where((c) => c.meta317['usable'] == true)
+        .map((c) => c.key)
+        .toSet();
+    for (final claim in claims) {
+      _observe(brain, world, memory, claim, session);
+    }
+    if (session != null) _summary(memory, session);
+    return memory.claims.values
+        .where((c) => c.meta317['usable'] == true && !before.contains(c.key))
+        .length;
+  }
 
   /// Attach prose to a known identity only when the complete relation/object
   /// agrees and exactly one known sense fits. Word overlap is never enough.
@@ -1149,14 +1241,15 @@ class ResearchSemantics317 {
     c.lastSeenIso = now;
     m.claims[key] = c;
     reevaluate(brain, world, m, c);
-    if (session != null) _recordDecision(session, c, before);
+    if (session != null) _recordDecision(session, c, before, evidenceId: evKey);
   }
 
   static void _recordDecision(
     ResearchSession11 session,
     ResearchClaim11 c,
-    String? before,
-  ) {
+    String? before, {
+    String? evidenceId,
+  }) {
     final ds = List<Map<String, dynamic>>.from(
       (session.audit315['decisions'] as List? ?? []).map(
         (x) => Map<String, dynamic>.from(x as Map),
@@ -1172,6 +1265,12 @@ class ResearchSemantics317 {
       'object': c.object,
       'status': c.status,
       'statusBefore': original,
+      'newClaim321': original == null,
+      'newEvidenceIds321': {
+        ...((was.isNotEmpty ? was.first['newEvidenceIds321'] : null) as List? ??
+            []),
+        if (evidenceId != null) evidenceId,
+      }.toList(),
       'nuovo consolidamento':
           c.status == 'accettata' && original != 'accettata',
       'confidence': c.confidence,
@@ -1315,6 +1414,17 @@ class ResearchSemantics317 {
     final documented = cs.where((c) => c.status == 'documentata').length;
     s.audit315['documented'] = documented;
     s.audit315['candidates'] = ds;
+    s.audit315['newClaims321'] =
+        ds.where((d) => d['newClaim321'] == true).length;
+    s.audit315['knownClaims321'] =
+        ds.where((d) => d['newClaim321'] != true).length;
+    s.audit315['newUsable321'] = ds
+        .where((d) =>
+            {'documentata', 'accettata'}.contains(d['status']) &&
+            !{'documentata', 'accettata'}.contains(d['statusBefore']))
+        .length;
+    s.audit315['newEvidence321'] =
+        ds.expand((d) => d['newEvidenceIds321'] as List? ?? []).toSet().length;
     s.audit315['candidateCounting'] =
         'Proposizioni distinte; ripetizioni nelle evidenze, non nel numero dei candidati.';
     final pending = (m.state317['queue'] as List? ?? [])
@@ -1325,7 +1435,11 @@ class ResearchSemantics317 {
     s.learnedFacts
       ..clear()
       ..addAll(
-        cs.take(10).map(
+        cs
+            .where((c) => ds
+                .any((d) => d['claimKey'] == c.key && d['newClaim321'] == true))
+            .take(10)
+            .map(
               (c) =>
                   '${c.status == 'documentata' ? 'Fonte' : c.status == 'accettata' ? 'Fonti' : '?'}: ${c.subject} — ${c.relation} → ${c.object}',
             ),
@@ -1372,15 +1486,23 @@ class ResearchSemantics317 {
         )
         .toList();
     final qn = norm(question);
-    final requested =
-        RegExp(r'(?:compost|costituit|contien|conteng|quali parti)')
-                .hasMatch(qn)
-            ? 'ha parte'
-            : RegExp(r'(?:a cosa serv|serve per|funzione)').hasMatch(qn)
-                ? 'serve per'
-                : RegExp(r'(?:dove|si trova)').hasMatch(qn)
-                    ? 'si trova in'
-                    : null;
+    final requested = RegExp(
+                r'(?:compost|costituit|contien|conteng|quali parti)')
+            .hasMatch(qn)
+        ? 'ha parte'
+        : RegExp(r'(?:a cosa serv|serve per|funzione)').hasMatch(qn)
+            ? 'serve per'
+            : RegExp(r'(?:dove|si trova)').hasMatch(qn)
+                ? (RegExp(r'\bviv').hasMatch(qn) ? 'vive in' : 'si trova in')
+                : RegExp(r'\bmangi').hasMatch(qn)
+                    ? 'mangia'
+                    : RegExp(r'\bprodu').hasMatch(qn)
+                        ? 'produce'
+                        : RegExp(r'\bstudi').hasMatch(qn)
+                            ? 'studia'
+                            : RegExp(r'\bunisc').hasMatch(qn)
+                                ? 'unisce'
+                                : null;
     if (requested != null)
       found.removeWhere((c) => relation(c.relation) != requested);
     if (found.isEmpty) {

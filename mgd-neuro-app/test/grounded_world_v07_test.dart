@@ -49,7 +49,7 @@ void main() {
     final world = MgdWorld06();
     final trace = world.think(brain, cycles: 24, seedText: 'Diego');
     expect(trace, isNotEmpty);
-    expect(trace.any((t) => t.hypothesis.startsWith('Ipotesi:') || t.hypothesis.startsWith('Esploro:')), isTrue);
+    expect(trace.any((t) => t.hypothesis.startsWith('Richiamo:') || t.hypothesis.startsWith('Esploro:')), isTrue);
   });
 
   test('natural self label grounds photo to user identity', () {

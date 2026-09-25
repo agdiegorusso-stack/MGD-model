@@ -27,6 +27,8 @@ import 'mgd_language_v020.dart';
 import 'cognitive_induction_v024.dart';
 import 'mgd_state_store_v026.dart';
 import 'memory_runtime_v0319.dart';
+import 'learning_service_v0321.dart';
+import 'reasoning_v0321.dart';
 import 'knowledge_inspector_v0315.dart';
 import 'curiosity_actions_v0316.dart';
 
@@ -46,7 +48,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.32.0',
+      title: 'MGD Neuro 0.32.1',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -279,6 +281,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       if (!mounted || !_ready || _bootError318 != null || _mindBusy320) return;
       if (_lifecycle319 != AppLifecycleState.resumed ||
           _busy ||
+          _researchBusy ||
           !_uiIdle18 ||
           _chat.text.isNotEmpty) {
         _world.runtime319['state'] =
@@ -314,7 +317,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
       if (mounted) setState(() {});
       if (_mindTicks % 3 == 0) unawaited(_autoSave17());
-      if (_mindTicks % 24 == 5 && _researchMemory.enabled && !_researchBusy) {
+      if (_mindTicks % 6 == 1 && _researchMemory.enabled && !_researchBusy) {
         unawaited(_researchOnce10(autonomous: true));
       } else if (!_researchBusy &&
           ResearchSemantics317.needsMaintenance(_researchMemory)) {
@@ -443,14 +446,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         ResearchSemantics317.markLanguage320(_researchMemory, doc);
         if (!mounted || _busy || _chat.text.isNotEmpty) return;
       }
-      for (var n = 0;
-          n < 80 && ResearchSemantics317.getPending(_researchMemory) > 0;
-          n++) {
-        ResearchSemantics317.processQueue(_brain, _world, _researchMemory,
-            maxUnits: 16);
-        await Future<void>.delayed(const Duration(milliseconds: 16));
-        if (!mounted || _busy || _chat.text.isNotEmpty) break;
-      }
+      await LearningService321.drainResearch(_brain, _world, _researchMemory,
+          shouldContinue: () => mounted && !_busy && _chat.text.isEmpty);
       await _saveAllSilent22();
       if (mounted) setState(() {});
     } catch (e) {
@@ -546,9 +543,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     }
 
     try {
+      final studyClock = Stopwatch()..start();
       final draft = await _webExplorer.research(goal);
-      final outcome =
-          _webExplorer.integrate(_brain, _world, _researchMemory, draft);
+      _webExplorer.integrate(_brain, _world, _researchMemory, draft);
       await _checkpoint319();
 
       // Reading is learning even when the rule-based extractor cannot turn a
@@ -557,6 +554,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       // candidates no longer means 0 learning.
       for (final doc in draft.documents) {
         await _language20.ingestWeb317(doc);
+        ResearchSemantics317.markLanguage320(_researchMemory, doc);
         final cognitiveKey = _researchMemory.cognitiveSourceKey030(
             provider: doc.provider,
             family: doc.family,
@@ -587,11 +585,22 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         }
       }
 
-      // Intake and its session were already saved before language processing.
+      await LearningService321.drainResearch(_brain, _world, _researchMemory,
+          shouldContinue: () => mounted);
+      final session = _researchMemory.sessions
+          .where((s) => s.query == goal.query)
+          .lastOrNull;
+      if (session != null) {
+        session.audit315['elapsedMicros321'] = studyClock.elapsedMicroseconds;
+        session.completedAtIso = DateTime.now().toIso8601String();
+        _researchMemory.recordTopicStudy321(
+            goal.topic, session.audit315['newEvidence321'] as int? ?? 0);
+      }
+      // All readings and updated metrics are persisted together.
       await _checkpoint319();
       if (mounted) {
         setState(() {
-          _status = outcome.summary;
+          _status = _researchMemory.lastStatus;
         });
       }
     } catch (e) {
@@ -646,18 +655,25 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _openLanguage20() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MgdLanguageLab20(
-          language: _language20,
-          brain: _brain,
-          world: _world,
-          research: _researchMemory,
-          onSave: _saveAllSilent22,
-        ),
-      ),
-    );
-    if (mounted) setState(() {});
+    if (_busy || _researchBusy || _maintenance317) return;
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => InspectorScope315(
+              inspector: MemoryInspector315(
+                  brain: _brain,
+                  world: _world,
+                  research: _researchMemory,
+                  language: _language20),
+              child: MgdLanguageLab20(
+                  language: _language20,
+                  brain: _brain,
+                  world: _world,
+                  research: _researchMemory,
+                  onSave: _saveAllSilent22))));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _curiosityResult316(
@@ -673,7 +689,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _send() async {
-    if (_busy || !_ready) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     final text = _chat.text.trim();
     if (text.isEmpty) return;
     _chat.clear();
@@ -715,8 +731,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final grounded = (curiosityAnswer == null && sensoryGrounding == null)
           ? _world.groundedAnswer07(_brain, text)
           : null;
-      final sourced317 = ResearchSemantics317.answer(text, _researchMemory,
-          realize: (s, r, o) => _language20.realizeFact320(s, r, o));
+      final sourced317 = Reasoning321.answer(text, _researchMemory) ??
+          ResearchSemantics317.answer(text, _researchMemory,
+              realize: (s, r, o) => _language20.realizeFact320(s, r, o));
       final semanticAnswer = sourced317 ?? grounded ?? languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||
@@ -1026,73 +1043,53 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _learnCorpus(int passes) async {
-    if (_busy) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     final raw = _teach.text.trim();
     if (raw.isEmpty) return;
-    final chunks = raw
-        .split(RegExp(r'(?<=[.!?])\s+|\n+'))
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    if (chunks.isEmpty) return;
-
     setState(() {
       _busy = true;
       _progress = 0;
-      _status = 'Segmentazione in eventi e apprendimento online…';
+      _status = 'Apprendo relazioni e forme linguistiche dallo stesso testo…';
     });
-    final total = chunks.length * passes;
-    var done = 0;
-    for (var p = 0; p < passes; p++) {
-      for (final chunk in chunks) {
-        _brain.learnEvent(chunk, reward: 0.45);
-        _world.integrateLanguageExperience09(_brain, chunk, reward: 0.30);
-        done++;
-        if (done % 2 == 0 || done == total) {
-          if (!mounted) return;
+    try {
+      final n = await LearningService321.learnText(
+          _brain, _world, _language20, raw, passes: passes,
+          progress: (done, total) {
+        if (mounted)
           setState(() {
             _progress = done / total;
-            _status =
-                'Eventi $done/$total • fatti ${_brain.stats().facts} • entità ${_brain.stats().entities}';
+            _status = 'Frasi elaborate: $done/$total';
           });
-          await Future<void>.delayed(Duration.zero);
-        }
-      }
+      });
+      await _save('$n frasi elaborate nelle memorie relazionale e linguistica');
+    } catch (e) {
+      if (mounted) setState(() => _status = 'Apprendimento interrotto: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-    _brain.discoverConcepts();
-    await _save('Testo incorporato • attrattori e concetti ricalcolati');
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _progress = 1;
-    });
   }
 
   Future<void> _sleep() async {
-    if (_busy) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
       _busy = true;
       _status = 'Sonno: replay degli attrattori, consolidamento e pruning…';
     });
     try {
       await Future<void>.delayed(Duration.zero);
-      _brain.sleepReplay(cycles: 72);
-      _world.sleepReplay(cycles: 72);
-      _world.think(_brain, cycles: 32);
-      final rielaborati = _webExplorer.reprocessDuringSleep(
-        _brain,
-        _world,
-        _researchMemory,
-        limit: 20,
-      );
+      final result =
+          await LearningService321.sleep(_brain, _world, _researchMemory);
+      if (!mounted) return;
+      _brain = result.brain;
+      _world.applyRuntime320(result.world);
+      _researchMemory = result.research;
+      await LearningService321.drainResearch(_brain, _world, _researchMemory,
+          shouldContinue: () => mounted);
       if (_researchMemory.enabled) {
         await _researchOnce10(autonomous: true, allowWhileBusy: true);
       }
       await _save(
-        rielaborati > 0
-            ? 'Sonno completato • $rielaborati conoscenze emerse da testi conservati'
-            : 'Sonno completato • memoria consolidata e testi web rielaborati',
-      );
+          'Ripasso completato; apri i dettagli dei testi interpretati e non interpretati.');
       _maybeAskCuriosity09();
       if (!mounted) return;
       setState(() => _busy = false);
@@ -1136,7 +1133,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _observeImage06(ImageSource source) async {
-    if (_busy || !_ready) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
       _busy = true;
       _status = source == ImageSource.camera
@@ -1170,7 +1167,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _listen06() async {
-    if (_busy || !_ready) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
       _busy = true;
       _status = 'Ascolto 2 secondi di audio grezzo…';
@@ -1293,7 +1290,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _importTeacherPack08() async {
-    if (_busy || !_ready) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
       _busy = true;
       _status = 'Seleziona un knowledge pack distillato da un LLM…';
@@ -1478,26 +1475,25 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _think06() async {
-    if (_busy || !_ready) return;
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
       _busy = true;
       _status =
           'Ciclo mentale autonomo: propagazione e competizione degli attrattori…';
     });
-    await Future<void>.delayed(Duration.zero);
-    final seed = _chat.text.trim().isEmpty ? null : _chat.text.trim();
-    MemoryRuntime319.pulse(_brain, _world, seedText: seed);
-    final trace = _world.think(_brain, cycles: 96, seedText: seed);
-    final last = trace.isEmpty ? null : trace.last;
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _status = last == null
-          ? 'Ciclo mentale completato'
-          : '${last.hypothesis} • coerenza ${(last.coherence * 100).round()}%';
-    });
-    await _save('Ciclo mentale salvato');
-    _maybeAskCuriosity09();
+    try {
+      final seed = _chat.text.trim().isEmpty ? null : _chat.text.trim();
+      final result = await MemoryRuntime319.compute320(_brain, _world,
+          cycles: 96, seedText: seed);
+      if (!mounted) return;
+      _world.applyRuntime320(result.world);
+      _brain.adoptConcepts320(result.concepts);
+      await _save('96 cicli MGD completati e salvati');
+    } catch (e) {
+      if (mounted) setState(() => _status = 'Ciclo interrotto: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -1519,7 +1515,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.32.0')),
+          appBar: AppBar(title: const Text('MGD Neuro 0.32.1')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1548,7 +1544,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         messages: _messages,
         controller: _chat,
         scroll: _scroll,
-        busy: _busy,
+        busy: _busy || _maintenance317 || _researchBusy,
         world: _world,
         last: _lastSense,
         labelController: _senseLabel,
@@ -1566,7 +1562,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         world: _world,
         research: _researchMemory,
         last: _lastSense,
-        busy: _busy,
+        busy: _busy || _maintenance317 || _researchBusy,
         onImportTeacher: _importTeacherPack08,
         onEdit: _openEditor12,
       ),
@@ -1574,7 +1570,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         brain: _brain,
         world: _world,
         research: _researchMemory,
-        busy: _busy,
+        busy: _busy || _maintenance317 || _researchBusy,
         researchBusy: _researchBusy,
         onThink: _think06,
         onSleep: _sleep,
@@ -1597,7 +1593,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.32.0'),
+        title: const Text('MGD Neuro 0.32.1'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -2213,7 +2209,7 @@ class _MindPage07 extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _Metric04('Passi mentali', '${ws.thoughtCycles}'),
+            _Metric04('Cicli MGD', '${ws.thoughtCycles}'),
             _Metric04('Episodi relazionali', '${bs.episodes}'),
             _Metric04('Fatti cognitivi', '${brain.cognitiveFacts06().length}'),
             _Metric04('Concetti relazionali', '${bs.concepts}'),
@@ -2239,7 +2235,7 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.32.0',
+                          Text('Memorie MGD 0.32.1',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(
@@ -2252,13 +2248,12 @@ class _MindPage07 extends StatelessWidget {
           label: const Text('Modifica Mente / ricerca / pensieri'),
         ),
         const SizedBox(height: 12),
-        _Meter04(label: 'Curiosità mondo', value: ws.curiosity),
+        _Meter04(label: 'Curiosità sensoriale', value: ws.curiosity),
         _Meter04(label: 'Errore previsione', value: ws.predictionError),
         _Meter04(label: 'Materia M media', value: ws.meanSlow.clamp(0, 1)),
+        _Meter04(label: 'Flusso entropico Δτ', value: ws.entropicFlux),
         _Meter04(
-            label: 'Flusso entropico Δτ', value: ws.entropicFlux.clamp(0, 1)),
-        _Meter04(
-            label: 'Memoria lenta linguistica', value: bs.meanSlow.clamp(0, 1)),
+            label: 'Memoria lenta relazionale', value: bs.meanSlow.clamp(0, 1)),
         const SizedBox(height: 12),
         Card(
           child: Padding(
@@ -2271,12 +2266,12 @@ class _MindPage07 extends StatelessWidget {
                   Row(children: [
                     const Icon(Icons.record_voice_over_outlined),
                     const SizedBox(width: 8),
-                    Text('MGD Language — PURE',
+                    Text('MGD Language',
                         style: Theme.of(context).textTheme.titleMedium),
                   ]),
                   const SizedBox(height: 6),
                   const Text(
-                      'Generazione italiana nativa MGD: nessun LLM, nessun embedding preaddestrato, nessun POS tagger. Le frasi emergono da memoria, materia, costi, macro-sequenze e binding semantico.'),
+                      'Forme linguistiche apprese dai testi e selezionate tramite il grafo MGD. Risposte vincolate ai fatti disponibili, con fonti quando presenti. Nessun modello linguistico preaddestrato.'),
                   const SizedBox(height: 8),
                   Wrap(spacing: 8, runSpacing: 8, children: [
                     _Metric04('Token', '${ls.tokens}'),
@@ -2319,7 +2314,7 @@ class _MindPage07 extends StatelessWidget {
                   children: [
                     _Metric04('Documentate',
                         '${research.claims.values.where((c) => c.status == 'documentata').length}'),
-                    _Metric04('Coda di verifica',
+                    _Metric04('Documenti da leggere',
                         '${ResearchSemantics317.getPending(research)}'),
                     _Metric04('Corroborate web',
                         '${research.claims.values.where((c) => c.status == 'accettata').length}'),
@@ -2336,9 +2331,12 @@ class _MindPage07 extends StatelessWidget {
                         '${research.lastSession?.documents ?? 0} doc'),
                     _Metric04('Famiglie con evidenza',
                         '${research.evidence.map((e) => e.sourceFamily).toSet().length}'),
+                    _Metric04('Testi da elaborare',
+                        '${research.pendingPassages321.length}'),
+                    _Metric04('Testi non interpretati',
+                        '${research.uninterpretedPassages321.length}'),
                     _Metric04(
-                        'Testi in attesa', '${research.unresolvedPassages}'),
-                    _Metric04('Ricerche oggi', '${research.requestsToday}'),
+                        'Ricerche avviate oggi', '${research.requestsToday}'),
                     const _Metric04('Limite giornaliero', 'Illimitato'),
                   ],
                 ),
@@ -2450,8 +2448,17 @@ class _MindPage07 extends StatelessWidget {
                       _Metric04('Documentate',
                           '${research.lastSession!.audit315['documented'] ?? 0}',
                           session: true),
+                      _Metric04('Proposizioni nuove',
+                          '${research.lastSession!.audit315['newClaims321'] ?? 0}',
+                          session: true),
+                      _Metric04('Già note',
+                          '${research.lastSession!.audit315['knownClaims321'] ?? 0}',
+                          session: true),
+                      _Metric04('Nuove evidenze',
+                          '${research.lastSession!.audit315['newEvidence321'] ?? 0}',
+                          session: true),
                       _Metric04(
-                          'Consolidati', '${research.lastSession!.integrated}',
+                          'Corroborate', '${research.lastSession!.integrated}',
                           session: true),
                       _Metric04(
                           'Osservate', '${research.lastSession!.doubtful}',
@@ -2471,7 +2478,7 @@ class _MindPage07 extends StatelessWidget {
                   ],
                   if (research.lastSession!.learnedFacts.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text('Nuove conoscenze integrate',
+                    Text('Nuove proposizioni registrate',
                         style: Theme.of(context).textTheme.titleSmall),
                     ...research.lastSession!.learnedFacts.take(6).map(
                           (f) => Padding(
@@ -2532,8 +2539,8 @@ class _MindPage07 extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Fluidità UI: frame p95 ${frameP95Ms.toStringAsFixed(1)} ms • '
-                  'scatti >24 ms: $jankFrames • peggiore ${worstFrameMs.toStringAsFixed(1)} ms',
+                  'Fluidità UI: p95 degli ultimi 180 frame ${frameP95Ms.toStringAsFixed(1)} ms • '
+                  'scatti dall’avvio >24 ms: $jankFrames • peggiore ${worstFrameMs.toStringAsFixed(1)} ms',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 10),
@@ -2581,7 +2588,7 @@ class _MindPage07 extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        Text('Pensiero interno',
+        Text('Attività del grafo',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 6),
         if (thoughts.isEmpty)
@@ -2591,8 +2598,8 @@ class _MindPage07 extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.psychology_alt_outlined),
                   title: Text(t.hypothesis),
-                  subtitle: Text('focus: ${t.focus.join(' · ')}'),
-                  trailing: Text('${(t.coherence * 100).round()}%'),
+                  subtitle: Text(
+                      'Attivazione: ${(t.coherence * 100).round()}% • ${t.focus.join(' · ')}'),
                 ),
               )),
         const SizedBox(height: 24),
@@ -2922,7 +2929,7 @@ class _SensesPage06 extends StatelessWidget {
             _Metric04('Pattern uditivi', '${s.auditoryPatterns}'),
             _Metric04('Legami mondo', '${s.worldEdges}'),
             _Metric04('Binding', '${s.semanticBindings}'),
-            _Metric04('Passi mentali', '${s.thoughtCycles}'),
+            _Metric04('Cicli MGD', '${s.thoughtCycles}'),
             _Metric04('Età mondo τ', s.entropicAge.toStringAsFixed(2)),
           ],
         ),
@@ -2932,11 +2939,11 @@ class _SensesPage06 extends StatelessWidget {
         _Meter04(label: 'Curiosità', value: s.curiosity),
         _Meter04(label: 'Consolidamento mondo', value: s.meanSlow),
         const SizedBox(height: 14),
-        Text('Pensiero interno',
+        Text('Attività del grafo',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 6),
         const Text(
-            'È propagazione ricorrente dell’attività tra memoria semantica e pattern sensoriali. Le ipotesi restano interne finché non vengono confermate.'),
+            'È propagazione ricorrente dell’attività tra memoria semantica e pattern sensoriali. I richiami mostrano relazioni già memorizzate. Il valore di attivazione non è una probabilità di verità.'),
         const SizedBox(height: 8),
         if (recent.isEmpty)
           const Text('Il ciclo mentale non ha ancora prodotto tracce.')
@@ -2945,8 +2952,8 @@ class _SensesPage06 extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.psychology_alt_outlined),
                   title: Text(t.hypothesis),
-                  subtitle: Text('focus: ${t.focus.join(' · ')}'),
-                  trailing: Text('${(t.coherence * 100).round()}%'),
+                  subtitle: Text(
+                      'Attivazione: ${(t.coherence * 100).round()}% • ${t.focus.join(' · ')}'),
                 ),
               )),
         const SizedBox(height: 24),
@@ -3101,20 +3108,36 @@ class _Meter04 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = value.clamp(0.0, 1.0).toDouble();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          SizedBox(
-              width: 156,
-              child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
-          Expanded(child: LinearProgressIndicator(value: v)),
-          const SizedBox(width: 8),
-          SizedBox(
-              width: 42,
-              child: Text('${(v * 100).round()}%', textAlign: TextAlign.end)),
-        ],
-      ),
+    final isFlux = label.contains('Δτ');
+    return InkWell(
+      onTap: () => showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text(label),
+                content: Text('Valore: ${value.toStringAsFixed(6)}.\n'
+                    '${isFlux ? "Variazione di età entropica nell’ultimo aggiornamento; non è una percentuale." : "Indicatore interno compreso tra 0 e 1; non misura intelligenza o accuratezza."}\n'
+                    '${label.contains("sensoriale") || label.contains("previsione") ? "Si aggiorna con le osservazioni sensoriali. In assenza di osservazioni può restare a zero." : "Apri le memorie e gli archi per i dati sottostanti."}'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Chiudi'))
+                ],
+              )),
+      child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(children: [
+            SizedBox(
+                width: 156,
+                child:
+                    Text(label, style: Theme.of(context).textTheme.bodySmall)),
+            Expanded(child: LinearProgressIndicator(value: v)),
+            const SizedBox(width: 8),
+            SizedBox(
+                width: 58,
+                child: Text(
+                    isFlux ? value.toStringAsFixed(3) : '${(v * 100).round()}%',
+                    textAlign: TextAlign.end)),
+          ])),
     );
   }
 }
