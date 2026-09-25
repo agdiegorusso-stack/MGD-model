@@ -30,6 +30,9 @@ import 'memory_runtime_v0319.dart';
 import 'learning_service_v0321.dart';
 import 'reasoning_v0321.dart';
 import 'source_memory_page_v0323.dart';
+import 'relational_memory_v0324.dart';
+import 'relational_memory_page_v0324.dart';
+import 'learned_reader_v0324.dart';
 import 'knowledge_inspector_v0315.dart';
 import 'curiosity_actions_v0316.dart';
 
@@ -49,7 +52,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.32.3',
+      title: 'MGD Neuro 0.32.4',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -711,6 +714,30 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     await Future<void>.delayed(Duration.zero);
     try {
       _language20.ingestText(text, reward: 0.38);
+      if (LearnedReader324.handles(text) ||
+          RegExp(r'^\s*correggi\s*:',caseSensitive:false).hasMatch(text)) {
+        String? reply324;
+        if (LearnedReader324.isQuestion(text)) {
+          reply324 = RelationalMemory324.answer(_researchMemory,text);
+        } else {
+          SourceMemory323.retain(_researchMemory,WebDocument11(
+            provider:'Chat utente',family:'locale:utente',title:'Testo insegnato in chat',
+            url:'local://chat/'+ResearchSemantics317.digest(text),text:text,trust:.75));
+          final learned324=await RelationalMemory324.learnAsync(_researchMemory,text,
+            source:'Chat utente');
+          if(learned324.handled) reply324=learned324.message;
+        }
+        if(reply324!=null) {
+          if(!mounted) return;
+          setState(() {
+            _messages.add(ChatMessage04(user:false,text:reply324!,prompt:text));
+            _status='Lettura e memoria relazionale • salvataggio…';
+          });
+          _scrollDown();
+          await _save('Relazioni insegnate e cronologia salvate');
+          return;
+        }
+      }
       final questionAnswer316 = _world.consumeCuriosityAnswer09(_brain, text);
       if (questionAnswer316 != null) {
         try {
@@ -740,7 +767,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final grounded = (curiosityAnswer == null && sensoryGrounding == null)
           ? _world.groundedAnswer07(_brain, text)
           : null;
-      final sourced317 = Reasoning321.answer(text, _researchMemory) ??
+      final sourced317 = RelationalMemory324.answer(_researchMemory,text) ??
+          Reasoning321.answer(text, _researchMemory) ??
           ResearchSemantics317.answer(text, _researchMemory,
               realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
           SourceMemory323.answer(text, _researchMemory);
@@ -851,6 +879,16 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           'Correzione: rinforzo l’attrattore che ha prodotto la risposta…';
     });
     try {
+      final query324=LearnedReader324.parse(m.prompt!);
+      if(query324!=null && LearnedReader324.handles(m.prompt!)) {
+        final candidates=RelationalMemory324.find(_researchMemory,query324);
+        if(candidates.length==1) {
+          final correction=RelationalMemory324.correct(_researchMemory,
+            candidates.single['id'].toString(),answer);
+          await _save(correction.message);
+          return;
+        }
+      }
       _brain.teachResponse(m.prompt!, answer, reward: 1.0);
       await _save('Correzione consolidata nell’attrattore MGD');
       if (!mounted) return;
@@ -1524,7 +1562,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.32.3')),
+          appBar: AppBar(title: const Text('MGD Neuro 0.32.4')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1603,7 +1641,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.32.3'),
+        title: const Text('MGD Neuro 0.32.4'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -2247,13 +2285,22 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.32.3',
+                          Text('Memorie MGD 0.32.4',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(
                               'Lingua: ${language20.stats().sentences} frasi · Episodica web: ${research.narrativeEpisodes.length} episodi (${research.narrativeSentencesSeen} frasi osservate) · Concettuale: ${research.emergentConcepts.length} cluster · Web: ${research.claims.values.where((c) => c.status == 'documentata').length} documentate + ${research.claims.values.where((c) => c.status == 'accettata').length} corroborate + ${research.claims.values.where((c) => c.status == 'ipotesi_mgd').length} ipotesi MGD.'),
                         ])))),
         const SizedBox(height: 12),
+        Card(child:ListTile(
+          leading:const Icon(Icons.account_tree_outlined),
+          title:Text('${RelationalMemory324.stats(research)['current']} relazioni apprese'),
+          subtitle:const Text('Agente, azione, oggetto · fonti e correzioni'),
+          trailing:const Icon(Icons.chevron_right),
+          onTap:()=>Navigator.of(context).push(MaterialPageRoute(
+            builder:(_)=>RelationalMemoryPage324(memory:research,onSave:()=>onSave()))),
+        )),
+        const SizedBox(height:12),
         Card(child: ListTile(
           leading: const Icon(Icons.find_in_page_outlined),
           title: Text(SourceMemory323.stats(research)['passages'].toString() +

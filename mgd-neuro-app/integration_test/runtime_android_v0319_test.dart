@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:mgd_neuro_mobile/relational_memory_v0324.dart';
 import '../test/research_v0318_test.dart' show Sources318;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -399,5 +400,64 @@ void main() {
     print('ANDROID323 '+jsonEncode({'sourceInChat':true,'sourceInspector':true,
       'sqliteRestore':true,'noInventedClaim':restored.claims.isEmpty}));
     await store.clearAll(); await store.close319();
+  });
+
+  testWidgets('Android learned roles: chat teaching, paraphrase, correction, map and SQLite restore',(tester) async {
+    final store=MgdStateStore26.instance;
+    await store.clearAll();
+    await MemoryCheckpoint319().save(PlasticLanguageBrain04(),MgdWorld06(),
+      ResearchMemory11(enabled:false)..state317.addAll({
+        'migrationComplete':true,'recovery320Complete':true}),MgdLanguage20());
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    Future<void> send(String text) async {
+      await tester.enterText(find.byType(TextField),text);
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      for(var n=0;n<150;n++) {
+        await tester.pump(const Duration(milliseconds:100));
+        final button=find.ancestor(of:find.byIcon(Icons.arrow_upward),matching:find.byType(IconButton));
+        if(button.evaluate().isNotEmpty&&tester.widget<IconButton>(button).onPressed!=null) break;
+      }
+    }
+    await send('Il norvente insegue il talverio.');
+    await send('Da chi viene rincorso il talverio?');
+    expect(find.textContaining('norvente insegue talverio'),findsOneWidget);
+    await send('Correggi: Il norvente insegue il felvario.');
+    expect(find.textContaining('Correzione salvata.'),findsOneWidget);
+    await send('Il norvente rincorre chi?');
+    expect(find.textContaining('norvente insegue felvario'),findsOneWidget);
+    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
+    expect(RelationalMemory324.stats(live.research)['current'],1);
+    expect(RelationalMemory324.stats(live.research)['history'],1);
+    expect(RelationalMemory324.answer(live.research,'Chi rincorre il talverio?'),startsWith('Non ho'));
+    await tester.tap(find.text('Mente'));await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('1 relazioni apprese'),250,
+      scrollable:find.byType(Scrollable).first);
+    await tester.pumpAndSettle();await tester.tap(find.text('1 relazioni apprese').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.text('Relazioni apprese'),findsOneWidget);
+    expect(find.textContaining('norvente → insegue → felvario'),findsOneWidget);
+    await tester.pageBack();await tester.pumpAndSettle();
+    await tester.tap(find.text('Mondo'));await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Visualizza mappa'),300,
+      scrollable:find.byType(Scrollable).first);
+    await tester.pumpAndSettle();await tester.tap(find.text('Visualizza mappa').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField),'norvente');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(find.text('Focus: norvente • 1 collegamenti'),findsOneWidget);
+    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
+    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
+    await store.close319();
+    await tester.pumpWidget(const MgdNeuro04App());await waitBoot319(tester);
+    await send('Chi rincorre il felvario?');
+    expect(find.textContaining('norvente insegue felvario'),findsOneWidget);
+    final restored=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
+    expect(RelationalMemory324.stats(restored.research)['history'],1);
+    print('ANDROID324 '+jsonEncode({'oneRead':true,'passiveParaphrase':true,
+      'correction':true,'history':true,'worldMap':true,'sqliteRestart':true}));
+    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
+    await store.clearAll();await store.close319();
   });
 }

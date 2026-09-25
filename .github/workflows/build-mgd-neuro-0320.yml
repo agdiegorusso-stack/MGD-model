@@ -1,4 +1,4 @@
-name: MGD Neuro 0.32.3 - Runtime and Android restart
+name: MGD Neuro 0.32.4 - Runtime and Android restart
 on:
   push:
     branches: [mgd-neuro-mobile]
@@ -37,21 +37,24 @@ jobs:
       - name: Dependencies
         working-directory: mgd-neuro-app
         run: flutter pub get
+      - name: Reproduce the supervised reader training
+        working-directory: mgd-neuro-app
+        run: node tool/train_reader_v0324.mjs --check
       - name: Unit and widget runtime regressions
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter test --reporter expanded 2>&1 | tee tests-0.32.3.log
+          flutter test --reporter expanded 2>&1 | tee tests-0.32.4.log
       - name: Measured one-pass learning benchmark
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          MGD_BENCHMARK_OUT=benchmark-0.32.3.json flutter test tool/learning_benchmark_v0321_test.dart --reporter expanded 2>&1 | tee benchmark-0.32.3.log
+          MGD_BENCHMARK_OUT=benchmark-0.32.4.json flutter test tool/learning_benchmark_v0321_test.dart --reporter expanded 2>&1 | tee benchmark-0.32.4.log
       - name: Static analysis
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.32.3.log
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.32.4.log
       - name: Enable Android KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -67,12 +70,12 @@ jobs:
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
-          script: cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-0.32.3.log'
+          script: cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-0.32.4.log'
       - name: Build signed release APK after Android passes
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter build apk --release --build-name 0.32.3 --build-number 62 2>&1 | tee build-0.32.3.log
+          flutter build apk --release --build-name 0.32.4 --build-number 63 2>&1 | tee build-0.32.4.log
       - name: Verify release identity and stable certificate
         run: |
           set -euo pipefail
@@ -81,22 +84,22 @@ jobs:
           SIGN=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
           "$AAPT" dump badging "$APK" | head -1 > mgd-neuro-app/APK-VERSION.txt
           grep -F "name='it.diegorusso.mgdneurostable'" mgd-neuro-app/APK-VERSION.txt
-          grep -F "versionName='0.32.3'" mgd-neuro-app/APK-VERSION.txt
-          grep -F "versionCode='62'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionName='0.32.4'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionCode='63'" mgd-neuro-app/APK-VERSION.txt
           "$SIGN" verify --verbose --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
           grep -Fi 'bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589' mgd-neuro-app/APK-SIGNATURE.txt
           sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
       - name: Upload verified APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.3-Android
+          name: MGD-Neuro-0.32.4-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
       - name: Upload exact sources
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.3-source
+          name: MGD-Neuro-0.32.4-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -110,18 +113,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.3-reports
+          name: MGD-Neuro-0.32.4-reports
           path: |
-            mgd-neuro-app/*-0.32.3.log
-            mgd-neuro-app/benchmark-0.32.3.json
+            mgd-neuro-app/*-0.32.4.log
+            mgd-neuro-app/benchmark-0.32.4.json
             mgd-neuro-app/APK-*.txt
             mgd-neuro-app/BUILD-COMMIT.txt
-            mgd-neuro-app/VERIFICA-0.32.3.md
+            mgd-neuro-app/VERIFICA-0.32.4.md
+            mgd-neuro-app/tool/reader-training-0324.json
           retention-days: 30
 
   comparison:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -129,40 +133,33 @@ jobs:
           flutter-version: '3.47.5'
           channel: stable
           cache: true
-      - name: MGD source-selection evaluation
+      - name: Reproducible reader and memory ablation
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
+          node tool/train_reader_v0324.mjs --check
           flutter pub get
-          flutter test tool/source_eval_v0323_test.dart --reporter expanded 2>&1 | tee source-eval-0.32.3.log
-      - name: Live Bioma reading diagnostic
-        working-directory: mgd-neuro-app
-        run: |
-          set -o pipefail
-          flutter test tool/live_bioma_v0323_test.dart --reporter expanded 2>&1 | tee live-bioma-0.32.3.log
-      - name: Install pinned CPU Transformer baseline
+          flutter test tool/relational_eval_v0324_test.dart --reporter expanded 2>&1 | tee relational-eval-0.32.4.log
+      - name: Pinned CPU Transformer dependencies
         run: |
           python3 -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install transformers==4.56.2
-      - name: Same-machine Transformer comparison
+      - name: Same facts and questions for the pretrained baseline
         working-directory: mgd-neuro-app
         env:
           HF_HUB_DISABLE_TELEMETRY: '1'
           TOKENIZERS_PARALLELISM: 'false'
         run: |
           set -o pipefail
-          python3 tool/transformer_comparison_v0323.py 2>&1 | tee transformer-comparison-0.32.3.log
-      - name: Upload comparison including failures
+          python3 tool/relational_transformer_v0324.py 2>&1 | tee relational-transformer-0.32.4.log
+      - name: Upload complete evaluation including failures
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.32.3-comparison
+          name: MGD-Neuro-0.32.4-comparison
           path: |
-            mgd-neuro-app/live-bioma-*.json
-            mgd-neuro-app/live-bioma-*.log
-            mgd-neuro-app/source-eval-*.json
-            mgd-neuro-app/source-eval-*.log
-            mgd-neuro-app/transformer-comparison-*.json
-            mgd-neuro-app/transformer-comparison-*.log
-            mgd-neuro-app/tool/source_eval_v0323.json
+            mgd-neuro-app/relational-*-0.32.4.*
+            mgd-neuro-app/tool/relational_eval_v0324.json
+            mgd-neuro-app/tool/reader-training-0324.json
+            mgd-neuro-app/lib/learned_reader_model_v0324.dart
           retention-days: 30

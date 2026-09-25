@@ -4,9 +4,12 @@ import 'plastic_language_brain_v04.dart';
 import 'sensory_world_v06.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'cognitive_induction_v024.dart';
+import 'relational_memory_v0324.dart';
+import 'learned_reader_v0324.dart';
 
 List<ExtractedClaim11> _extract321(WebDocument11 doc) => doc.text
     .split(RegExp(r'(?<=[.!?])\s+|\n+'))
+    .where((s) => !LearnedReader324.handles(s))
     .expand((s) => ResearchSemantics317.extractAny321(s, doc))
     .toList();
 
@@ -52,6 +55,7 @@ class CorpusSemanticBridge22 {
         url: 'local://corpus/$digest',
         text: text,
         trust: .75);
+    final learned324=await RelationalMemory324.learnAsync(memory,text,source:sourceName);
     final claims = await compute(_extract321, doc);
     final count = text
         .split(RegExp(r'(?<=[.!?])\s+|\n+'))
@@ -86,6 +90,7 @@ class CorpusSemanticBridge22 {
       cognitiveSummary = cognitive.summary;
       memory.state317['localSources321'] = sources.toList();
     }
+    session.audit315['learnedReader324']={'added':learned324.added,'unresolved':learned324.unresolved};
     session.completedAtIso = DateTime.now().toIso8601String();
     session.audit315['elapsedMicros321'] = clock.elapsedMicroseconds;
     world.runtime319['lastLearning321'] = {

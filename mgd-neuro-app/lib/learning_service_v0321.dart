@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'relational_memory_v0324.dart';
 
 import 'plastic_language_brain_v04.dart';
 import 'sensory_world_v06.dart';
@@ -30,6 +31,7 @@ class LearningService321 {
       }
     }
     if (memory != null) {
+      await RelationalMemory324.learnAsync(memory,text);
       final id = ResearchSemantics317.digest(ResearchSemantics317.norm(text));
       SourceMemory323.retain(memory, WebDocument11(provider: 'Testo insegnato',
         family: 'locale:utente', title: 'Testo insegnato',

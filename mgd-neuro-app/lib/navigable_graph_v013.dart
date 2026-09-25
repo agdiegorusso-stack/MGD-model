@@ -9,6 +9,8 @@ import 'package:file_picker/file_picker.dart';
 import 'plastic_language_brain_v04.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'mgd_language_v020.dart';
+import 'relational_memory_v0324.dart';
+import 'native_mgd_engine_v09.dart';
 
 typedef SemanticLink13 = ({
   String from,
@@ -156,6 +158,16 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
           .where((x) => x.confidence >= _minConfidence));
       nodes.addAll(widget.brain.entities.map((e) => e.label));
       if (research != null) {
+        for(final r in RelationalMemory324.rows(research,includeHistory:false)) {
+          links.add((
+            from:r['agent'].toString(),
+            relation:'insegnata: ${r['negative']==true?'non ':''}${r['relation']}',
+            to:r['patient'].toString(),
+            // Graph thickness is geometric strength, not factual confidence.
+            confidence:MgdMath09.strength(weight:(r['weight'] as num).toDouble(),
+              memory:(r['memory'] as num).toDouble(),material:(r['material'] as num).toDouble()),
+          ));
+        }
         for (final c in research.claims.values.where((c) =>
             {'documentata', 'accettata'}.contains(c.status) && !c.conflict)) {
           links.removeWhere((l) =>
