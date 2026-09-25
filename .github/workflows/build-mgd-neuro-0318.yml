@@ -1,0 +1,133 @@
+name: MGD Neuro 0.31.8 - Restore research intake
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths:
+      - 'mgd-neuro/v0318/**'
+      - '.github/workflows/build-mgd-neuro-0318.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mgd-research-0318-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mgd-neuro-prototype-signing-v1
+      - name: Check signing continuity
+        run: python3 mgd-neuro/v0315/ci.py signing
+      - name: Restore exact 0.31.7 production source
+        uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.7-source
+          run-id: 36133768553
+          github-token: ${{ github.token }}
+          path: mgd-neuro-app
+      - name: Apply hashed regression repair
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,base64,gzip,json
+          folder=Path('mgd-neuro/v0318')
+          raw=base64.b64decode((folder/'bundle.b64').read_text().strip(),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='80f340fd368737e1cae83e01c0c04ad7fd7f98d0dde11b4c1c727cc3d0d150c4'
+          out=folder/'expanded';out.mkdir(exist_ok=True)
+          for name,text in json.loads(gzip.decompress(raw)).items():
+            assert Path(name).name==name
+            (out/name).write_text(text)
+          PY
+          python3 mgd-neuro/v0318/expanded/apply.py mgd-neuro-app
+          cp mgd-neuro/v0318/expanded/research_v0318_test.dart mgd-neuro-app/test/
+          mkdir -p mgd-neuro-app/tool
+          cp mgd-neuro/v0318/expanded/probe0318.dart mgd-neuro-app/tool/
+          if test -f mgd-neuro/v0318/fixes.py; then python3 mgd-neuro/v0318/fixes.py mgd-neuro-app; fi
+          git rev-parse HEAD > mgd-neuro-app/BUILD-COMMIT.txt
+      - name: Generate Android project and permissions
+        run: python3 mgd-neuro/v0315/ci.py platform
+      - name: Dependencies
+        working-directory: mgd-neuro-app
+        run: flutter pub get
+      - name: Unit widget provider-path and recovery regressions
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee tests-0.31.8.log
+      - name: Static analysis
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.31.8.log
+      - name: Real providers end to end on both reported topics
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          dart run tool/probe0318.dart 2>&1 | tee live-probe0318.log
+      - name: Build signed release APK
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-name 0.31.8 --build-number 57 2>&1 | tee build-0.31.8.log
+      - name: Verify APK identity signature and digest
+        run: |
+          set -euo pipefail
+          APK=mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" > mgd-neuro-app/APK-BADGING.txt
+          head -1 mgd-neuro-app/APK-BADGING.txt > mgd-neuro-app/APK-VERSION.txt
+          cat mgd-neuro-app/APK-VERSION.txt
+          grep -F "name='it.diegorusso.mgdneurostable'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionName='0.31.8'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionCode='57'" mgd-neuro-app/APK-VERSION.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
+          grep -Fi 'bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589' mgd-neuro-app/APK-SIGNATURE.txt
+          sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
+      - name: Upload verified APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.8-Android
+          path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+      - name: Upload exact source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.8-source
+          path: |
+            mgd-neuro-app/lib
+            mgd-neuro-app/test
+            mgd-neuro-app/tool
+            mgd-neuro-app/pubspec.yaml
+            mgd-neuro-app/pubspec.lock
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
+      - name: Upload verification reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.8-reports
+          path: |
+            mgd-neuro-app/tests-0.31.8.log
+            mgd-neuro-app/analyze-0.31.8.log
+            mgd-neuro-app/live-probe0318.log
+            mgd-neuro-app/live-0318.json
+            mgd-neuro-app/build-0.31.8.log
+            mgd-neuro-app/APK-VERSION.txt
+            mgd-neuro-app/APK-SIGNATURE.txt
+            mgd-neuro-app/APK-SHA256.txt
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
