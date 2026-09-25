@@ -57,7 +57,7 @@ void main() {
         brain: b, world: w, memory: m);
     latencies.sort();
     final report = <String,dynamic>{
-      'version': '0.32.1', 'seed': 3212026, 'platform': Platform.operatingSystem,
+      'version': '0.32.2', 'seed': 3212026, 'platform': Platform.operatingSystem,
       'scope': 'Structured source-attributed questions and explicit class transitivity; synthetic Italian templates.',
       'trainingSentenceExposures': sentences.length, 'trainingPasses': 1,
       'trainingMs': training.elapsedMicroseconds / 1000,

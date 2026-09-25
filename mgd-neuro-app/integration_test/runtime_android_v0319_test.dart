@@ -24,6 +24,26 @@ Future<void> waitBoot319(WidgetTester tester) async {
   fail('Application did not expose its loaded memory within 30s');
 }
 
+Future<void> searchCiao322(WidgetTester tester) async {
+  await tester.tap(find.text('Mondo'));
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(find.text('Visualizza mappa'), 300,
+      scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Visualizza mappa').hitTestable());
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byType(TextField), 'ciao');
+  await tester.testTextInput.receiveAction(TextInputAction.search);
+  await tester.pumpAndSettle();
+  expect(find.text('Focus: ciao • 0 collegamenti'), findsOneWidget);
+  expect(find.byKey(const ValueKey('knowledge-map-nodes')), findsOneWidget);
+  expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Lingua'))
+          .selected,
+      true);
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
@@ -131,7 +151,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.32.1'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.32.2'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;
@@ -281,6 +301,56 @@ void main() {
           'restart': true,
           'sentences': after.research.lastSession!.sentencesRead,
           'documented': after.metricRows('Documentate').length
+        })}');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.clearAll();
+    await store.close319();
+  });
+
+  testWidgets(
+      'Android chat word appears in map before and after SQLite restore',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    await MemoryCheckpoint319().save(
+        PlasticLanguageBrain04(),
+        MgdWorld06(),
+        ResearchMemory11(enabled: false)
+          ..state317
+              .addAll({'migrationComplete': true, 'recovery320Complete': true}),
+        MgdLanguage20());
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    await tester.enterText(find.byType(TextField), 'ciao');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    for (var n = 0; n < 150; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      final send = find.ancestor(
+          of: find.byIcon(Icons.arrow_upward),
+          matching: find.byType(IconButton));
+      if (send.evaluate().isNotEmpty &&
+          tester.widget<IconButton>(send).onPressed != null) break;
+    }
+    final before = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(before.language.tokenCount['ciao'], 1);
+    await searchCiao322(tester);
+    await MemoryCheckpoint319()
+        .save(before.brain, before.world, before.research, before.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.close319();
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    await searchCiao322(tester);
+    print('ANDROID322 ${jsonEncode({
+          'chatWord': 'ciao',
+          'foundInLanguageMap': true,
+          'isolatedNodeVisible': true,
+          'restart': true
         })}');
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

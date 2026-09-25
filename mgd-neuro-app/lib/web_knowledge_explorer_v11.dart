@@ -514,9 +514,9 @@ class ResearchMemory11 {
   ResearchSession11? get lastSession => sessions.isEmpty ? null : sessions.last;
   int get unresolvedPassages => passages.where((p) => !p.structured).length;
   Iterable<ResearchPassage11> get pendingPassages321 => passages
-      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '321');
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '322');
   Iterable<ResearchPassage11> get uninterpretedPassages321 => passages
-      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '321');
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '322');
 
   int get requestsToday321 {
     final t = DateTime.now();
@@ -1079,6 +1079,48 @@ class WebKnowledgeExplorer11 {
         });
       }
       docs.removeWhere((d) => rejected.contains(d));
+      // A label imported as "A o B" may contain alternative descriptions.
+      // Retry the parts only after the complete label yields no relevant
+      // document, and preserve the page's own subject instead of asserting
+      // that the alternatives are equivalent entities.
+      if (docs.isEmpty) {
+        for (final part in alternativeTopics322(topic)) {
+          final alternatives = await safeDocs('Wikipedia IT', _wikipedia(part));
+          for (final d in alternatives) {
+            final partialGoal = ResearchGoal11(
+                query: part,
+                topic: part,
+                reason: 'argomento parziale',
+                value: goal.value);
+            if (!documentMatches320(partialGoal, d) ||
+                docs.any((old) => old.url == d.url)) continue;
+            seen.add(d.url);
+            docs.add(WebDocument11(
+                provider: d.provider,
+                family: d.family,
+                title: d.title,
+                url: d.url,
+                text: d.text,
+                trust: d.trust,
+                meta318: {
+                  ...d.meta318,
+                  'requestedTopic': topic,
+                  'resolvedTopic': false,
+                  'partialTopic322': part,
+                  'resolution':
+                      'Argomento parziale: $part; non equivalenza con tutta la ricerca.'
+                }));
+            diagnostics.add({
+              'provider': d.provider,
+              'status': 'argomento parziale',
+              'requestedTopic': topic,
+              'matchedTopic': part,
+              'title': d.title,
+              'url': d.url
+            });
+          }
+        }
+      }
       docs.sort((a, b) => (b.meta318['resolvedTopic'] == true ? 1 : 0)
           .compareTo(a.meta318['resolvedTopic'] == true ? 1 : 0));
 
@@ -1337,7 +1379,7 @@ class WebKnowledgeExplorer11 {
     for (final p in pending) {
       p.attempts++;
       p.lastAttemptIso = now;
-      p.meta318['extractorAttempt321'] = '321';
+      p.meta318['extractorAttempt321'] = '322';
       final doc = WebDocument11(
           provider: p.provider,
           family: p.sourceFamily,
@@ -1900,7 +1942,24 @@ class WebKnowledgeExplorer11 {
     return italian >= english && italian >= 1;
   }
 
+  static List<String> alternativeTopics322(String topic) {
+    final parts = topic
+        .split(RegExp(r'\s+(?:o|oppure)\s+', caseSensitive: false))
+        .map((s) => s.trim())
+        .where((s) => s.length >= 2 && s.length <= 80)
+        .toSet();
+    return parts.length >= 2 && parts.length <= 3 ? parts.toList() : const [];
+  }
+
   static bool documentMatches320(ResearchGoal11 goal, WebDocument11 doc) {
+    final partial = doc.meta318['partialTopic322'];
+    if (partial is String &&
+        alternativeTopics322(goal.topic).contains(partial)) {
+      final hay =
+          ' ${ResearchSemantics317.concept('${doc.title} ${doc.text}')} ';
+      if (hay.contains(' ${ResearchSemantics317.concept(partial)} '))
+        return true;
+    }
     if (doc.meta318['resolvedTopic'] == true &&
         ResearchSemantics317.sameSubject(
             '${doc.meta318['requestedTopic'] ?? goal.topic}', goal.topic))

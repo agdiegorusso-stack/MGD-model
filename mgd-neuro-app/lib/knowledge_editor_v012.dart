@@ -52,18 +52,27 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: s, decoration: const InputDecoration(labelText: 'Soggetto')),
+              TextField(
+                  controller: s,
+                  decoration: const InputDecoration(labelText: 'Soggetto')),
               const SizedBox(height: 8),
-              TextField(controller: r, decoration: const InputDecoration(labelText: 'Relazione')),
+              TextField(
+                  controller: r,
+                  decoration: const InputDecoration(labelText: 'Relazione')),
               const SizedBox(height: 8),
-              TextField(controller: o, decoration: const InputDecoration(labelText: 'Oggetto')),
+              TextField(
+                  controller: o,
+                  decoration: const InputDecoration(labelText: 'Oggetto')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla')),
           FilledButton(
-            onPressed: () => Navigator.pop(context, [s.text.trim(), r.text.trim(), o.text.trim()]),
+            onPressed: () => Navigator.pop(
+                context, [s.text.trim(), r.text.trim(), o.text.trim()]),
             child: const Text('Salva'),
           ),
         ],
@@ -78,7 +87,8 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
   Future<void> _addFact() async {
     final v = await _tripleDialog(title: 'Nuovo collegamento');
     if (v == null || v.any((x) => x.isEmpty)) return;
-    widget.brain.upsertManualFact12(subject: v[0], relation: v[1], object: v[2]);
+    widget.brain
+        .upsertManualFact12(subject: v[0], relation: v[1], object: v[2]);
     await _persist('Collegamento aggiunto: ${v[0]} — ${v[1]} → ${v[2]}');
   }
 
@@ -100,7 +110,8 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
   }
 
   Future<void> _deleteFact(EditableFact12 fact) async {
-    final ok = await _confirm('Eliminare “${fact.subject} — ${fact.relation} → ${fact.object}”?');
+    final ok = await _confirm(
+        'Eliminare “${fact.subject} — ${fact.relation} → ${fact.object}”?');
     if (!ok) return;
     widget.brain.deleteFact12(
       subjectId: fact.subjectId,
@@ -118,8 +129,12 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
           title: const Text('Conferma'),
           content: Text(text),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sì')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('No')),
+            FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Sì')),
           ],
         ),
       ) ??
@@ -131,10 +146,17 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Rinomina entità'),
-        content: TextField(controller: c, autofocus: true, decoration: const InputDecoration(labelText: 'Nome')),
+        content: TextField(
+            controller: c,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Nome')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-          FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: const Text('Salva')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, c.text.trim()),
+              child: const Text('Salva')),
         ],
       ),
     );
@@ -148,10 +170,12 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
   }
 
   Future<void> _removeEntityFacts(EntityMemory04 entity) async {
-    final ok = await _confirm('Rimuovere tutti i fatti che coinvolgono “${entity.label}”? L’entità resterà disponibile per non spezzare gli ID persistenti.');
+    final ok = await _confirm(
+        'Rimuovere tutti i fatti che coinvolgono “${entity.label}”? L’entità resterà disponibile per non spezzare gli ID persistenti.');
     if (!ok) return;
     final n = widget.brain.removeFactsForEntity12(entity.id);
-    widget.world.edges.removeWhere((_, e) => e.a == 'e:${entity.id}' || e.b == 'e:${entity.id}');
+    widget.world.edges.removeWhere(
+        (_, e) => e.a == 'e:${entity.id}' || e.b == 'e:${entity.id}');
     await _persist('$n fatti rimossi da ${entity.label}.');
   }
 
@@ -163,25 +187,39 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: Text(edge == null ? 'Nuovo legame geometrico MGD' : 'Modifica legame MGD'),
+          title: Text(edge == null
+              ? 'Nuovo legame geometrico MGD'
+              : 'Modifica legame MGD'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: a, enabled: edge == null, decoration: const InputDecoration(labelText: 'Entità A')),
+                TextField(
+                    controller: a,
+                    enabled: edge == null,
+                    decoration: const InputDecoration(labelText: 'Entità A')),
                 const SizedBox(height: 8),
-                TextField(controller: b, enabled: edge == null, decoration: const InputDecoration(labelText: 'Entità B')),
+                TextField(
+                    controller: b,
+                    enabled: edge == null,
+                    decoration: const InputDecoration(labelText: 'Entità B')),
                 const SizedBox(height: 12),
                 Text('Forza ${(strength * 100).round()}%'),
-                Slider(value: strength, onChanged: (v) => setLocal(() => strength = v)),
-                const Text('Questo modifica direttamente il peso geometrico w e la memoria del legame.'),
+                Slider(
+                    value: strength,
+                    onChanged: (v) => setLocal(() => strength = v)),
+                const Text(
+                    'Questo modifica direttamente il peso geometrico w e la memoria del legame.'),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annulla')),
             FilledButton(
-              onPressed: () => Navigator.pop(context, (a: a.text.trim(), b: b.text.trim(), strength: strength)),
+              onPressed: () => Navigator.pop(context,
+                  (a: a.text.trim(), b: b.text.trim(), strength: strength)),
               child: const Text('Salva'),
             ),
           ],
@@ -207,10 +245,17 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Ricollega ${p.modality} #${p.id}'),
-        content: TextField(controller: c, autofocus: true, decoration: const InputDecoration(labelText: 'Entità')),
+        content: TextField(
+            controller: c,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Entità')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-          FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: const Text('Collega')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, c.text.trim()),
+              child: const Text('Collega')),
         ],
       ),
     );
@@ -236,7 +281,8 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
       relation: v[1],
       object: v[2],
     );
-    await _persist('Conoscenza web corretta dall’utente e promossa a fonte umana.');
+    await _persist(
+        'Conoscenza web corretta dall’utente e promossa a fonte umana.');
   }
 
   Future<void> _quarantineClaim(ResearchClaim11 claim) async {
@@ -245,9 +291,12 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
   }
 
   Future<void> _deleteClaim(ResearchClaim11 claim) async {
-    final ok = await _confirm('Eliminare la conoscenza ricercata e il corrispondente fatto dal cervello?');
+    final ok = await _confirm(
+        'Eliminare la conoscenza ricercata e il corrispondente fatto dal cervello?');
     if (!ok) return;
-    widget.brain.deleteFactByLabels12(claim.subject, claim.relation, claim.object, deleteSourceEpisodes: true);
+    widget.brain.deleteFactByLabels12(
+        claim.subject, claim.relation, claim.object,
+        deleteSourceEpisodes: true);
     widget.research.claims.remove(claim.key);
     await _persist('Conoscenza ricercata eliminata.');
   }
@@ -297,14 +346,19 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        FilledButton.icon(onPressed: _addFact, icon: const Icon(Icons.add_link), label: const Text('Aggiungi nuovo collegamento')),
+        FilledButton.icon(
+            onPressed: _addFact,
+            icon: const Icon(Icons.add_link),
+            label: const Text('Aggiungi nuovo collegamento')),
         const SizedBox(height: 8),
-        const Text('Questi sono i fatti semantici usati dal cervello per rispondere e ragionare.'),
+        const Text(
+            'Relazioni memorizzate dal motore. Il punteggio guida il recupero: non è una probabilità di correttezza.'),
         const Divider(),
         ...facts.map((f) => ListTile(
               leading: const Icon(Icons.hub_outlined),
               title: Text('${f.subject} — ${f.relation} → ${f.object}'),
-              subtitle: Text('Confidenza ${(f.confidence * 100).round()}%'),
+              subtitle:
+                  Text('Punteggio interno ${f.confidence.toStringAsFixed(2)}'),
               trailing: PopupMenuButton<String>(
                 onSelected: (v) {
                   if (v == 'edit') _editFact(f);
@@ -321,16 +375,20 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
   }
 
   Widget _entitiesTab() {
-    final entities = widget.brain.entities.where((e) => e.kind != 'self' && e.kind != 'user').toList();
+    final entities = widget.brain.entities
+        .where((e) => e.kind != 'self' && e.kind != 'user')
+        .toList();
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        const Text('Rinomina le entità o rimuovi i fatti collegati senza spezzare gli ID persistenti del cervello.'),
+        const Text(
+            'Rinomina le entità o rimuovi i fatti collegati senza spezzare gli ID persistenti del cervello.'),
         const Divider(),
         ...entities.map((e) => ListTile(
               leading: const Icon(Icons.circle_outlined),
               title: Text(e.label),
-              subtitle: Text('id ${e.id} • ${e.mentions} menzioni • ${e.aliases.length} alias'),
+              subtitle: Text(
+                  'id ${e.id} • ${e.mentions} menzioni • ${e.aliases.length} alias'),
               trailing: PopupMenuButton<String>(
                 onSelected: (v) {
                   if (v == 'rename') _renameEntity(e);
@@ -338,7 +396,9 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
                 },
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: 'rename', child: Text('Rinomina')),
-                  PopupMenuItem(value: 'removeFacts', child: Text('Rimuovi fatti e legami')),
+                  PopupMenuItem(
+                      value: 'removeFacts',
+                      child: Text('Rimuovi fatti e legami')),
                 ],
               ),
             )),
@@ -351,24 +411,33 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        FilledButton.icon(onPressed: () => _worldLinkDialog(), icon: const Icon(Icons.add), label: const Text('Aggiungi legame geometrico')),
+        FilledButton.icon(
+            onPressed: () => _worldLinkDialog(),
+            icon: const Icon(Icons.add),
+            label: const Text('Aggiungi legame geometrico')),
         const SizedBox(height: 8),
-        const Text('I legami MGD controllano prossimità, attivazione, memoria m, materia M e propagazione nel world model.'),
+        const Text(
+            'I legami MGD controllano prossimità, attivazione, memoria m, materia M e propagazione nel world model.'),
         const Divider(),
         ...edges.map((e) => ListTile(
               leading: Icon(e.active ? Icons.link : Icons.link_off),
               title: Text('${e.aLabel} ↔ ${e.bLabel}'),
-              subtitle: Text('forza ${(e.strength * 100).round()}% • w ${e.cost.toStringAsFixed(2)} • m ${e.memory.toStringAsFixed(2)} • M ${e.material.toStringAsFixed(2)} • κ ${e.curvature.toStringAsFixed(2)}'),
+              subtitle: Text(
+                  'forza ${(e.strength * 100).round()}% • w ${e.cost.toStringAsFixed(2)} • m ${e.memory.toStringAsFixed(2)} • M ${e.material.toStringAsFixed(2)} • κ ${e.curvature.toStringAsFixed(2)}'),
               trailing: PopupMenuButton<String>(
                 onSelected: (v) async {
-                  if (v == 'edit' && e.a.startsWith('e:') && e.b.startsWith('e:')) await _worldLinkDialog(edge: e);
+                  if (v == 'edit' &&
+                      e.a.startsWith('e:') &&
+                      e.b.startsWith('e:')) await _worldLinkDialog(edge: e);
                   if (v == 'delete') {
                     widget.world.deleteWorldEdge12(e.key);
                     await _persist('Legame MGD eliminato.');
                   }
                 },
                 itemBuilder: (_) => [
-                  if (e.a.startsWith('e:') && e.b.startsWith('e:')) const PopupMenuItem(value: 'edit', child: Text('Modifica forza')),
+                  if (e.a.startsWith('e:') && e.b.startsWith('e:'))
+                    const PopupMenuItem(
+                        value: 'edit', child: Text('Modifica forza')),
                   const PopupMenuItem(value: 'delete', child: Text('Elimina')),
                 ],
               ),
@@ -381,12 +450,15 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        const Text('Puoi correggere direttamente quale entità è associata a ogni pattern visivo o uditivo.'),
+        const Text(
+            'Puoi correggere direttamente quale entità è associata a ogni pattern visivo o uditivo.'),
         const Divider(),
         ...widget.world.prototypes.map((p) => ListTile(
-              leading: Icon(p.modality == 'vision' ? Icons.visibility : Icons.hearing),
+              leading: Icon(
+                  p.modality == 'vision' ? Icons.visibility : Icons.hearing),
               title: Text(p.label ?? '${p.modality} #${p.id}'),
-              subtitle: Text('${p.observations} osservazioni • stabilità ${(p.stability * 100).round()}% • entity ${p.semanticEntityId ?? '—'}'),
+              subtitle: Text(
+                  '${p.observations} osservazioni • stabilità ${(p.stability * 100).round()}% • entity ${p.semanticEntityId ?? '—'}'),
               trailing: PopupMenuButton<String>(
                 onSelected: (v) async {
                   if (v == 'rebind') await _rebind(p);
@@ -406,18 +478,26 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
   }
 
   Widget _researchTab() {
-    final claims = widget.research.claims.values.toList()..sort((a, b) => b.lastSeenIso.compareTo(a.lastSeenIso));
+    final claims = widget.research.claims.values.toList()
+      ..sort((a, b) => b.lastSeenIso.compareTo(a.lastSeenIso));
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        FilledButton.tonalIcon(onPressed: _cleanUnsafeWeb, icon: const Icon(Icons.cleaning_services), label: const Text('Quarantena conoscenza web debole/ambigua')),
+        FilledButton.tonalIcon(
+            onPressed: _cleanUnsafeWeb,
+            icon: const Icon(Icons.cleaning_services),
+            label: const Text('Quarantena conoscenza web debole/ambigua')),
         const SizedBox(height: 8),
-        Text('Testi non strutturati conservati: ${widget.research.unresolvedPassages}'),
+        Text(
+            'Testi non strutturati conservati: ${widget.research.unresolvedPassages}'),
         const Divider(),
         ...claims.map((c) => ListTile(
-              leading: Icon(c.status == 'quarantena' || c.status == 'dubbia' ? Icons.warning_amber : Icons.manage_search),
+              leading: Icon(c.status == 'quarantena' || c.status == 'dubbia'
+                  ? Icons.warning_amber
+                  : Icons.manage_search),
               title: Text('${c.subject} — ${c.relation} → ${c.object}'),
-              subtitle: Text('${c.status.toUpperCase()} • ${(c.confidence * 100).round()}% • ${c.independentSourceCount} famiglie di fonte • ${c.evidenceCount} evidenze'),
+              subtitle: Text(
+                  '${c.status.toUpperCase()} • ${(c.confidence * 100).round()}% • ${c.independentSourceCount} famiglie di fonte • ${c.evidenceCount} evidenze'),
               trailing: PopupMenuButton<String>(
                 onSelected: (v) {
                   if (v == 'edit') _editClaim(c);
@@ -425,8 +505,10 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
                   if (v == 'delete') _deleteClaim(c);
                 },
                 itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Correggi manualmente')),
-                  PopupMenuItem(value: 'quarantine', child: Text('Metti in quarantena')),
+                  PopupMenuItem(
+                      value: 'edit', child: Text('Correggi manualmente')),
+                  PopupMenuItem(
+                      value: 'quarantine', child: Text('Metti in quarantena')),
                   PopupMenuItem(value: 'delete', child: Text('Elimina')),
                 ],
               ),
@@ -452,7 +534,8 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
         ...thoughts.map((t) => ListTile(
               leading: const Icon(Icons.psychology_alt_outlined),
               title: Text(t.hypothesis),
-              subtitle: Text('focus: ${t.focus.join(' · ')} • ${(t.coherence * 100).round()}%'),
+              subtitle: Text(
+                  'focus: ${t.focus.join(' · ')} • ${(t.coherence * 100).round()}%'),
               trailing: IconButton(
                 onPressed: () async {
                   widget.world.deleteThought12(t);
@@ -469,11 +552,18 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('Esporta la conoscenza per riutilizzarla o salva l’intero cervello con mondo, sensori, ricerca e stato MGD.'),
+        const Text(
+            'Esporta la conoscenza per riutilizzarla o salva l’intero cervello con mondo, sensori, ricerca e stato MGD.'),
         const SizedBox(height: 16),
-        FilledButton.icon(onPressed: widget.onExportPack, icon: const Icon(Icons.ios_share), label: const Text('Esporta knowledge pack (.mgdpack)')),
+        FilledButton.icon(
+            onPressed: widget.onExportPack,
+            icon: const Icon(Icons.ios_share),
+            label: const Text('Esporta knowledge pack (.mgdpack)')),
         const SizedBox(height: 10),
-        FilledButton.tonalIcon(onPressed: widget.onExportSnapshot, icon: const Icon(Icons.backup_outlined), label: const Text('Esporta snapshot completo (.mgdbrain)')),
+        FilledButton.tonalIcon(
+            onPressed: widget.onExportSnapshot,
+            icon: const Icon(Icons.backup_outlined),
+            label: const Text('Esporta snapshot completo (.mgdbrain)')),
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: () async {
@@ -484,7 +574,8 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
           label: const Text('Importa / ripristina snapshot'),
         ),
         const SizedBox(height: 16),
-        const Text('Il knowledge pack contiene fatti e legami semantici ed è portabile. Lo snapshot completo conserva anche episodi, pesi MGD, memoria m/M, pattern sensoriali, pensieri e provenienza della ricerca.'),
+        const Text(
+            'Il knowledge pack contiene fatti e legami semantici ed è portabile. Lo snapshot completo conserva anche episodi, pesi MGD, memoria m/M, pattern sensoriali, pensieri e provenienza della ricerca.'),
       ],
     );
   }

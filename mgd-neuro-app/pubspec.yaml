@@ -1,7 +1,7 @@
 name: mgd_neuro_mobile
 description: MGD-Neuro 0.6 - multimodal MGD continual-learning brain for Android.
 publish_to: 'none'
-version: 0.32.1+60
+version: 0.32.2+61
 
 environment:
   sdk: '>=3.4.0 <4.0.0'

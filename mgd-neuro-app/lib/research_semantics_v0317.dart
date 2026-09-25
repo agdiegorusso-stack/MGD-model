@@ -193,6 +193,63 @@ class ResearchSemantics317 {
       jsonEncode(a.meta317['qualifiers'] ?? {}) ==
           jsonEncode(b.meta317['qualifiers'] ?? {});
 
+  static final _domainLead322 = RegExp(
+      r'^In\s+(?:chimica|biologia|fisica|matematica|medicina|ecologia|genetica)\s*,\s*',
+      caseSensitive: false);
+
+  static bool _invalidSubject322(String subject) =>
+      subject.contains(RegExp(r'[,;:]')) ||
+      RegExp(r'^(?:uno|una|due|tre|[0-9]+)\s+(?:dei|degli|delle|di)\b',
+              caseSensitive: false)
+          .hasMatch(subject.trim());
+
+  static bool _ambiguousCopula322(String subject, String object) {
+    if (!RegExp(r'^(?:il|lo|la|i|gli|le)\s+|^l[’\x27]', caseSensitive: false)
+        .hasMatch(object.trim())) return false;
+    // A definite nominal can be a description of the same class ("gli
+    // amminoacidi che..."). A different head can instead be inverse naming
+    // or enumeration; this reader cannot safely turn it into X is-a Y.
+    final s = concept(subject).split(' ').first;
+    final o = concept(object).split(' ').first;
+    return s != o;
+  }
+
+  static String? extractionIssue322(ResearchClaim11 claim) {
+    if (claim.meta317['extractor'] != 'rules317') return null;
+    if (_invalidSubject322(claim.subject))
+      return 'Il soggetto contiene un inciso o un’enumerazione non risolta.';
+    if (relation(claim.relation) == 'tipo di' &&
+        claim.meta317['classRelation321'] != true &&
+        _ambiguousCopula322(claim.subject, claim.object))
+      return 'Copula ambigua: il testo non giustifica una relazione di appartenenza a una classe.';
+    return null;
+  }
+
+  static int reviewExtractions322(
+      PlasticLanguageBrain04 brain, MgdWorld06 world, ResearchMemory11 memory) {
+    if (memory.state317['extractionReview322Complete'] == true) return 0;
+    var changed = 0;
+    for (final c in memory.claims.values) {
+      final reason = extractionIssue322(c);
+      if (reason == null || c.status == 'corretta_utente') continue;
+      c.meta317['extractionReview322'] = reason;
+      final before = c.status;
+      reevaluate(brain, world, memory, c);
+      for (final s in memory.sessions) {
+        if ((s.audit315['decisions'] as List? ?? [])
+            .whereType<Map>()
+            .any((d) => d['claimKey'] == c.key)) {
+          _recordDecision(s, c, before);
+          _summary(memory, s);
+        }
+      }
+      changed++;
+    }
+    memory.state317['extractionReview322Complete'] = true;
+    memory.state317['extractionReview322Count'] = changed;
+    return changed;
+  }
+
   static List<ExtractedClaim11> extract(
     String subject,
     String sentence,
@@ -203,7 +260,8 @@ class ResearchSemantics317 {
         .replaceAll(RegExp(r'\[[0-9, –-]+\]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
-    if (text.length < 8 || text.length > 1400) return [];
+    if (text.length < 8 || text.length > 1400 || _invalidSubject322(subject))
+      return [];
     // Parentheses may contain conditions; do not erase them from evidence.
     if (RegExp(
       r'\b(?:se|qualora|forse|potrebbe|potrebbero|might|may|could|if|unless)\b',
@@ -211,7 +269,8 @@ class ResearchSemantics317 {
     ).hasMatch(text)) return [];
     final terms = tokens(subject);
     if (terms.isEmpty) return [];
-    var body = text;
+    final domain = _domainLead322.firstMatch(text);
+    var body = domain == null ? text : text.substring(domain.end);
     body = body.replaceFirst(
       RegExp(
         r'^(?:il|lo|la|i|gli|le|un|uno|una|the|a|an)\s+|^l[’\x27]',
@@ -223,7 +282,9 @@ class ResearchSemantics317 {
       r'^(alcuni|alcune|molti|molte|some|many|tutti|tutte|all)\s+',
       caseSensitive: false,
     ).firstMatch(body);
-    final qualifiers = <String, dynamic>{};
+    final qualifiers = <String, dynamic>{
+      if (domain != null) 'domainContext': domain.group(0)!.trim(),
+    };
     if (scope != null) {
       qualifiers['scope'] = scope.group(1)!.toLowerCase();
       body = body.substring(scope.end);
@@ -355,6 +416,7 @@ class ResearchSemantics317 {
       final m = RegExp(r.pattern, caseSensitive: false).firstMatch(body);
       if (m == null) continue;
       var object = m.group(1)!.replaceAll(RegExp(r'[.;:]+$'), '').trim();
+      if (r == rules.last && _ambiguousCopula322(subject, object)) return [];
       if (r.rel == 'tipo di' &&
           RegExp(
             r'^(?:non|not|stato|stata|stati|state|studiat|usato|usata|used|studied|found|shown|associat|dovut|causat|situat|compost|costituit)',
@@ -408,7 +470,7 @@ class ResearchSemantics317 {
     final m = RegExp(
             r'^(.{2,100}?)\s+(?=(?:non\s+)?(?:è|sono|ha|hanno|contiene|contengono|comprende|comprendono|serve|servono|consente|consentono|permette|permettono|fa|fanno|si trova|si trovano|vive|vivono|mangia|mangiano|studia|studiano|produce|producono|unisce|uniscono)\s)',
             caseSensitive: false)
-        .firstMatch(sentence.trim());
+        .firstMatch(sentence.trim().replaceFirst(_domainLead322, ''));
     if (m == null) return [];
     final subject = m[1]!.replaceFirst(
         RegExp(r'^(?:il|lo|la|i|gli|le|un|uno|una)\s+|^l[’\x27]',
@@ -659,7 +721,7 @@ class ResearchSemantics317 {
     session.providers = documents.values.map((d) => d.provider).toSet().length;
     session.families = documents.values.map(family).toSet().length;
     session.audit315.addAll({
-      'version': '0.32.1',
+      'version': '0.32.2',
       'documents': documents.values.map(docMap).toList(),
       'providerDiagnostics': draft.diagnostics318,
       'decisions': <Map<String, dynamic>>[],
@@ -799,6 +861,8 @@ class ResearchSemantics317 {
   }
 
   static bool needsMaintenance(ResearchMemory11 m) =>
+      (m.claims.isNotEmpty &&
+          m.state317['extractionReview322Complete'] != true) ||
       needsRecovery318(m) ||
       m.state317['migrationComplete'] != true ||
       getPending(m) > 0 ||
@@ -1318,11 +1382,15 @@ class ResearchSemantics317 {
       ..clear()
       ..addAll(direct.map((e) => e.provider));
     c.conflict = direct.isNotEmpty && negatives.isNotEmpty;
-    final suspicious = WebKnowledgeExplorer11._suspiciousKnowledge12(
-      c.subject,
-      c.relation,
-      c.object,
-    );
+    final extractionIssue = extractionIssue322(c);
+    if (extractionIssue != null)
+      c.meta317['extractionReview322'] = extractionIssue;
+    final suspicious = extractionIssue != null ||
+        WebKnowledgeExplorer11._suspiciousKnowledge12(
+          c.subject,
+          c.relation,
+          c.object,
+        );
     final n = c.sourceFamilies.length;
     c.status = c.conflict || suspicious || negatives.isNotEmpty
         ? 'quarantena'

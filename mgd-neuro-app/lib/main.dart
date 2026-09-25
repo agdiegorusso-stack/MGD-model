@@ -48,7 +48,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.32.1',
+      title: 'MGD Neuro 0.32.2',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -284,8 +284,13 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           _researchBusy ||
           !_uiIdle18 ||
           _chat.text.isNotEmpty) {
-        _world.runtime319['state'] =
-            'in pausa per interazione o app non in primo piano';
+        _world.runtime319['state'] = _lifecycle319 != AppLifecycleState.resumed
+            ? 'in pausa: app non in primo piano'
+            : _researchBusy
+                ? 'in pausa durante la ricerca web'
+                : _busy
+                    ? 'in pausa durante un’operazione'
+                    : 'in pausa durante l’interazione';
         return;
       }
       if (_maintenance317) {
@@ -439,6 +444,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         _status =
             'Riesame completato. Originali conservati nel backup pre-0.31.7.';
       }
+      ResearchSemantics317.reviewExtractions322(
+          _brain, _world, _researchMemory);
       // Backfill language independently from claim acceptance, without repeating sentences.
       for (final doc in ResearchSemantics317.pendingLanguage320(_researchMemory)
           .take(32)) {
@@ -702,6 +709,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      _language20.ingestText(text, reward: 0.38);
       final questionAnswer316 = _world.consumeCuriosityAnswer09(_brain, text);
       if (questionAnswer316 != null) {
         try {
@@ -753,7 +761,6 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
               fluent ??
               semanticAnswer ??
               'Ho incorporato questa esperienza.');
-      _language20.ingestText(text, reward: 0.38);
       // A generated answer is not a new linguistic observation.
       _world.integrateLanguageExperience09(
         _brain,
@@ -1515,7 +1522,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.32.1')),
+          appBar: AppBar(title: const Text('MGD Neuro 0.32.2')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1559,6 +1566,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       ),
       _WorldPage07(
         brain: _brain,
+        language: _language20,
         world: _world,
         research: _researchMemory,
         last: _lastSense,
@@ -1593,7 +1601,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.32.1'),
+        title: const Text('MGD Neuro 0.32.2'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -1931,6 +1939,7 @@ class LivePage07 extends StatelessWidget {
 }
 
 class _WorldPage07 extends StatelessWidget {
+  final MgdLanguage20 language;
   final PlasticLanguageBrain04 brain;
   final MgdWorld06 world;
   final ResearchMemory11 research;
@@ -1940,6 +1949,7 @@ class _WorldPage07 extends StatelessWidget {
   final Future<void> Function() onEdit;
 
   const _WorldPage07({
+    required this.language,
     required this.brain,
     required this.world,
     required this.research,
@@ -2072,8 +2082,8 @@ class _WorldPage07 extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) =>
-                          SemanticMapPage14(brain: brain, research: research),
+                      builder: (_) => SemanticMapPage14(
+                          brain: brain, research: research, language: language),
                     ),
                   ),
                   icon: const Icon(Icons.open_in_full),
@@ -2235,7 +2245,7 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.32.1',
+                          Text('Memorie MGD 0.32.2',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(
