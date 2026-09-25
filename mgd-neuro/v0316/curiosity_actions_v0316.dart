@@ -21,6 +21,7 @@ class _CuriosityActions316State extends State<CuriosityActions316> {
   bool get _active => widget.world.pendingCuriosityKey316 == widget.questionKey;
   Future<void> _act(String action) async {
     if (_running || widget.busy || !_active) return;
+    final releaseBusy = widget.onBusy;
     setState(() => _running = true);
     widget.onBusy(true);
     try {
@@ -61,7 +62,9 @@ class _CuriosityActions316State extends State<CuriosityActions316> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Operazione o salvataggio non completato: $e')));
     } finally {
-      if (mounted) { setState(() => _running = false); widget.onBusy(false); }
+      if (mounted) setState(() => _running = false);
+      // Appending replies may recycle this ListView item while saving.
+      releaseBusy(false);
     }
   }
   @override
