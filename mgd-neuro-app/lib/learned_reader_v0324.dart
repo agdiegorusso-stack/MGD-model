@@ -37,6 +37,8 @@ class LearnedReader324 {
     'oppure','perché','perche','mentre','quindi','dice','afferma',
     'sostiene','pensa','crede','secondo','prima','dopo','domani','ieri',
     'e','o','ma','né','ne','che','cui','avrebbe','sarebbe',
+    'cosa','come','dove','quale','quali','puoi','potresti','vorrei',
+    'sapresti','sai','dimmi','dirmi','raccontami','spiegami','spiega',
   };
   static List<String> features(List<String> ts,int i) {
     final a=ts.map((t)=>lexicon.contains(t)?t:'@').toList();
@@ -62,7 +64,8 @@ class LearnedReader324 {
     final ts=tokens(text);
     return text.trim().endsWith('?') || ts.contains('chi') ||
       (ts.isNotEmpty && const {'cosa','come','dove','quando','quale','quali',
-        'perché','perche','che','dimmi','spiega','spiegami'}.contains(ts.first));
+        'perché','perche','che','dimmi','spiega','spiegami','puoi','potresti',
+        'vorrei','sapresti','sai','raccontami'}.contains(ts.first));
   }
   static List<({String token,String label,double margin})> tag(String text) {
     final ts=tokens(text);

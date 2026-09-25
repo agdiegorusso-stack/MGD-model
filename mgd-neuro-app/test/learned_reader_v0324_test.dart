@@ -73,7 +73,8 @@ void main() {
   test('question wording without punctuation never creates invented facts',() {
     final m=ResearchMemory11();
     for(final text in ['Cosa contiene la cassa','Come aiuta il cane',
-      'Dimmi chi insegue il topo','Quale animale insegue il topo']) {
+      'Dimmi chi insegue il topo','Quale animale insegue il topo',
+      'Puoi dirmi cosa contiene la cassa']) {
       expect(LearnedReader324.isQuestion(text),isTrue,reason:text);
       RelationalMemory324.learn(m,text);
     }
