@@ -152,7 +152,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.32.3'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.32.4'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;

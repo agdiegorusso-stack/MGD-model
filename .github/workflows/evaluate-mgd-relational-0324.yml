@@ -14,8 +14,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Verify app and frozen dataset unchanged
-        run: git diff --exit-code a305498d59fc1933c3f40dff0dac6f79bcfc5eb1 HEAD -- mgd-neuro-app
+        with:
+          fetch-depth: 0
+      - name: Verify app code, model and frozen dataset unchanged
+        run: git diff --exit-code a305498d59fc1933c3f40dff0dac6f79bcfc5eb1 HEAD -- mgd-neuro-app/lib mgd-neuro-app/pubspec.yaml mgd-neuro-app/tool/relational_eval_v0324.json
       - name: Install CPU model dependencies
         run: |
           python3 -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
