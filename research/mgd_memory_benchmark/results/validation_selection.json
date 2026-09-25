@@ -1,0 +1,31 @@
+{
+  "mgd": {
+    "params": {
+      "alpha": 0.95,
+      "nu": 0.3,
+      "eta_material": 1.6,
+      "cap": 2.0
+    },
+    "score": 0.8436104910714285
+  },
+  "ema": {
+    "alpha": 0.7
+  },
+  "retunedNoMaterial": {
+    "alpha": 0.95,
+    "nu": 0.3,
+    "eta_material": 0.2,
+    "cap": 2.0
+  },
+  "unbounded": {
+    "params": {
+      "alpha": 0.2,
+      "nu": 0.075,
+      "eta_material": 0.8,
+      "cap": "unbounded"
+    },
+    "score": 0.8392857142857143
+  },
+  "mgdGridSize": 54,
+  "emaGridSize": 11
+}

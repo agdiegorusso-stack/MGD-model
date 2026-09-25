@@ -1,0 +1,172 @@
+{
+  "allChecksPassed": true,
+  "testSha256": "146712c6d057809d42b9a6008f0f42e458a5a0d9ad092e4711d03de64b8483cc",
+  "transformerControlsRechecked": [
+    {
+      "seed": 21,
+      "cleanAccuracy": 1.0,
+      "futureLogitDifference": 0.0
+    },
+    {
+      "seed": 22,
+      "cleanAccuracy": 1.0,
+      "futureLogitDifference": 0.0
+    },
+    {
+      "seed": 23,
+      "cleanAccuracy": 1.0,
+      "futureLogitDifference": 0.0
+    }
+  ],
+  "savedCheckpointPredictionsReproducedExactly": true,
+  "mgdPredictionsReproducedExactly": true,
+  "mgdLabelAndFutureIndependencePassed": true,
+  "savedAggregateAccuraciesAndBootstrapIntervalsReproduced": true,
+  "means": {
+    "MGD": 0.8427269345238094,
+    "MGD_no_material_same_params": 0.8328101748511904,
+    "MGD_no_memory_same_params": 0.8507835751488096,
+    "MGD_no_material_retuned": 0.8328101748511904,
+    "MGD_unbounded": 0.8369721912202381,
+    "EMA": 0.8713843936011906,
+    "counts": 0.7754487537202381,
+    "last_observation": 0.8008393787202381,
+    "no_state": 0.2507440476190476,
+    "Bayes_known_generator": 0.8891020275297619,
+    "Transformer_mean": 0.8587123325892857
+  },
+  "transformerSeedAccuracies": {
+    "21": {
+      "stationary": 0.9575544084821429,
+      "changing": 0.8691057477678571,
+      "fast_changes": 0.7482561383928571,
+      "mean": 0.8583054315476191
+    },
+    "22": {
+      "stationary": 0.9498814174107143,
+      "changing": 0.8697684151785714,
+      "fast_changes": 0.7585797991071429,
+      "mean": 0.8594098772321428
+    },
+    "23": {
+      "stationary": 0.9385114397321429,
+      "changing": 0.8668387276785714,
+      "fast_changes": 0.7699148995535714,
+      "mean": 0.8584216889880952
+    }
+  },
+  "secondaryPerScenarioMGDMinusOther": {
+    "stationary": {
+      "Transformer_mean": {
+        "deltaPercentagePoints": 2.568126860119049,
+        "ci95Percentile": [
+          2.2949218750000013,
+          2.8529575892857153
+        ]
+      },
+      "EMA": {
+        "deltaPercentagePoints": 1.8833705357142856,
+        "ci95Percentile": [
+          1.6043526785714288,
+          2.1623883928571423
+        ]
+      },
+      "MGD_no_material_retuned": {
+        "deltaPercentagePoints": -0.13253348214285698,
+        "ci95Percentile": [
+          -0.20577566964285707,
+          -0.055803571428571494
+        ]
+      },
+      "MGD_no_memory_same_params": {
+        "deltaPercentagePoints": 0.4464285714285715,
+        "ci95Percentile": [
+          0.34179687499999994,
+          0.5545479910714286
+        ]
+      },
+      "counts": {
+        "deltaPercentagePoints": -0.42550223214285704,
+        "ci95Percentile": [
+          -0.6347656249999998,
+          -0.23367745535714285
+        ]
+      }
+    },
+    "changing": {
+      "Transformer_mean": {
+        "deltaPercentagePoints": -2.489071800595237,
+        "ci95Percentile": [
+          -2.9064650762648805,
+          -2.0995803106398796
+        ]
+      },
+      "EMA": {
+        "deltaPercentagePoints": -4.520089285714286,
+        "ci95Percentile": [
+          -4.983956473214285,
+          -4.0771484375
+        ]
+      },
+      "MGD_no_material_retuned": {
+        "deltaPercentagePoints": 1.1823381696428572,
+        "ci95Percentile": [
+          1.0219029017857146,
+          1.3498360770089293
+        ]
+      },
+      "MGD_no_memory_same_params": {
+        "deltaPercentagePoints": -0.9102957589285712,
+        "ci95Percentile": [
+          -1.0986328124999996,
+          -0.7219587053571427
+        ]
+      },
+      "counts": {
+        "deltaPercentagePoints": 5.943080357142857,
+        "ci95Percentile": [
+          5.385044642857144,
+          6.483677455357142
+        ]
+      }
+    },
+    "fast_changes": {
+      "Transformer_mean": {
+        "deltaPercentagePoints": -4.874674479166666,
+        "ci95Percentile": [
+          -5.221121651785713,
+          -4.510788690476189
+        ]
+      },
+      "EMA": {
+        "deltaPercentagePoints": -5.9605189732142865,
+        "ci95Percentile": [
+          -6.347743443080358,
+          -5.559343610491071
+        ]
+      },
+      "MGD_no_material_retuned": {
+        "deltaPercentagePoints": 1.9252232142857144,
+        "ci95Percentile": [
+          1.7682756696428568,
+          2.0821707589285716
+        ]
+      },
+      "MGD_no_memory_same_params": {
+        "deltaPercentagePoints": -1.953125,
+        "ci95Percentile": [
+          -2.1763392857142856,
+          -1.7333984375000004
+        ]
+      },
+      "counts": {
+        "deltaPercentagePoints": 14.66587611607143,
+        "ci95Percentile": [
+          14.048461914062502,
+          15.29017857142857
+        ]
+      }
+    }
+  },
+  "secondaryAnalysisWarning": "Per-scenario intervals are descriptive, without correction for multiple comparisons; do not replace the primary criterion."
+}

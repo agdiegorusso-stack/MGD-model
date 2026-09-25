@@ -1,0 +1,54 @@
+VALIDATION_SELECTION {"mgd": {"params": {"alpha": 0.95, "nu": 0.3, "eta_material": 1.6, "cap": 2.0}, "score": 0.8436104910714285}, "ema": {"alpha": 0.7}, "retunedNoMaterial": {"alpha": 0.95, "nu": 0.3, "eta_material": 0.2, "cap": 2.0}, "unbounded": {"params": {"alpha": 0.2, "nu": 0.075, "eta_material": 0.8, "cap": "unbounded"}, "score": 0.8392857142857143}, "mgdGridSize": 54, "emaGridSize": 11}
+TRAIN 21 100 0.84277
+TRAIN 21 200 0.85589
+TRAIN 21 300 0.84166
+TRAIN 21 400 0.85412
+TRAIN 21 500 0.85965
+TRAIN 21 600 0.8584
+TRAIN 21 700 0.86003
+TRAIN 21 800 0.85547
+MODEL_CONTROL {"seed": 21, "parameters": 38788, "trainingSteps": 800, "trainingEvents": 3276800, "trainingSeconds": 37.67409310500079, "bestValidationAccuracy": 0.8600260416666666, "noiselessControlAccuracy": 1.0, "futureLeakMaxAbsLogitDifference": 0.0, "validControl": true}
+TRAIN 22 100 0.84338
+TRAIN 22 200 0.85547
+TRAIN 22 300 0.84519
+TRAIN 22 400 0.85524
+TRAIN 22 500 0.84254
+TRAIN 22 600 0.85998
+TRAIN 22 700 0.85789
+TRAIN 22 800 0.85333
+MODEL_CONTROL {"seed": 22, "parameters": 38788, "trainingSteps": 800, "trainingEvents": 3276800, "trainingSeconds": 35.468339084000036, "bestValidationAccuracy": 0.8599795386904763, "noiselessControlAccuracy": 1.0, "futureLeakMaxAbsLogitDifference": 0.0, "validControl": true}
+TRAIN 23 100 0.84133
+TRAIN 23 200 0.85249
+TRAIN 23 300 0.85491
+TRAIN 23 400 0.85603
+TRAIN 23 500 0.8564
+TRAIN 23 600 0.85477
+TRAIN 23 700 0.85435
+TRAIN 23 800 0.86082
+MODEL_CONTROL {"seed": 23, "parameters": 38788, "trainingSteps": 800, "trainingEvents": 3276800, "trainingSeconds": 39.451190332001715, "bestValidationAccuracy": 0.8608165922619048, "noiselessControlAccuracy": 1.0, "futureLeakMaxAbsLogitDifference": 0.0, "validControl": true}
+Traceback (most recent call last):
+  File "/workspace/scratch/ee277b844106/math_mgd/repo/research/mgd_memory_benchmark/benchmark.py", line 225, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/scratch/ee277b844106/math_mgd/repo/research/mgd_memory_benchmark/benchmark.py", line 221, in main
+    (out/'results.json').write_text(json_text(report,indent=2));np.savez_compressed(out/'predictions.npz',**predictions)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/ee277b844106/math_mgd/repo/research/mgd_memory_benchmark/benchmark.py", line 23, in json_text
+    return json.dumps(safe(obj),indent=indent,allow_nan=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type bool is not JSON serializable

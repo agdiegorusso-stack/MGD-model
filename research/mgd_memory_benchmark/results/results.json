@@ -1,0 +1,465 @@
+{
+  "scope": "Synthetic noisy changing key-value memory, 8 keys/4 values/128 events. Not language fluency or frontier LLM superiority.",
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "torch": "2.8.0+cpu",
+    "threads": 2,
+    "cpu": "x86_64"
+  },
+  "selection": {
+    "mgd": {
+      "params": {
+        "alpha": 0.95,
+        "nu": 0.3,
+        "eta_material": 1.6,
+        "cap": 2.0
+      },
+      "score": 0.8436104910714285
+    },
+    "ema": {
+      "alpha": 0.7
+    },
+    "retunedNoMaterial": {
+      "alpha": 0.95,
+      "nu": 0.3,
+      "eta_material": 0.2,
+      "cap": 2.0
+    },
+    "unbounded": {
+      "params": {
+        "alpha": 0.2,
+        "nu": 0.075,
+        "eta_material": 0.8,
+        "cap": "unbounded"
+      },
+      "score": 0.8392857142857143
+    },
+    "mgdGridSize": 54,
+    "emaGridSize": 11
+  },
+  "training": [
+    {
+      "seed": 21,
+      "parameters": 38788,
+      "trainingSteps": 800,
+      "trainingEvents": 3276800,
+      "trainingSeconds": 37.67409310500079,
+      "bestValidationAccuracy": 0.8600260416666666,
+      "noiselessControlAccuracy": 1.0,
+      "futureLeakMaxAbsLogitDifference": 0.0,
+      "validControl": true,
+      "log": [
+        {
+          "step": 100,
+          "loss": 0.25049886107444763,
+          "validationAccuracy": 0.8427734375
+        },
+        {
+          "step": 200,
+          "loss": 0.5507925748825073,
+          "validationAccuracy": 0.8558872767857144
+        },
+        {
+          "step": 300,
+          "loss": 0.22186359763145447,
+          "validationAccuracy": 0.8416573660714285
+        },
+        {
+          "step": 400,
+          "loss": 0.6507018208503723,
+          "validationAccuracy": 0.8541201636904762
+        },
+        {
+          "step": 500,
+          "loss": 0.8906021118164062,
+          "validationAccuracy": 0.8596540178571429
+        },
+        {
+          "step": 600,
+          "loss": 0.28411248326301575,
+          "validationAccuracy": 0.8583984375
+        },
+        {
+          "step": 700,
+          "loss": 0.3789314329624176,
+          "validationAccuracy": 0.8600260416666666
+        },
+        {
+          "step": 800,
+          "loss": 0.2940038740634918,
+          "validationAccuracy": 0.85546875
+        }
+      ]
+    },
+    {
+      "seed": 22,
+      "parameters": 38788,
+      "trainingSteps": 800,
+      "trainingEvents": 3276800,
+      "trainingSeconds": 35.468339084000036,
+      "bestValidationAccuracy": 0.8599795386904763,
+      "noiselessControlAccuracy": 1.0,
+      "futureLeakMaxAbsLogitDifference": 0.0,
+      "validControl": true,
+      "log": [
+        {
+          "step": 100,
+          "loss": 0.34775060415267944,
+          "validationAccuracy": 0.8433779761904762
+        },
+        {
+          "step": 200,
+          "loss": 0.17811699211597443,
+          "validationAccuracy": 0.85546875
+        },
+        {
+          "step": 300,
+          "loss": 0.11298532038927078,
+          "validationAccuracy": 0.8451915922619048
+        },
+        {
+          "step": 400,
+          "loss": 0.18146443367004395,
+          "validationAccuracy": 0.8552362351190476
+        },
+        {
+          "step": 500,
+          "loss": 0.5466877222061157,
+          "validationAccuracy": 0.8425409226190476
+        },
+        {
+          "step": 600,
+          "loss": 0.6478076577186584,
+          "validationAccuracy": 0.8599795386904763
+        },
+        {
+          "step": 700,
+          "loss": 0.5168189406394958,
+          "validationAccuracy": 0.8578869047619048
+        },
+        {
+          "step": 800,
+          "loss": 0.4191220700740814,
+          "validationAccuracy": 0.8533296130952381
+        }
+      ]
+    },
+    {
+      "seed": 23,
+      "parameters": 38788,
+      "trainingSteps": 800,
+      "trainingEvents": 3276800,
+      "trainingSeconds": 39.451190332001715,
+      "bestValidationAccuracy": 0.8608165922619048,
+      "noiselessControlAccuracy": 1.0,
+      "futureLeakMaxAbsLogitDifference": 0.0,
+      "validControl": true,
+      "log": [
+        {
+          "step": 100,
+          "loss": 0.9824712872505188,
+          "validationAccuracy": 0.8413318452380952
+        },
+        {
+          "step": 200,
+          "loss": 0.0797191858291626,
+          "validationAccuracy": 0.8524925595238096
+        },
+        {
+          "step": 300,
+          "loss": 0.5831977128982544,
+          "validationAccuracy": 0.8549107142857143
+        },
+        {
+          "step": 400,
+          "loss": 0.36593228578567505,
+          "validationAccuracy": 0.8560267857142857
+        },
+        {
+          "step": 500,
+          "loss": 0.14549461007118225,
+          "validationAccuracy": 0.8563988095238094
+        },
+        {
+          "step": 600,
+          "loss": 0.6213257908821106,
+          "validationAccuracy": 0.8547712053571429
+        },
+        {
+          "step": 700,
+          "loss": 0.0634378120303154,
+          "validationAccuracy": 0.8543526785714285
+        },
+        {
+          "step": 800,
+          "loss": 0.16232635080814362,
+          "validationAccuracy": 0.8608165922619048
+        }
+      ]
+    }
+  ],
+  "testSha256": "146712c6d057809d42b9a6008f0f42e458a5a0d9ad092e4711d03de64b8483cc",
+  "episodesPerScenario": 256,
+  "scoredEventsPerEpisode": 112,
+  "results": {
+    "MGD": {
+      "stationary": {
+        "accuracy": 0.9743303571428571,
+        "batch256TotalMs": 14.840864998404868
+      },
+      "changing": {
+        "accuracy": 0.8436802455357143,
+        "batch256TotalMs": 13.88025200139964
+      },
+      "fast_changes": {
+        "accuracy": 0.7101702008928571,
+        "batch256TotalMs": 13.60059199942043
+      }
+    },
+    "MGD_no_material_same_params": {
+      "stationary": {
+        "accuracy": 0.9756556919642857,
+        "batch256TotalMs": 8.10448000265751
+      },
+      "changing": {
+        "accuracy": 0.8318568638392857,
+        "batch256TotalMs": 7.854363997466862
+      },
+      "fast_changes": {
+        "accuracy": 0.69091796875,
+        "batch256TotalMs": 8.237918998929672
+      }
+    },
+    "MGD_no_memory_same_params": {
+      "stationary": {
+        "accuracy": 0.9698660714285714,
+        "batch256TotalMs": 13.94680199882714
+      },
+      "changing": {
+        "accuracy": 0.852783203125,
+        "batch256TotalMs": 13.614533003419638
+      },
+      "fast_changes": {
+        "accuracy": 0.7297014508928571,
+        "batch256TotalMs": 14.059029999771155
+      }
+    },
+    "MGD_no_material_retuned": {
+      "stationary": {
+        "accuracy": 0.9756556919642857,
+        "batch256TotalMs": 7.717016997048631
+      },
+      "changing": {
+        "accuracy": 0.8318568638392857,
+        "batch256TotalMs": 7.39605599665083
+      },
+      "fast_changes": {
+        "accuracy": 0.69091796875,
+        "batch256TotalMs": 7.267073000548407
+      }
+    },
+    "MGD_unbounded": {
+      "stationary": {
+        "accuracy": 0.974609375,
+        "batch256TotalMs": 16.251902998192236
+      },
+      "changing": {
+        "accuracy": 0.8525739397321429,
+        "batch256TotalMs": 15.615067000908311
+      },
+      "fast_changes": {
+        "accuracy": 0.6837332589285714,
+        "batch256TotalMs": 14.622096001403406
+      }
+    },
+    "EMA": {
+      "stationary": {
+        "accuracy": 0.9554966517857143,
+        "batch256TotalMs": 3.3598150039324537
+      },
+      "changing": {
+        "accuracy": 0.8888811383928571,
+        "batch256TotalMs": 3.5038909991271794
+      },
+      "fast_changes": {
+        "accuracy": 0.769775390625,
+        "batch256TotalMs": 3.4446319987182505
+      }
+    },
+    "counts": {
+      "stationary": {
+        "accuracy": 0.9785853794642857,
+        "batch256TotalMs": 3.3453729993198067
+      },
+      "changing": {
+        "accuracy": 0.7842494419642857,
+        "batch256TotalMs": 3.5341269976925105
+      },
+      "fast_changes": {
+        "accuracy": 0.5635114397321429,
+        "batch256TotalMs": 3.5299700030009262
+      }
+    },
+    "last_observation": {
+      "stationary": {
+        "accuracy": 0.8014787946428571,
+        "batch256TotalMs": 0.7485140013159253
+      },
+      "changing": {
+        "accuracy": 0.8037458147321429,
+        "batch256TotalMs": 0.7390699975076132
+      },
+      "fast_changes": {
+        "accuracy": 0.7972935267857143,
+        "batch256TotalMs": 0.8150439971359447
+      }
+    },
+    "no_state": {
+      "stationary": {
+        "accuracy": 0.2511509486607143,
+        "batch256TotalMs": 0.958478995016776
+      },
+      "changing": {
+        "accuracy": 0.24979073660714285,
+        "batch256TotalMs": 0.782654999056831
+      },
+      "fast_changes": {
+        "accuracy": 0.2512904575892857,
+        "batch256TotalMs": 0.7499759958591312
+      }
+    },
+    "Bayes_known_generator": {
+      "stationary": {
+        "accuracy": 0.9794224330357143
+      },
+      "changing": {
+        "accuracy": 0.8905901227678571
+      },
+      "fast_changes": {
+        "accuracy": 0.7972935267857143
+      }
+    },
+    "Transformer_mean": {
+      "stationary": {
+        "accuracy": 0.9486490885416666,
+        "seedAccuracies": [
+          0.9575544084821429,
+          0.9498814174107143,
+          0.9385114397321429
+        ],
+        "batch256TotalMs": [
+          173.12792299344437,
+          179.2772260014317,
+          186.7141230031848
+        ]
+      },
+      "changing": {
+        "accuracy": 0.8685709635416666,
+        "seedAccuracies": [
+          0.8691057477678571,
+          0.8697684151785714,
+          0.8668387276785714
+        ],
+        "batch256TotalMs": [
+          183.33753300248645,
+          182.55486300040502,
+          197.00705900322646
+        ]
+      },
+      "fast_changes": {
+        "accuracy": 0.7589169456845238,
+        "seedAccuracies": [
+          0.7482561383928571,
+          0.7585797991071429,
+          0.7699148995535714
+        ],
+        "batch256TotalMs": [
+          180.3015539990156,
+          199.764969998796,
+          202.24872900143964
+        ]
+      }
+    }
+  },
+  "pairedComparisonsMGDMinusOther": {
+    "MGD_no_material_same_params": {
+      "deltaPercentagePoints": 0.9916759672619048,
+      "ci95Percentile": [
+        0.9125918433779763,
+        1.073056175595238
+      ]
+    },
+    "MGD_no_memory_same_params": {
+      "deltaPercentagePoints": -0.8056640624999998,
+      "ci95Percentile": [
+        -0.9079706101190472,
+        -0.7033575148809521
+      ]
+    },
+    "MGD_no_material_retuned": {
+      "deltaPercentagePoints": 0.9916759672619048,
+      "ci95Percentile": [
+        0.9125918433779763,
+        1.073056175595238
+      ]
+    },
+    "MGD_unbounded": {
+      "deltaPercentagePoints": 0.5754743303571429,
+      "ci95Percentile": [
+        0.368536086309524,
+        0.7929048084077381
+      ]
+    },
+    "EMA": {
+      "deltaPercentagePoints": -2.8657459077380953,
+      "ci95Percentile": [
+        -3.0866641090029767,
+        -2.639014834449404
+      ]
+    },
+    "counts": {
+      "deltaPercentagePoints": 6.727818080357144,
+      "ci95Percentile": [
+        6.4522588820684526,
+        7.018490745907738
+      ]
+    },
+    "last_observation": {
+      "deltaPercentagePoints": 4.1887555803571415,
+      "ci95Percentile": [
+        3.8655308314732135,
+        4.537527901785714
+      ]
+    },
+    "no_state": {
+      "deltaPercentagePoints": 59.19828869047619,
+      "ci95Percentile": [
+        58.21693057105656,
+        60.18650599888392
+      ]
+    },
+    "Bayes_known_generator": {
+      "deltaPercentagePoints": -4.637509300595238,
+      "ci95Percentile": [
+        -4.8944382440476195,
+        -4.37593005952381
+      ]
+    },
+    "Transformer_mean": {
+      "deltaPercentagePoints": -1.5985398065476177,
+      "ci95Percentile": [
+        -1.8035598028273803,
+        -1.3993423704117045
+      ]
+    }
+  },
+  "predeclaredSuccessCriterionMet": false,
+  "limitations": [
+    "Original papers do not define this prediction objective, token encoding, per-key clock, cost cap, or decoder.",
+    "MGD structural slot addressing and Transformer learned addressing have different inductive biases and offline budgets.",
+    "Bootstrap conditions on the three trained checkpoints; it does not quantify all training-run variability.",
+    "Timing is batch-throughput on CPU with optimized parallel Transformer evaluation; not phone latency or energy.",
+    "This does not implement or compare complete Titans, TTT, all Transformer variants, or general language models."
+  ]
+}
