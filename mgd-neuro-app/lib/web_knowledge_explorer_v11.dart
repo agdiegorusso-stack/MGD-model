@@ -1087,13 +1087,24 @@ class WebKnowledgeExplorer11 {
         for (final part in alternativeTopics322(topic)) {
           final alternatives = await safeDocs('Wikipedia IT', _wikipedia(part));
           for (final d in alternatives) {
-            final partialGoal = ResearchGoal11(
-                query: part,
-                topic: part,
-                reason: 'argomento parziale',
-                value: goal.value);
-            if (!documentMatches320(partialGoal, d) ||
-                docs.any((old) => old.url == d.url)) continue;
+            final resolvedPart =
+                ResearchSemantics317.sameSubject(d.title, part) ||
+                    (d.meta318['resolvedTopic'] == true &&
+                        ResearchSemantics317.sameSubject(
+                            '${d.meta318['requestedTopic'] ?? ''}', part));
+            if (!resolvedPart) {
+              diagnostics.add({
+                'provider': d.provider,
+                'status': 'risultato parziale escluso',
+                'matchedTopic': part,
+                'title': d.title,
+                'url': d.url,
+                'reason':
+                    'Il titolo o un redirect non risolvono questa parte della richiesta.'
+              });
+              continue;
+            }
+            if (docs.any((old) => old.url == d.url)) continue;
             seen.add(d.url);
             docs.add(WebDocument11(
                 provider: d.provider,
@@ -1107,6 +1118,7 @@ class WebKnowledgeExplorer11 {
                   'requestedTopic': topic,
                   'resolvedTopic': false,
                   'partialTopic322': part,
+                  'partialResolved322': true,
                   'resolution':
                       'Argomento parziale: $part; non equivalenza con tutta la ricerca.'
                 }));
@@ -1955,10 +1967,7 @@ class WebKnowledgeExplorer11 {
     final partial = doc.meta318['partialTopic322'];
     if (partial is String &&
         alternativeTopics322(goal.topic).contains(partial)) {
-      final hay =
-          ' ${ResearchSemantics317.concept('${doc.title} ${doc.text}')} ';
-      if (hay.contains(' ${ResearchSemantics317.concept(partial)} '))
-        return true;
+      return doc.meta318['partialResolved322'] == true;
     }
     if (doc.meta318['resolvedTopic'] == true &&
         ResearchSemantics317.sameSubject(

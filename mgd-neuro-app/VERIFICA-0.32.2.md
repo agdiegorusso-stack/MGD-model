@@ -8,7 +8,7 @@ Correzioni ricavate dalle schermate della 0.32.1:
 - Il disegno usa lo spazio effettivamente disponibile e lo zoom si adatta all’area occupata dai nodi. Controlli e dettagli rimangono consultabili su schermi piccoli e in orizzontale.
 - Il lettore conserva l’inciso «In chimica» come contesto della frase, invece di incorporarlo nel nome dell’entità. Copule inverse o enumerazioni ambigue non diventano automaticamente relazioni «tipo di».
 - Le estrazioni pregresse riconosciute come ambigue vengono messe in quarantena con il motivo. Proposizioni e fonti rimangono conservate; le correzioni esplicite dell’utente sono rispettate.
-- Dopo una ricerca senza documenti pertinenti, un argomento composto come «Bioma o grande sistema ecologico» può essere cercato nelle sue parti. L’esito è indicato come argomento parziale: non si dichiara che i termini siano equivalenti.
+- Dopo una ricerca senza documenti pertinenti, un argomento composto come «Bioma o grande sistema ecologico» può essere cercato nelle sue parti. Sono ammessi titoli o redirect che risolvono quella parte; la semplice presenza della frase in un’altra pagina non basta. L’esito è indicato come argomento parziale: non si dichiara che i termini siano equivalenti.
 - Lo stato del motore distingue la pausa per ricerca web, interazione, operazione e app non in primo piano. Nell’editor il punteggio delle relazioni è indicato come interno, non come probabilità di verità.
 
 ## Prova pratica

@@ -113,6 +113,7 @@ void main() {
       () {
     for (final text in [
       "Uno zucchero pentoso è il ribosio nell'RNA e il desossiribosio nel DNA.",
+      'La compatibilità del sensore è in funzione della temperatura.',
       "Due dei nucleotidi più importanti dal punto di vista metabolico sono l'adenosina trifosfato (ATP) e la guanosina monofosfato ciclico (cGMP)."
     ])
       expect(ResearchSemantics317.extractAny321(text, document(text)), isEmpty,
@@ -199,7 +200,15 @@ void main() {
                 'title': 'Bioma',
                 'extract': 'Il bioma è una regione ecologica estesa.',
                 'fullurl': 'https://it.wikipedia.org/wiki/Bioma'
-              }
+              },
+              if (q['generator'] == 'search')
+                {
+                  'pageid': 2,
+                  'title': 'Biosfera 2',
+                  'extract':
+                      'Biosfera 2 comprende un grande sistema ecologico sperimentale.',
+                  'fullurl': 'https://it.wikipedia.org/wiki/Biosfera_2'
+                },
             ]
           }
         };

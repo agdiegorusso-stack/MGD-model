@@ -204,6 +204,9 @@ class ResearchSemantics317 {
           .hasMatch(subject.trim());
 
   static bool _ambiguousCopula322(String subject, String object) {
+    if (RegExp(r'^(?:in|nel|nella|nei|nelle|su|sul|sulla|per|con|tra|fra)\s+',
+            caseSensitive: false)
+        .hasMatch(object.trim())) return true;
     if (!RegExp(r'^(?:il|lo|la|i|gli|le)\s+|^l[’\x27]', caseSensitive: false)
         .hasMatch(object.trim())) return false;
     // A definite nominal can be a description of the same class ("gli
