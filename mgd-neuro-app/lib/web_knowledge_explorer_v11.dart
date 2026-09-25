@@ -1348,6 +1348,8 @@ class WebKnowledgeExplorer11 {
           meta318: p.meta318);
       final xs = ResearchSemantics317.extractDocument318(p.topic, p.text, doc,
           first: true);
+      if (xs.isEmpty)
+        xs.addAll(ResearchSemantics317.extractAny321(p.text, doc));
       if (xs.isEmpty) continue;
       final newlyUsable =
           ResearchSemantics317.observePassage321(brain, world, memory, p, xs);

@@ -15,6 +15,28 @@ import 'research_v0318_test.dart' show Sources318;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
+      'legacy unstructured text learns an explicit subject different from the old query',
+      () async {
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        m = ResearchMemory11();
+    m.passages.add(ResearchPassage11(
+        id: 'old',
+        topic: 'Biologia',
+        provider: 'Fonte',
+        sourceFamily: 'example',
+        sourceTitle: 'Manuale',
+        sourceUrl: 'https://example.org/biologia',
+        text: 'Il nucleotide è una molecola.',
+        trust: .9,
+        attempts: 6));
+    await LearningService321.drainResearch(b, w, m);
+    expect(m.passages.single.structured, true);
+    expect(m.pendingPassages321, isEmpty);
+    expect(ResearchSemantics317.answer('Cosa è il nucleotide?', m),
+        contains('molecola'));
+  });
+  test(
       'structured Wikidata sources are present in the session document inventory',
       () async {
     final explorer = WebKnowledgeExplorer11(jsonLoader318: Sources318().call);
