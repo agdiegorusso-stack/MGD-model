@@ -1,0 +1,47 @@
+name: MGD 0.32.3 - Audit Transformer baseline
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths: ['tools/mgd_comparison_0323.py', '.github/workflows/evaluate-mgd-source-0323.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify app is unchanged since APK source
+        run: git fetch --depth=5 origin mgd-neuro-mobile && git diff --exit-code 9725c1fda0e024afd52550fe79e425d9ede8253e HEAD -- mgd-neuro-app
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Identical MGD evaluation on this CPU
+        working-directory: mgd-neuro-app
+        run: |
+          flutter pub get
+          flutter test tool/source_eval_v0323_test.dart --reporter expanded
+      - name: Install pinned baseline dependencies
+        run: |
+          python3 -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python3 -m pip install transformers==4.56.2
+      - name: Health checks and frozen evaluation
+        env:
+          HF_HUB_DISABLE_TELEMETRY: '1'
+          TOKENIZERS_PARALLELISM: 'false'
+        run: |
+          set -o pipefail
+          python3 tools/mgd_comparison_0323.py 2>&1 | tee mgd-neuro-app/comparison-audit-0.32.3.log
+      - name: Upload audit including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.32.3-comparison-audit
+          path: |
+            mgd-neuro-app/comparison-audit-0.32.3.*
+            mgd-neuro-app/source-eval-mgd-0.32.3.json
+            mgd-neuro-app/tool/source_eval_v0323.json
+          retention-days: 30
