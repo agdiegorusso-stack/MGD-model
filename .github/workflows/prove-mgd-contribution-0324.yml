@@ -1,0 +1,48 @@
+name: MGD 0.32.4 - Full relational ablation proof
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths:
+      - 'tools/prepare_mgd_contribution_0324.py'
+      - 'tools/mgd_contribution_0324_test.dart'
+      - '.github/workflows/prove-mgd-contribution-0324.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Freeze app and generate complete relational ablation
+        run: |
+          git diff --exit-code 336848c817d3fbed5c6b5906ff085d262d21e914 HEAD -- mgd-neuro-app/lib mgd-neuro-app/tool/relational_eval_v0324.json
+          python3 tools/prepare_mgd_contribution_0324.py
+      - name: Verify paired behavior and sensitive positive control
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter pub get
+          flutter test tool/mgd_contribution_0324_test.dart --reporter expanded 2>&1 | tee mgd-contribution-0324.log
+      - name: Upload source intervention and all outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.32.4-full-ablation-proof
+          path: |
+            mgd-neuro-app/mgd-contribution-0324.json
+            mgd-neuro-app/mgd-contribution-0324.log
+            mgd-neuro-app/lib/ablation_no_mgd_v0324.dart
+            tools/prepare_mgd_contribution_0324.py
+            tools/mgd_contribution_0324_test.dart
+            mgd-contribution-manifest-0324.json
+            MGD-0.32.4-PROTOCOLLO-CONTRIBUTO.md
+          retention-days: 90
