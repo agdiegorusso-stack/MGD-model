@@ -1,0 +1,87 @@
+name: Deliver verified MGD Neuro 0.32.4 APK
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths: ['.github/workflows/deliver-mgd-0324.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: deliver-mgd-neuro-0324
+  cancel-in-progress: false
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify completed source build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/agdiegorusso-stack/MGD-model/actions/runs/36185703631 > verified-run.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open("verified-run.json"))
+          assert r["conclusion"]=="success"
+          assert r["head_sha"]=="336848c817d3fbed5c6b5906ff085d262d21e914"
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neuro-0.32.4-Android
+          path: verified-apk
+          run-id: 36185703631
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neuro-0.32.4-reports
+          path: verified-reports
+          run-id: 36185703631
+          github-token: ${{ github.token }}
+      - name: Verify exact APK hash and identity report
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,shutil
+          apk=next(Path("verified-apk").rglob("app-release.apk"))
+          reports=Path("verified-reports")
+          digest=hashlib.sha256(apk.read_bytes()).hexdigest()
+          expected=next(reports.rglob("APK-SHA256.txt")).read_text().split()[0]
+          assert digest==expected, "APK differs from signed and tested build"
+          version=next(reports.rglob("APK-VERSION.txt")).read_text()
+          for field in ["name='it.diegorusso.mgdneurostable'","versionName='0.32.4'","versionCode='63'"]:
+              assert field in version
+          signature=next(reports.rglob("APK-SIGNATURE.txt")).read_text().lower()
+          assert "bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589" in signature
+          name="MGD-Neuro-0.32.4.apk"
+          shutil.copyfile(apk,name)
+          Path("MGD-Neuro-0.32.4-SHA256.txt").write_text(digest+"  "+name+"\n")
+          Path("release-notes-0324.md").write_text(
+              "APK diretto della build verificata 0.32.4 (codice 63). "
+              "Installare come aggiornamento senza disinstallare la versione precedente.\n\n"
+              "228 test unitari/widget e 5 test Android passati. "
+              "Esperimento limitato a quattro famiglie di relazioni; "
+              "nessuna superiorità sui Transformer dimostrata.\n\n"
+              "Rapporto: https://github.com/agdiegorusso-stack/MGD-model/blob/mgd-neuro-mobile/MGD-Neuro-0.32.4-RISULTATI.md\n\n"
+              "Commit APK: 336848c817d3fbed5c6b5906ff085d262d21e914\n"
+          )
+          print("Verified APK SHA256:",digest)
+          PY
+      - name: Publish directly downloadable APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=mgd-neuro-v0.32.4
+          if gh release view "$TAG" --json tagName > existing-release.json 2>/dev/null; then
+            mkdir -p existing-apk
+            gh release download "$TAG" --pattern 'MGD-Neuro-0.32.4.apk' --dir existing-apk
+            cmp MGD-Neuro-0.32.4.apk existing-apk/MGD-Neuro-0.32.4.apk
+          else
+            gh release create "$TAG" MGD-Neuro-0.32.4.apk MGD-Neuro-0.32.4-SHA256.txt \
+              --target 336848c817d3fbed5c6b5906ff085d262d21e914 \
+              --title "MGD Neuro 0.32.4 — APK Android verificato" \
+              --notes-file release-notes-0324.md --prerelease --latest=false
+          fi
+          gh release view "$TAG" --json url,assets
