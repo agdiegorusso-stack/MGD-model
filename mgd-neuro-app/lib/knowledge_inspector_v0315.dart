@@ -72,7 +72,7 @@ class InspectMetric315 extends StatelessWidget {
           onTap:inspector==null?null:()=>inspector.openMetric(context,label,session:session,value:value),
           child:Padding(padding:const EdgeInsets.all(11),child:Column(
             crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Row(children:[Expanded(child:Text(value,style:Theme.of(context).textTheme.titleLarge)),
+              Row(children:[Expanded(child:FittedBox(fit:BoxFit.scaleDown,alignment:Alignment.centerLeft,child:Text(value,maxLines:1,style:Theme.of(context).textTheme.titleLarge))),
                 const Icon(Icons.chevron_right,size:18)]),
               Text(label,style:Theme.of(context).textTheme.bodySmall),
             ],

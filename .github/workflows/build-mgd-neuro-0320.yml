@@ -1,7 +1,7 @@
 name: MGD Neuro 0.32.0 - Runtime and Android restart
 on:
   push:
-    branches: [mgd-neuro-0320-repair]
+    branches: [mgd-neuro-mobile]
     paths:
       - 'mgd-neuro-app/**'
       - '.github/workflows/build-mgd-neuro-0320.yml'
