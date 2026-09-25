@@ -1,0 +1,9 @@
+/build/
+/.dart_tool/
+/.flutter-plugins*
+/android/
+*.log
+*.mgdbrain
+phone_snapshot_local_test.dart
+!/lib/
+!/lib/**

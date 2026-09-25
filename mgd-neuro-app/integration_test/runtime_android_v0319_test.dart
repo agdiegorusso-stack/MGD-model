@@ -1,0 +1,201 @@
+import 'dart:convert';
+import '../test/research_v0318_test.dart' show Sources318;
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:mgd_neuro_mobile/main.dart';
+import 'package:mgd_neuro_mobile/memory_runtime_v0319.dart';
+import 'package:mgd_neuro_mobile/plastic_language_brain_v04.dart';
+import 'package:mgd_neuro_mobile/sensory_world_v06.dart';
+import 'package:mgd_neuro_mobile/web_knowledge_explorer_v11.dart';
+import 'package:mgd_neuro_mobile/mgd_language_v020.dart';
+import 'package:mgd_neuro_mobile/mgd_state_store_v026.dart';
+import 'package:mgd_neuro_mobile/knowledge_inspector_v0315.dart';
+import 'package:mgd_neuro_mobile/world_persistence_v06.dart';
+import 'package:mgd_neuro_mobile/persistence.dart';
+import 'package:mgd_neuro_mobile/research_persistence_v11.dart';
+
+Future<void> waitBoot319(WidgetTester tester) async {
+  for (var n = 0; n < 150; n++) {
+    await tester.pump(const Duration(milliseconds: 200));
+    if (find.byType(InspectorScope315).evaluate().isNotEmpty) return;
+  }
+  fail('Application did not expose its loaded memory within 30s');
+}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets(
+      'Android SQLite restart retains learned answers and UI, then blocks corrupt world',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        r = ResearchMemory11(enabled: false),
+        l = MgdLanguage20();
+    for (var n = 0; n < 96; n++) {
+      final s = 'Entità numero $n', o = 'Categoria ${n % 4}';
+      b.importTeacherFact08(
+          subject: s,
+          relation: 'tipo di',
+          object: o,
+          confidence: .85,
+          source: 'Android fixture');
+      w.importTeacherSemanticLink08(
+          b.ensureSemanticEntity06(s), b.ensureSemanticEntity06(o), .55,
+          confidence: .6);
+    }
+    const doc = WebDocument11(
+        provider: 'Fonte test',
+        family: 'test',
+        title: 'Nucleotide',
+        url: 'https://example.invalid/nucleotide',
+        text: 'Il nucleotide è una molecola.',
+        trust: .9);
+    WebKnowledgeExplorer11().integrate(
+        b,
+        w,
+        r,
+        const ResearchDraft11(
+            goal: ResearchGoal11(
+                query: 'Nucleotide',
+                topic: 'Nucleotide',
+                reason: 'fixture',
+                value: 1),
+            documents: [doc],
+            claims: [
+              ExtractedClaim11(
+                  subject: 'Nucleotide',
+                  relation: 'tipo di',
+                  object: 'molecola',
+                  sentence: 'Il nucleotide è una molecola.',
+                  source: doc,
+                  quality: .9)
+            ],
+            passages: [],
+            sentencesRead: 1));
+    while (ResearchSemantics317.getPending(r) > 0)
+      ResearchSemantics317.processQueue(b, w, r);
+    final online = WebKnowledgeExplorer11(jsonLoader318: Sources318().call);
+    final draft = await online.research(const ResearchGoal11(
+        query: 'Organismi Tassonomia Animali Piante',
+        topic: 'Organismi',
+        contextTerms: ['Tassonomia', 'Animali', 'Piante'],
+        reason: 'Android context regression',
+        value: 1));
+    online.integrate(b, w, r, draft);
+    while (ResearchSemantics317.getPending(r) > 0)
+      ResearchSemantics317.processQueue(b, w, r);
+    expect(
+        ResearchSemantics317.answer('Cosa sono gli organismi?', r), isNotNull);
+    for (final d in draft.documents) await l.ingestWeb317(d);
+    r.state317.addAll({
+      'migrationComplete': true,
+      'recovery318Complete': true,
+      'languagePassages': r.passages.length,
+      'languageEvidence': r.evidence.length
+    });
+    l.ingestText(
+        'Il nucleotide è una molecola. La cellula contiene informazioni.');
+    r.narrativeLinks.add(NarrativeLink24(
+        episodeId: 'e24:fixture',
+        from: 'nucleotide',
+        relation: 'co-presente',
+        to: 'molecola',
+        confidence: .5,
+        source: 'Android fixture'));
+    for (var n = 0; n < 6; n++) MemoryRuntime319.pulse(b, w);
+    final initialCycles = w.thoughtCycles,
+        initialEdges = w.edges.length,
+        initialAge = w.entropicAge,
+        initialFacts = b.cognitiveFacts06().length;
+    final answer = ResearchSemantics317.answer('Che cosa è un nucleotide?', r);
+    expect(answer, contains('Documentata da una fonte'));
+    await MemoryCheckpoint319().save(b, w, r, l);
+    await store.close319();
+    final rb = await Brain04Persistence().load(),
+        rw = await WorldPersistence06().load(),
+        rr = await ResearchPersistence11().load(),
+        rl = await MgdLanguagePersistence20().load();
+    expect(rb!.brain.cognitiveFacts06().length, initialFacts);
+    expect(rw!.thoughtCycles, initialCycles);
+    expect(rw.edges.length, initialEdges);
+    expect(rw.entropicAge, initialAge);
+    expect(rr!.evidence.length, r.evidence.length);
+    expect(
+        ResearchSemantics317.answer('Che cosa è un nucleotide?', rr), answer);
+    expect(rl!.sentences, l.sentences);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    await tester.tap(find.text('Mente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Memorie MGD 0.32.0'), findsOneWidget);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(live.world.thoughtCycles, greaterThanOrEqualTo(initialCycles));
+    expect(live.brain.cognitiveFacts06().length, initialFacts);
+    // Exercise actual scheduler while a read-only inspector is open.
+    await tester.tap(find.text('Esplora tutta la memoria'));
+    await tester.pumpAndSettle();
+    final cyclesBefore = live.world.thoughtCycles;
+    await tester.pump(const Duration(seconds: 12));
+    for (var n = 0; n < 100 && live.world.thoughtCycles <= cyclesBefore; n++)
+      await tester.pump(const Duration(milliseconds: 200));
+    expect(live.world.thoughtCycles, greaterThan(cyclesBefore));
+    expect(live.research.evidence.length, r.evidence.length);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    // A fresh widget instance loads the same persisted world, not a new empty one.
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
+    final savedCycles = live.world.thoughtCycles,
+        savedAge = live.world.entropicAge;
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.close319();
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    final second = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(second.world.thoughtCycles, greaterThanOrEqualTo(savedCycles));
+    expect(second.world.entropicAge, greaterThanOrEqualTo(savedAge));
+    expect(
+        ResearchSemantics317.answer(
+            'Che cosa è un nucleotide?', second.research),
+        answer);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    final malformed = {'edges': 'INVALID_TEST_PAYLOAD', 'thoughtCycles': 999};
+    await store.putMap('world_v06', malformed);
+    await tester.pumpWidget(const MgdNeuro04App());
+    for (var n = 0;
+        n < 150 &&
+            find
+                .text('Memoria protetta: caricamento non riuscito')
+                .evaluate()
+                .isEmpty;
+        n++) await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Memoria protetta: caricamento non riuscito'),
+        findsOneWidget);
+    await tester.pump(const Duration(seconds: 31));
+    expect(await store.getMap('world_v06'), malformed);
+    expect((await store.getMap('brain_v051'))!['episodes'], isNotEmpty);
+    print('ANDROID319 ${jsonEncode({
+          'facts': initialFacts,
+          'worldEdges': initialEdges,
+          'cyclesRestored': savedCycles,
+          'ageRestored': savedAge,
+          'evidence': r.evidence.length,
+          'restart': true,
+          'corruptionProtected': true,
+          'sourcedAnswer': answer
+        })}');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.clearAll();
+    await store.close319();
+  });
+}
