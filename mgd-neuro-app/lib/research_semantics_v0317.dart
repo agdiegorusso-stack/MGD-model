@@ -204,6 +204,10 @@ class ResearchSemantics317 {
           .hasMatch(subject.trim());
 
   static bool _ambiguousCopula322(String subject, String object) {
+    if (RegExp(
+            r'^(?:spesso|talvolta|generalmente|solitamente|principalmente|normalmente|identificat[oaie]|distint[oaie]|definit[oaie]|classificat[oaie]|caratterizzat[oaie]|considerat[oaie]|suddivis[oaie]|chiamat[oaie])\b',
+            caseSensitive: false)
+        .hasMatch(object.trim())) return true;
     if (RegExp(r'^(?:in|nel|nella|nei|nelle|su|sul|sulla|per|con|tra|fra)\s+',
             caseSensitive: false)
         .hasMatch(object.trim())) return true;

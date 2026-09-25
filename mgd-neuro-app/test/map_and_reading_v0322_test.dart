@@ -114,6 +114,8 @@ void main() {
     for (final text in [
       "Uno zucchero pentoso è il ribosio nell'RNA e il desossiribosio nel DNA.",
       'La compatibilità del sensore è in funzione della temperatura.',
+      'I talverii sono spesso identificati tramite i sensori.',
+      'I talverii sono distinti in tre gruppi.',
       "Due dei nucleotidi più importanti dal punto di vista metabolico sono l'adenosina trifosfato (ATP) e la guanosina monofosfato ciclico (cGMP)."
     ])
       expect(ResearchSemantics317.extractAny321(text, document(text)), isEmpty,
