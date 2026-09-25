@@ -1601,7 +1601,7 @@ class ResearchSemantics317 {
       );
       return legacy
           ? 'Le fonti di questo argomento sono ancora in riesame. Non uso il vecchio consolidamento come conferma.'
-          : SourceMemory323.answer(question, m);
+          : null;
     }
     final senses =
         found.map((c) => c.subjectSenseKey).whereType<String>().toSet();

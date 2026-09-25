@@ -742,7 +742,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           : null;
       final sourced317 = Reasoning321.answer(text, _researchMemory) ??
           ResearchSemantics317.answer(text, _researchMemory,
-              realize: (s, r, o) => _language20.realizeFact320(s, r, o));
+              realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
+          SourceMemory323.answer(text, _researchMemory);
       final semanticAnswer = sourced317 ?? grounded ?? languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||

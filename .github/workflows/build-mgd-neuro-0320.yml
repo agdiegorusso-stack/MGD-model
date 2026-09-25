@@ -135,6 +135,11 @@ jobs:
           set -o pipefail
           flutter pub get
           flutter test tool/source_eval_v0323_test.dart --reporter expanded 2>&1 | tee source-eval-0.32.3.log
+      - name: Live Bioma reading diagnostic
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter test tool/live_bioma_v0323_test.dart --reporter expanded 2>&1 | tee live-bioma-0.32.3.log
       - name: Install pinned CPU Transformer baseline
         run: |
           python3 -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
@@ -153,6 +158,8 @@ jobs:
         with:
           name: MGD-Neuro-0.32.3-comparison
           path: |
+            mgd-neuro-app/live-bioma-*.json
+            mgd-neuro-app/live-bioma-*.log
             mgd-neuro-app/source-eval-*.json
             mgd-neuro-app/source-eval-*.log
             mgd-neuro-app/transformer-comparison-*.json

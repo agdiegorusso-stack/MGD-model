@@ -52,7 +52,7 @@ void main() {
     const text='Il talverio viene osservato soltanto quando il rilevatore è acceso.';
     final m=ResearchMemory11(); intake(m,doc(text));
     final claims=m.claims.length, evidence=m.evidence.length;
-    final answer=ResearchSemantics317.answer('Che cosa è il talverio?',m);
+    final answer=SourceMemory323.answer('Che cosa è il talverio?',m);
     expect(answer,contains(text));
     expect(answer,contains('non equivale a una relazione verificata'));
     expect(answer,contains('https://example.invalid/a'));

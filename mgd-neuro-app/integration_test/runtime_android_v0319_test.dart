@@ -395,7 +395,7 @@ void main() {
     await tester.pumpAndSettle(); await store.close319();
     final restored=await ResearchPersistence11().load();
     expect(SourceMemory323.stats(restored!)['passages'],1);
-    expect(ResearchSemantics317.answer('Che cosa è il norvente?',restored),contains(text));
+    expect(SourceMemory323.answer('Che cosa è il norvente?',restored),contains(text));
     print('ANDROID323 '+jsonEncode({'sourceInChat':true,'sourceInspector':true,
       'sqliteRestore':true,'noInventedClaim':restored.claims.isEmpty}));
     await store.clearAll(); await store.close319();
