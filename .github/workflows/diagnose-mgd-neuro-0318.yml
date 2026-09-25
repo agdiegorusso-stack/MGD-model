@@ -1,0 +1,73 @@
+name: MGD Neuro 0.31.8 - Diagnose zero knowledge
+on:
+  push:
+    branches: [mgd-neuro-mobile]
+    paths: ['.github/workflows/diagnose-mgd-neuro-0318.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neuro-0.31.7-source
+          run-id: 36133768553
+          github-token: ${{ github.token }}
+          path: mgd-neuro-app
+      - name: Instrument a diagnostic copy, not a release
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mgd-neuro-app/lib/web_knowledge_explorer_v11.dart')
+          s=p.read_text().replace('      } catch (_) {\n        // A throttled provider', "      } catch (e, st) {\n        print('STRUCTURED_FAILURE $e $st');\n        // A throttled provider")
+          s=s.replace('        final decoded = jsonDecode(body);', "        final decoded = jsonDecode(body);\n        print('API_TRACE $uri $body');")
+          s=s.replace('        lastError = e;','        print(\'HTTP_FAILURE $uri $e\');\n        lastError = e;')
+          p.write_text(s)
+          p=Path('mgd-neuro-app/tool');p.mkdir(exist_ok=True)
+          (p/'probe0318.dart').write_text('''
+          import 'dart:convert';
+          import 'dart:io';
+          import '../lib/web_knowledge_explorer_v11.dart';
+          import '../lib/plastic_language_brain_v04.dart';
+          import '../lib/sensory_world_v06.dart';
+          Future<void> main() async {
+            for(final topic in ['Organismi','Amminoacido proteinogenico']) {
+              final explorer=WebKnowledgeExplorer11();
+              final draft=await explorer.research(ResearchGoal11(query:topic,topic:topic,reason:'live regression reproduction',value:1)).timeout(const Duration(minutes:3));
+              final memory=ResearchMemory11(),brain=PlasticLanguageBrain04(),world=MgdWorld06();
+              explorer.integrate(brain,world,memory,draft);
+              for(var n=0;n<10000 && ResearchSemantics317.getPending(memory)>0;n++)ResearchSemantics317.processQueue(brain,world,memory);
+              final result={'topic':topic,'error':draft.error,'documents':draft.documents.map((d)=>{'title':d.title,'url':d.url,'text':d.text,'provider':d.provider,'family':d.family,'trust':d.trust}).toList(),'preliminaryClaims':draft.claims.length,'claims':memory.claims.values.map((c)=>c.toJson()).toList(),'evidence':memory.evidence.length,'passages':memory.passages.length,'session':memory.lastSession?.toJson()};
+              await File('live-${topic.replaceAll(' ','_')}.json').writeAsString(jsonEncode(result));
+              print('RESULT $topic docs=${draft.documents.length} claims=${memory.claims.length} evidence=${memory.evidence.length} error=${draft.error}');
+            }
+          }
+          ''')
+          PY
+      - name: Dependencies
+        working-directory: mgd-neuro-app
+        run: flutter pub get
+      - name: End to end live probe of original 0.31.7
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          dart run tool/probe0318.dart 2>&1 | tee live-probe0317.log
+      - name: Upload diagnostic observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0317-zero-live-diagnostic
+          path: |
+            mgd-neuro-app/live-*.json
+            mgd-neuro-app/live-probe0317.log
+          retention-days: 14
