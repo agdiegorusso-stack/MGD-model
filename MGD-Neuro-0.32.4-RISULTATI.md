@@ -37,6 +37,9 @@ Revisioni Qwen: 0.5B `7ae557604adf67be50417f59c2c2f167def9a775`; 1.5B `989aa7980
 
 ## Download e installazione
 
+**[Download diretto APK, senza ZIP](https://github.com/agdiegorusso-stack/MGD-model/releases/download/mgd-neuro-v0.32.4/MGD-Neuro-0.32.4.apk)** — disponibile anche senza accedere agli artifact Actions.
+
+
 - [APK Android 0.32.4 — archivio ZIP](https://github.com/agdiegorusso-stack/MGD-model/actions/runs/36185703631/artifacts/10887085835)
 - [Sorgenti esatti della build](https://github.com/agdiegorusso-stack/MGD-model/actions/runs/36185703631/artifacts/10887105887)
 - [Log completi, benchmark e verifiche di firma/versione](https://github.com/agdiegorusso-stack/MGD-model/actions/runs/36185703631/artifacts/10887415404)
@@ -90,3 +93,7 @@ Questa è la stessa sequenza coperta dal nuovo test Android. Il test chiude e ri
 È un primo esperimento operativo su un dominio linguistico circoscritto: acquisizione da una sola esposizione, domande con varianti previste, correzioni tracciabili e persistenza. Non dimostra apprendimento rapido di qualunque frase, verità delle informazioni insegnate o superiorità generale sui Transformer.
 
 Per stabilire se MGD dà un vantaggio, il confronto successivo dovrà includere molte memorie concorrenti, interferenze, ritardi e budget fissati, un insieme di valutazione indipendente e una baseline linguistica che superi prima i controlli del protocollo. L'app non richiede un modello Transformer per le quattro famiglie introdotte.
+
+## Audit successivo: contributo effettivo di MGD
+
+La rimozione completa dei calcoli MGD dal nuovo modulo conserva 288/288 risposte e non cambia nessuno dei 19.200 ordini confrontati nello stress. Il pilot originario era strutturalmente insensibile all'ordinamento, perché accettava soltanto un candidato singolo. [Prova, risultati e limite individuato](MGD-0.32.4-PROVA-CONTRIBUTO.md). Questi risultati non dimostrano superiorità sui Transformer.

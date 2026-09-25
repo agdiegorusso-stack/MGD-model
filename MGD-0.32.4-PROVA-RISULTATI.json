@@ -1,0 +1,38 @@
+{
+  "pilot": {
+    "cases": 288,
+    "mgdCorrect": 288,
+    "withoutMgdCorrect": 288,
+    "pairedPredictionDifferences": 0,
+    "restoreDifferences": 0,
+    "accuracyDeltaPercentagePoints": 0
+  },
+  "stress": {
+    "seeds": 20,
+    "stepsPerSeed": 160,
+    "orderedQueryComparisons": 19200,
+    "orderedQueryDifferences": 0,
+    "formattedAnswerDifferences": 0,
+    "semanticRecordDifferences": 0,
+    "nonUniformCurrentStates": 0,
+    "noMgdRecordsWithGeometry": 0,
+    "successfulCorrections": 320,
+    "added": 3388,
+    "duplicates": 672,
+    "maxCompetingCandidates": 77
+  },
+  "positiveControl": {
+    "artificialGeometryChangesOrder": true,
+    "mgdOrder": [
+      "norvente|insegue|talverio|false|1",
+      "norvente|insegue|felvario|false|2"
+    ],
+    "chronologicalOrder": [
+      "norvente|insegue|felvario|false|2",
+      "norvente|insegue|talverio|false|1"
+    ],
+    "notAnAccuracyGain": true
+  },
+  "scope": "RelationalMemory324 only. Identical reader, language rules and versioning. Full removal of its MGD evolve/strength; other app subsystems are not evaluated.",
+  "gateDecision": "no_causal_accuracy_gain_do_not_claim_MGD_superiority"
+}
