@@ -10,9 +10,34 @@ import '../lib/knowledge_inspector_v0315.dart';
 import '../lib/learning_service_v0321.dart';
 import '../lib/memory_runtime_v0319.dart';
 import '../lib/reasoning_v0321.dart';
+import 'research_v0318_test.dart' show Sources318;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+      'structured Wikidata sources are present in the session document inventory',
+      () async {
+    final explorer = WebKnowledgeExplorer11(jsonLoader318: Sources318().call);
+    final draft = await explorer.research(const ResearchGoal11(
+        query: 'Organismi',
+        topic: 'Organismi',
+        reason: 'source inventory',
+        value: 1));
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        m = ResearchMemory11();
+    explorer.integrate(b, w, m, draft);
+    final inspector = MemoryInspector315(
+        brain: b, world: w, research: m, language: MgdLanguage20());
+    final documents = inspector.sessionRows(m.lastSession!, 'Documenti');
+    for (final claim in draft.claims) {
+      expect(documents.any((d) => d['sourceUrl'] == claim.source.url), true,
+          reason: claim.source.url);
+    }
+    expect(documents.length, m.lastSession!.documents);
+    expect(inspector.sessionRows(m.lastSession!, 'Provider').length,
+        m.lastSession!.providers);
+  });
   test(
       'one local reading answers unseen questions; reimport is not new evidence',
       () async {

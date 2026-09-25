@@ -638,20 +638,29 @@ class ResearchSemantics317 {
     ResearchDraft11 draft,
   ) {
     final iso = DateTime.now().toIso8601String();
+    // A structured API statement also has a source document. Keep it in the
+    // session's inspectable intake, even if the provider returned no prose page.
+    final documents = <String, WebDocument11>{};
+    for (final d in [
+      ...draft.documents,
+      ...draft.claims.map((c) => c.source)
+    ]) {
+      documents.putIfAbsent(digest([canonicalUrl(d.url), d.text]), () => d);
+    }
     final session = ResearchSession11(
       topic: draft.goal.topic,
       query: draft.goal.query,
       reason: draft.goal.reason,
       startedAtIso: iso,
     );
-    session.documents = draft.documents.length;
+    session.documents = documents.length;
     session.sentencesRead = 0;
-    session.sources.addAll(draft.documents.map((d) => d.provider).toSet());
-    session.providers = draft.documents.map((d) => d.provider).toSet().length;
-    session.families = draft.documents.map(family).toSet().length;
+    session.sources.addAll(documents.values.map((d) => d.provider).toSet());
+    session.providers = documents.values.map((d) => d.provider).toSet().length;
+    session.families = documents.values.map(family).toSet().length;
     session.audit315.addAll({
       'version': '0.32.1',
-      'documents': draft.documents.map(docMap).toList(),
+      'documents': documents.values.map(docMap).toList(),
       'providerDiagnostics': draft.diagnostics318,
       'decisions': <Map<String, dynamic>>[],
       'verification': <Map<String, dynamic>>[],
