@@ -178,6 +178,25 @@ class RelationalMemory324 {
     });
     return candidates;
   }
+  /// Preserve the pre-existing source reader when this experimental memory
+  /// has no relevant assertion. History also participates: a corrected-away
+  /// assertion must not silently reappear through a legacy fallback.
+  static String? answerIfKnown(ResearchMemory11 m,String question) {
+    if(!LearnedReader324.isQuestion(question)) return null;
+    final q=LearnedReader324.parse(question);
+    final ts=LearnedReader324.tokens(question);
+    final relations=ts.where(LearnedReader324.predicates.containsKey)
+      .map((t)=>LearnedReader324.predicates[t]).toSet();
+    final normalized=' ${ts.join(' ')} ';
+    final known=rows(m).any((r) {
+      if(!relations.contains(r['relation'])) return false;
+      if(q!=null) return (q.agent=='*'||q.agent==r['agent']) &&
+        (q.patient=='*'||q.patient==r['patient']);
+      return normalized.contains(' ${r['agent']} ') ||
+        normalized.contains(' ${r['patient']} ');
+    });
+    return known?answer(m,question):null;
+  }
   static String? answer(ResearchMemory11 m,String question,{bool mgd=true}) {
     if(!LearnedReader324.isQuestion(question)||
        !LearnedReader324.handles(question)) return null;

@@ -81,6 +81,15 @@ void main() {
     expect(RelationalMemory324.rows(m),isEmpty);
     expect(RelationalMemory324.answer(m,'Cosa contiene la cassa'),contains('Non interpreto'));
   });
+  test('legacy fallback stays available except for current or corrected assertions',() {
+    final m=ResearchMemory11();
+    expect(RelationalMemory324.answerIfKnown(m,'Chi contiene il nucleo?'),isNull);
+    RelationalMemory324.learn(m,'Il gatto insegue il topo.');
+    expect(RelationalMemory324.answerIfKnown(m,'Chi contiene il nucleo?'),isNull);
+    expect(RelationalMemory324.answerIfKnown(m,'Chi rincorre il topo?'),contains('gatto'));
+    RelationalMemory324.learn(m,'Correggi: Il gatto insegue la lepre.');
+    expect(RelationalMemory324.answerIfKnown(m,'Chi rincorre il topo?'),startsWith('Non ho'));
+  });
   test('negation and conflicting assertions do not become positive truth',() {
     final m=ResearchMemory11();
     RelationalMemory324.learn(m,'Il gatto non insegue il topo.');

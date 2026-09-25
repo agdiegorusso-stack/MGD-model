@@ -718,7 +718,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           RegExp(r'^\s*correggi\s*:',caseSensitive:false).hasMatch(text)) {
         String? reply324;
         if (LearnedReader324.isQuestion(text)) {
-          reply324 = RelationalMemory324.answer(_researchMemory,text);
+          reply324 = RelationalMemory324.answerIfKnown(_researchMemory,text);
         } else {
           SourceMemory323.retain(_researchMemory,WebDocument11(
             provider:'Chat utente',family:'locale:utente',title:'Testo insegnato in chat',
@@ -767,7 +767,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final grounded = (curiosityAnswer == null && sensoryGrounding == null)
           ? _world.groundedAnswer07(_brain, text)
           : null;
-      final sourced317 = RelationalMemory324.answer(_researchMemory,text) ??
+      final sourced317 = RelationalMemory324.answerIfKnown(_researchMemory,text) ??
           Reasoning321.answer(text, _researchMemory) ??
           ResearchSemantics317.answer(text, _researchMemory,
               realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
