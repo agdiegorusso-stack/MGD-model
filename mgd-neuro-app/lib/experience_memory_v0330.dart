@@ -23,42 +23,42 @@ class Experience33 {
     required this.source,
     required this.at,
     required Features33 features,
-  }) : label = label.trim(),
-       context = canonical33(context),
-       features = Map.unmodifiable(
-         features.map(
-           (k, v) => MapEntry(k, Map<String, double>.unmodifiable(v)),
-         ),
-       );
+  })  : label = label.trim(),
+        context = canonical33(context),
+        features = Map.unmodifiable(
+          features.map(
+            (k, v) => MapEntry(k, Map<String, double>.unmodifiable(v)),
+          ),
+        );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'label': label,
-    'context': context,
-    'description': description,
-    'source': source,
-    'at': at,
-    'features': features,
-  };
+        'id': id,
+        'label': label,
+        'context': context,
+        'description': description,
+        'source': source,
+        'at': at,
+        'features': features,
+      };
   factory Experience33.fromJson(Map<String, dynamic> j) => Experience33(
-    id: (j['id'] as num).toInt(),
-    label: j['label'] as String,
-    context: j['context'] as String,
-    description: j['description'] as String,
-    source: j['source'] as String,
-    at: j['at'] as String,
-    features: ExperienceMemory33.validate(
-      (j['features'] as Map).map(
-        (k, v) => MapEntry(
-          k.toString(),
-          (v as Map).map(
-            (a, b) => MapEntry(a.toString(), (b as num).toDouble()),
+        id: (j['id'] as num).toInt(),
+        label: j['label'] as String,
+        context: j['context'] as String,
+        description: j['description'] as String,
+        source: j['source'] as String,
+        at: j['at'] as String,
+        features: ExperienceMemory33.validate(
+          (j['features'] as Map).map(
+            (k, v) => MapEntry(
+              k.toString(),
+              (v as Map).map(
+                (a, b) => MapEntry(a.toString(), (b as num).toDouble()),
+              ),
+            ),
           ),
+          normalize: false,
         ),
-      ),
-      normalize: false,
-    ),
-  );
+      );
 }
 
 class Prediction33 {
@@ -87,6 +87,7 @@ class ExperienceMemory33 {
   static const double temperature = 12;
   final List<Experience33> _episodes = [];
   final Map<String, Map<String, Map<String, double>>> _weights = {};
+  final Map<String, double> _temperatures = {};
   int _nextId = 1, revision = 0, acceptedUpdates = 0, rejectedUpdates = 0;
   int evaluated = 0,
       correct = 0,
@@ -104,22 +105,22 @@ class ExperienceMemory33 {
       .length;
   int get serializedBytes => utf8.encode(jsonEncode(toJson())).length;
   Map<String, dynamic> get metrics => {
-    'episodes': _episodes.length,
-    'concepts': conceptCount,
-    'capacity': capacity,
-    'evaluatedBeforeLearning': evaluated,
-    'correctBeforeLearning': correct,
-    'answered': answered,
-    'answeredCorrect': answeredCorrect,
-    'coldStarts': coldStarts,
-    'meanLogLoss': evaluated == 0 ? null : logLoss / evaluated,
-    'acceptedMetricUpdates': acceptedUpdates,
-    'rejectedMetricUpdates': rejectedUpdates,
-    'lastPredictMicros': lastPredictMicros,
-    'lastLearnMicros': lastLearnMicros,
-    'coordinatesVisited': coordinatesVisited,
-    'evaluationResetAfterDeletion': evaluationReset,
-  };
+        'episodes': _episodes.length,
+        'concepts': conceptCount,
+        'capacity': capacity,
+        'evaluatedBeforeLearning': evaluated,
+        'correctBeforeLearning': correct,
+        'answered': answered,
+        'answeredCorrect': answeredCorrect,
+        'coldStarts': coldStarts,
+        'meanLogLoss': evaluated == 0 ? null : logLoss / evaluated,
+        'acceptedMetricUpdates': acceptedUpdates,
+        'rejectedMetricUpdates': rejectedUpdates,
+        'lastPredictMicros': lastPredictMicros,
+        'lastLearnMicros': lastLearnMicros,
+        'coordinatesVisited': coordinatesVisited,
+        'evaluationResetAfterDeletion': evaluationReset,
+      };
 
   static Features33 validate(Features33 input, {bool normalize = true}) {
     if (input.isEmpty || input.length > 3)
@@ -224,7 +225,7 @@ class ExperienceMemory33 {
       // mass, independent of how often that label has been repeated.
       kernels
           .putIfAbsent(canonical33(e.label), () => [])
-          .add(exp(-temperature * d / x.length));
+          .add(exp(-(_temperatures[context] ?? temperature) * d / x.length));
     }
     final scores = {
       for (final e in kernels.entries)
@@ -246,15 +247,16 @@ class ExperienceMemory33 {
     final byChannel = <String, Map<String, double>>{
       for (final m in x.keys) m: _posterior({m: x[m]!}, pool, context, weights),
     };
-    final complete = pool
-        .where((e) => x.keys.every(e.features.containsKey))
-        .toList();
+    final complete =
+        pool.where((e) => x.keys.every(e.features.containsKey)).toList();
     if (complete.isEmpty)
       return Prediction33(
         {},
         byChannel,
         [],
-        pool.isEmpty ? 'Nessun esempio confermato in questo contesto.' : 'Questi canali non sono ancora associati in un episodio confermato.',
+        pool.isEmpty
+            ? 'Nessun esempio confermato in questo contesto.'
+            : 'Questi canali non sono ancora associati in un episodio confermato.',
       );
     final exact = complete
         .where(
@@ -267,7 +269,9 @@ class ExperienceMemory33 {
         {for (final l in exactLabels) l: 1 / exactLabels.length},
         byChannel,
         exact.map((e) => e.id).toList(),
-        exactLabels.length == 1 ? 'Richiamo di uno stimolo già confermato.' : 'Lo stesso stimolo ha conferme incompatibili: correggi gli episodi o distingui il contesto.',
+        exactLabels.length == 1
+            ? 'Richiamo di uno stimolo già confermato.'
+            : 'Lo stesso stimolo ha conferme incompatibili: correggi gli episodi o distingui il contesto.',
         accepted: exactLabels.length == 1,
         exactRecall: true,
       );
@@ -294,8 +298,7 @@ class ExperienceMemory33 {
       );
     // Open-set distance check: a lone stored class must not get 100% certainty
     // for an arbitrary new stimulus. Scores are NOT calibrated probabilities.
-    final accepted =
-        ranked.isNotEmpty &&
+    final accepted = ranked.isNotEmpty &&
         nearest < .38 &&
         ranked.first.value >= .72 &&
         (ranked.length == 1 || ranked.first.value - ranked[1].value >= .20);
@@ -331,6 +334,8 @@ class ExperienceMemory33 {
   }
 
   void _adapt(Experience33 incoming) {
+    final temperature =
+        this._temperatures[incoming.context] ?? ExperienceMemory33.temperature;
     final refs = _balanced(incoming.context, limit: 48);
     if (refs.map((e) => canonical33(e.label)).toSet().length < 2) return;
     final candidate = <String, Map<String, Map<String, double>>>{
@@ -352,8 +357,7 @@ class ExperienceMemory33 {
       final mass = <int, double>{};
       var all = 0.0, pos = 0.0;
       for (final e in eligible) {
-        final q =
-            exp(
+        final q = exp(
               -temperature *
                   _distance(
                     incoming.features[m]!,
@@ -412,6 +416,50 @@ class ExperienceMemory33 {
     }
   }
 
+  /// Select score sharpness using retained training episodes, leaving each
+  /// anchor out of its own reference set. Never inspect evaluation samples.
+  /// This is bounded empirical calibration, not an open-world certainty proof.
+  void _calibrate(String context) {
+    final pool = _episodes.where((e) => e.context == context).toList();
+    if (pool.length % 8 != 0) return;
+    final counts = <String, int>{};
+    for (final e in pool) {
+      final l = canonical33(e.label);
+      counts[l] = (counts[l] ?? 0) + 1;
+    }
+    if (counts.length < 2 || counts.values.any((n) => n < 2)) return;
+    final anchors = _balanced(context, limit: 16);
+    final previous = _temperatures[context] ?? temperature;
+    final baseline = <int, String?>{};
+    double loss(double value, {bool capture = false}) {
+      _temperatures[context] = value;
+      var total = 0.0;
+      for (final e in anchors) {
+        final p = _posterior(e.features,
+            pool.where((x) => x.id != e.id).toList(), context, _weights);
+        final ranked = p.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        final best = ranked.isEmpty ? null : ranked.first.key;
+        if (capture) baseline[e.id] = best;
+        if (!capture &&
+            baseline[e.id] == canonical33(e.label) &&
+            best != baseline[e.id]) return double.infinity;
+        total -= log(max(1e-12, p[canonical33(e.label)] ?? 0));
+      }
+      return total / anchors.length + 1e-5 * value;
+    }
+
+    var selected = previous, bestLoss = loss(previous, capture: true);
+    for (final value in [6.0, 12.0, 24.0, 48.0]) {
+      final current = loss(value);
+      if (current < bestLoss) {
+        selected = value;
+        bestLoss = current;
+      }
+    }
+    _temperatures[context] = selected;
+  }
+
   Experience33 learn(
     Features33 input, {
     required String label,
@@ -457,6 +505,7 @@ class ExperienceMemory33 {
     );
     _adapt(e);
     _episodes.add(e);
+    _calibrate(c);
     revision++;
     lastLearnMicros = watch.elapsedMicroseconds;
     return e;
@@ -470,11 +519,13 @@ class ExperienceMemory33 {
     if (count == 0) return 0;
     _episodes.clear();
     _weights.clear();
+    _temperatures.clear();
     acceptedUpdates = 0;
     rejectedUpdates = 0;
     for (final e in kept) {
       _adapt(e);
       _episodes.add(e);
+      _calibrate(e.context);
     }
     evaluated = 0;
     correct = 0;
@@ -491,33 +542,40 @@ class ExperienceMemory33 {
   }
 
   int deleteConcept(String label, {String? context}) => deleteWhere(
-    (e) =>
-        canonical33(e.label) == canonical33(label) &&
-        (context == null || e.context == canonical33(context)),
-  );
+        (e) =>
+            canonical33(e.label) == canonical33(label) &&
+            (context == null || e.context == canonical33(context)),
+      );
 
   Map<String, dynamic> toJson() => {
-    'schema': 1,
-    'nextId': _nextId,
-    'revision': revision,
-    'episodes': _episodes.map((e) => e.toJson()).toList(),
-    'weights': _weights,
-    'acceptedUpdates': acceptedUpdates,
-    'rejectedUpdates': rejectedUpdates,
-    'evaluated': evaluated,
-    'correct': correct,
-    'answered': answered,
-    'answeredCorrect': answeredCorrect,
-    'coldStarts': coldStarts,
-    'logLoss': logLoss,
-    'evaluationReset': evaluationReset,
-  };
+        'schema': 1,
+        'nextId': _nextId,
+        'revision': revision,
+        'episodes': _episodes.map((e) => e.toJson()).toList(),
+        'weights': _weights,
+        'temperatures': _temperatures,
+        'acceptedUpdates': acceptedUpdates,
+        'rejectedUpdates': rejectedUpdates,
+        'evaluated': evaluated,
+        'correct': correct,
+        'answered': answered,
+        'answeredCorrect': answeredCorrect,
+        'coldStarts': coldStarts,
+        'logLoss': logLoss,
+        'evaluationReset': evaluationReset,
+      };
   factory ExperienceMemory33.fromJson(Map<String, dynamic> j) {
     if (j['schema'] != 1)
       throw const FormatException(
         'Versione della memoria esperienziale non supportata.',
       );
     final m = ExperienceMemory33();
+    for (final entry in (j['temperatures'] as Map? ?? {}).entries) {
+      final value = (entry.value as num).toDouble();
+      if (![6.0, 12.0, 24.0, 48.0].contains(value))
+        throw const FormatException('Calibrazione non valida.');
+      m._temperatures[entry.key.toString()] = value;
+    }
     m._episodes.addAll(
       (j['episodes'] as List).map(
         (e) => Experience33.fromJson(Map<String, dynamic>.from(e as Map)),
