@@ -415,7 +415,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       return;
     if (_chat.text.isNotEmpty ||
         !ResearchSemantics317.needsMaintenance(_researchMemory)) return;
-    _maintenance317 = true;
+    setState(() => _maintenance317 = true);
     try {
       if (ResearchSemantics317.needsRecovery318(_researchMemory)) {
         final store = MgdStateStore26.instance;
@@ -472,7 +472,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       if (mounted)
         setState(() => _status = 'Riesame sospeso, dati conservati: $e');
     } finally {
-      _maintenance317 = false;
+      if (mounted) setState(() => _maintenance317 = false);
     }
   }
 

@@ -14,6 +14,7 @@ import 'package:mgd_neuro_mobile/web_knowledge_explorer_v11.dart';
 import 'package:mgd_neuro_mobile/mgd_language_v020.dart';
 import 'package:mgd_neuro_mobile/navigable_graph_v013.dart';
 import 'package:mgd_neuro_mobile/relational_memory_v0324.dart';
+import 'package:mgd_neuro_mobile/knowledge_inspector_v0315.dart';
 
 Features33 cue33(int visual, int audio, {double noise = 0}) => {
   'vision:v1': {'a': visual == 0 ? 1 : noise, 'b': visual == 1 ? 1 : noise},
@@ -308,6 +309,9 @@ void main() {
     expect(l.tokenCount.containsKey('mario'), false);
     expect(w.experience33.episodes, isEmpty);
     expect(w.prototypes.where((p) => p.label == 'Mario'), isEmpty);
+      final inspector=MemoryInspector315(brain:b,world:w,research:r,language:l);
+      expect(inspector.metricRows('Entità').length,b.stats().entities);
+      expect(inspector.metricRows('Visione').length,w.stats().visualPatterns);
     expect(
       SourceMemory323.rows(r).any((e) => '${e['text']}'.contains('Mario')),
       false,

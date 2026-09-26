@@ -449,18 +449,43 @@ void main() {
     await waitBoot319(tester);
     Future<void> send(String text) async {
       await tester.enterText(find.byType(TextField), text);
+      final button = find.ancestor(
+          of: find.byIcon(Icons.arrow_upward),
+          matching: find.byType(IconButton));
+      for (var n = 0;
+          n < 150 && tester.widget<IconButton>(button).onPressed == null;
+          n++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.widget<IconButton>(button).onPressed, isNotNull,
+          reason: 'Chat must become ready before sending');
       await tester.tap(find.byIcon(Icons.arrow_upward));
       for (var n = 0; n < 150; n++) {
         await tester.pump(const Duration(milliseconds: 100));
-        final button = find.ancestor(
-            of: find.byIcon(Icons.arrow_upward),
-            matching: find.byType(IconButton));
-        if (button.evaluate().isNotEmpty &&
-            tester.widget<IconButton>(button).onPressed != null) break;
+        final consumed = tester
+            .widget<TextField>(find.byType(TextField))
+            .controller!
+            .text
+            .isEmpty;
+        if (consumed && tester.widget<IconButton>(button).onPressed != null)
+          break;
       }
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          isEmpty,
+          reason: 'The submitted text must be consumed, not silently ignored');
+      expect(tester.widget<IconButton>(button).onPressed, isNotNull);
+      await tester.pumpAndSettle(); // also wait for the 220 ms message scroll
     }
 
     await send('Il norvente insegue il talverio.');
+    final initialMemory = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(RelationalMemory324.stats(initialMemory.research)['current'], 1);
+    expect(
+        RelationalMemory324.answer(
+            initialMemory.research, 'Da chi viene rincorso il talverio?'),
+        contains('norvente insegue talverio'));
     await send('Da chi viene rincorso il talverio?');
     expect(find.textContaining('norvente insegue talverio'), findsOneWidget);
     await send('Correggi: Il norvente insegue il felvario.');
