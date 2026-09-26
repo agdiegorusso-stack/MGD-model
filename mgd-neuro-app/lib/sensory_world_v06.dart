@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 
 import 'plastic_language_brain_v04.dart';
 import 'native_mgd_engine_v09.dart';
+import 'experience_memory_v0330.dart';
 
 part 'curiosity_policy_v0316.dart';
 
@@ -249,6 +250,10 @@ class MgdWorld06 {
   final List<ThoughtStep06> thoughts = [];
 
   final Map<String, dynamic> runtime319 = {};
+  ExperienceMemory33 experience33 = ExperienceMemory33();
+  // Heavy work is triggered by input or an explicit command, not an idle clock.
+  bool eventDriven33 = true;
+  Map<String,double>? lastFeatures33;
   int step = 0;
   int nextObservationId = 1;
   int thoughtCycles = 0;
@@ -566,6 +571,7 @@ class MgdWorld06 {
   }
 
   SensoryResult06 _observe(String modality, Map<String, double> features) {
+    lastFeatures33 = Map.of(features);
     step++;
     SensoryPrototype06? best;
     var bestSimilarity = 0.0;
@@ -596,10 +602,13 @@ class MgdWorld06 {
       prototype = best!;
       final eta =
           (0.20 / sqrt(max(1, prototype.observations))).clamp(0.035, 0.20);
-      final keys = {...prototype.centroid.keys, ...features.keys};
-      for (final k in keys) {
-        final old = prototype.centroid[k] ?? 0;
-        prototype.centroid[k] = old + eta * ((features[k] ?? 0) - old);
+      // An unconfirmed similar observation must not move a named identity.
+      if (prototype.semanticEntityId == null) {
+        final keys = {...prototype.centroid.keys, ...features.keys};
+        for (final k in keys) {
+          final old = prototype.centroid[k] ?? 0;
+          prototype.centroid[k] = old + eta * ((features[k] ?? 0) - old);
+        }
       }
       prototype.observations++;
       prototype.lastSeen = step;
@@ -672,22 +681,34 @@ class MgdWorld06 {
   }
 
   SensoryResult06 observeVisionBytes(Uint8List bytes) {
+    return _observe('vision', encodeVision33(bytes));
+  }
+
+  static Map<String,double> encodeVision33(Uint8List bytes) {
+    if (bytes.length > 16 * 1024 * 1024) throw StateError('Immagine troppo grande.');
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw StateError('Immagine non decodificabile.');
     final resized = img.copyResize(decoded,
         width: 48, height: 48, interpolation: img.Interpolation.average);
-    return _observe('vision', _visionFeatures(resized));
+    return {'v:bias': .25, ...MgdWorld06()._visionFeatures(resized)};
   }
 
   SensoryResult06 observeAudioPcm(Uint8List bytes, {int sampleRate = 16000}) {
+    return _observe('audio', encodeAudio33(bytes, sampleRate:sampleRate));
+  }
+
+  static Map<String,double> encodeAudio33(Uint8List bytes, {int sampleRate = 16000}) {
     if (bytes.length < 800) throw StateError('Registrazione troppo breve.');
+    if (sampleRate != 16000 || bytes.length.isOdd || bytes.length > 640000) {
+      throw StateError('Usa audio PCM16 mono a 16 kHz, massimo 20 secondi.');
+    }
     final bd = ByteData.sublistView(bytes);
     final n = bytes.length ~/ 2;
     final samples = Float64List(n);
     for (var i = 0; i < n; i++) {
       samples[i] = bd.getInt16(i * 2, Endian.little) / 32768.0;
     }
-    return _observe('audio', _audioFeatures(samples, sampleRate));
+    return {'a:bias': .05, ...MgdWorld06()._audioFeatures(samples, sampleRate)};
   }
 
   Map<String, double> _visionFeatures(img.Image image) {
@@ -1794,8 +1815,8 @@ class MgdWorld06 {
       }
     }
     return MgdWorldStats06(
-      visualPatterns: prototypes.where((p) => p.modality == 'vision').length,
-      auditoryPatterns: prototypes.where((p) => p.modality == 'audio').length,
+      visualPatterns: prototypes.where((p) => p.modality == 'vision' && p.centroid.isNotEmpty).length,
+      auditoryPatterns: prototypes.where((p) => p.modality == 'audio' && p.centroid.isNotEmpty).length,
       worldEdges: edges.length,
       semanticBindings:
           prototypes.where((p) => p.semanticEntityId != null).length,
@@ -1815,6 +1836,8 @@ class MgdWorld06 {
 
   Map<String, dynamic> toJson() => {
         'version': version,
+        'experience33': experience33.toJson(),
+        'eventDriven33': eventDriven33,
         'step': step,
         'nextObservationId': nextObservationId,
         'thoughtCycles': thoughtCycles,
@@ -1883,6 +1906,10 @@ class MgdWorld06 {
 
   factory MgdWorld06.fromJson(Map<String, dynamic> j) {
     final w = MgdWorld06();
+    if (j['experience33'] is Map) {
+      w.experience33 = ExperienceMemory33.fromJson(Map<String,dynamic>.from(j['experience33'] as Map));
+    }
+    w.eventDriven33 = j['eventDriven33'] as bool? ?? true;
     if (j['runtime319'] is Map)
       w.runtime319.addAll(Map<String, dynamic>.from(j['runtime319'] as Map));
     final metrics = j['lastThinkMetrics321'] as Map? ?? {};

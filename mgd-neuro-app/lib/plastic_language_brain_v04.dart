@@ -690,6 +690,51 @@ class PlasticLanguageBrain04 {
         .replaceAll(RegExp(r'^[\s,.:;!?]+|[\s,.:;!?]+$'), '');
   }
 
+  static bool containsLabel33(String text,String label) {
+    final hay=' ${lexicalTokens(normalizeText(text)).join(' ')} ';
+    final needle=lexicalTokens(normalizeText(label)).join(' ');
+    return needle.isNotEmpty && hay.contains(' $needle ');
+  }
+
+  /// Keep numeric slots stable, but remove active semantic/lexical references.
+  /// A new explicit exposure may learn this name again as a new entity.
+  Set<int> forgetNode33(String label) {
+    final n=normalizeText(label);
+    final ids=entities.where((e)=>e.kind!='deleted' &&
+      (normalizeText(e.label)==n || e.aliases.contains(n))).map((e)=>e.id).toSet();
+    bool mentions(String? s)=>s!=null&&containsLabel33(s,label);
+    for(final entry in slots.entries.toList()) {
+      if(ids.contains(entry.value.subjectId)) {slots.remove(entry.key);continue;}
+      entry.value.candidates.removeWhere((_,c)=>mentions(c.display));
+      if(entry.value.candidates.isEmpty) slots.remove(entry.key);
+    }
+    episodes.removeWhere((e)=>ids.contains(e.subjectId)||mentions(e.userText)||mentions(e.agentText));
+    lexicalSenses028.removeWhere((k,_)=>mentions(k));
+    for(final senses in lexicalSenses028.values) {
+      senses.removeWhere((s)=>ids.contains(s.entityId)||mentions(s.label)||mentions(s.gloss));
+    }
+    responseAttractors028.removeWhere((k,v)=>mentions(k)||mentions(v.promptSurface));
+    for(final slot in responseAttractors028.values) {slot.candidates.removeWhere((k,c)=>mentions(c.text));}
+    for(final id in ids) {
+      entitySurfaceForms031.remove(id);
+      final e=entities[id];
+      if(e.kind=='self'||e.kind=='user') continue;
+      _entityKeyToId.removeWhere((_,value)=>value==id);
+      entities[id]=EntityMemory04(id:id,key:'@deleted:$id',label:'',kind:'deleted');
+    }
+    final tokenIds=assemblies.where((a)=>normalizeText(a.token)==n).map((a)=>a.id).toSet();
+    for(final id in tokenIds) {
+      _tokenToId.remove(assemblies[id].token);
+      assemblies[id]=TokenAssembly04(id:id,token:'<deleted:$id>',surface:'');
+      temporal.remove(id);associative.remove(id);
+    }
+    for(final row in temporal.values) {row.removeWhere((k,_)=>tokenIds.contains(k));}
+    for(final row in associative.values) {row.removeWhere((k,_)=>tokenIds.contains(k));}
+    workingMemory.removeWhere(tokenIds.contains);
+    step++;discoverConcepts();
+    return ids;
+  }
+
   static List<String> lexicalTokens(String input) {
     final text = input.replaceAll('’', "'");
     final rx =
@@ -4834,7 +4879,7 @@ class PlasticLanguageBrain04 {
     return Brain04Stats(
       vocabulary: max(0, assemblies.length - 2),
       synapses: _edgeCount(temporal) + _edgeCount(associative),
-      entities: entities.length,
+      entities: entities.where((e)=>e.kind!='deleted').length,
       relations:
           relations.where((r) => _canonicalRelation(r.id) == r.id).length,
       episodes: episodes.length,

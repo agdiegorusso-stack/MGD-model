@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:mgd_neuro_mobile/experience_memory_v0330.dart';
+import 'package:mgd_neuro_mobile/knowledge_deletion_v0330.dart';
+import '../test/experience_v0330_test.dart' show cue33, picture33, tone33;
 import 'package:mgd_neuro_mobile/relational_memory_v0324.dart';
 import '../test/research_v0318_test.dart' show Sources318;
 import 'package:flutter/material.dart';
@@ -128,6 +131,8 @@ void main() {
         confidence: .5,
         source: 'Android fixture'));
     for (var n = 0; n < 6; n++) MemoryRuntime319.pulse(b, w);
+    w.eventDriven33 =
+        false; // This legacy test explicitly exercises the idle scheduler.
     final initialCycles = w.thoughtCycles,
         initialEdges = w.edges.length,
         initialAge = w.entropicAge,
@@ -152,7 +157,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.32.4'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.33.0'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;
@@ -359,105 +364,255 @@ void main() {
     await store.close319();
   });
 
-  testWidgets('Android unparsed source is answered in chat, inspectable and retained by SQLite', (tester) async {
-    final store=MgdStateStore26.instance;
+  testWidgets(
+      'Android unparsed source is answered in chat, inspectable and retained by SQLite',
+      (tester) async {
+    final store = MgdStateStore26.instance;
     await store.clearAll();
-    final b=PlasticLanguageBrain04(),w=MgdWorld06(),
-      r=ResearchMemory11(enabled:false),l=MgdLanguage20();
-    const text='Il norvente viene osservato soltanto quando il rilevatore è acceso.';
-    SourceMemory323.retain(r,const WebDocument11(provider:'Fonte Android',
-      family:'android',title:'Norvente',url:'https://example.invalid/norvente',
-      text:text,trust:.8));
-    r.state317.addAll({'migrationComplete':true,'recovery320Complete':true});
-    await MemoryCheckpoint319().save(b,w,r,l);
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        r = ResearchMemory11(enabled: false),
+        l = MgdLanguage20();
+    const text =
+        'Il norvente viene osservato soltanto quando il rilevatore è acceso.';
+    SourceMemory323.retain(
+        r,
+        const WebDocument11(
+            provider: 'Fonte Android',
+            family: 'android',
+            title: 'Norvente',
+            url: 'https://example.invalid/norvente',
+            text: text,
+            trust: .8));
+    r.state317.addAll({'migrationComplete': true, 'recovery320Complete': true});
+    await MemoryCheckpoint319().save(b, w, r, l);
     await tester.pumpWidget(const MgdNeuro04App());
     await waitBoot319(tester);
-    await tester.enterText(find.byType(TextField),'Che cosa è il norvente?');
+    await tester.enterText(find.byType(TextField), 'Che cosa è il norvente?');
     await tester.tap(find.byIcon(Icons.arrow_upward));
-    for(var n=0;n<150;n++) {
-      await tester.pump(const Duration(milliseconds:100));
-      if(find.textContaining('Passaggi pertinenti conservati').evaluate().isNotEmpty) break;
+    for (var n = 0; n < 150; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find
+          .textContaining('Passaggi pertinenti conservati')
+          .evaluate()
+          .isNotEmpty) break;
     }
-    expect(find.textContaining('Passaggi pertinenti conservati'),findsOneWidget);
-    expect(find.textContaining(text),findsOneWidget);
-    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
-    expect(live.research.claims,isEmpty);
+    expect(
+        find.textContaining('Passaggi pertinenti conservati'), findsOneWidget);
+    expect(find.textContaining(text), findsOneWidget);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(live.research.claims, isEmpty);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('1 passaggi consultabili'),250,
-      scrollable:find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('1 passaggi consultabili'), 250,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('1 passaggi consultabili').hitTestable());
     await tester.pumpAndSettle();
-    expect(find.text('Passaggi e fonti'),findsOneWidget);
-    expect(find.text(text),findsOneWidget);
-    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
+    expect(find.text('Passaggi e fonti'), findsOneWidget);
+    expect(find.text(text), findsOneWidget);
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle(); await store.close319();
-    final restored=await ResearchPersistence11().load();
-    expect(SourceMemory323.stats(restored!)['passages'],1);
-    expect(SourceMemory323.answer('Che cosa è il norvente?',restored),contains(text));
-    print('ANDROID323 '+jsonEncode({'sourceInChat':true,'sourceInspector':true,
-      'sqliteRestore':true,'noInventedClaim':restored.claims.isEmpty}));
-    await store.clearAll(); await store.close319();
+    await tester.pumpAndSettle();
+    await store.close319();
+    final restored = await ResearchPersistence11().load();
+    expect(SourceMemory323.stats(restored!)['passages'], 1);
+    expect(SourceMemory323.answer('Che cosa è il norvente?', restored),
+        contains(text));
+    print('ANDROID323 ' +
+        jsonEncode({
+          'sourceInChat': true,
+          'sourceInspector': true,
+          'sqliteRestore': true,
+          'noInventedClaim': restored.claims.isEmpty
+        }));
+    await store.clearAll();
+    await store.close319();
   });
 
-  testWidgets('Android learned roles: chat teaching, paraphrase, correction, map and SQLite restore',(tester) async {
-    final store=MgdStateStore26.instance;
+  testWidgets(
+      'Android learned roles: chat teaching, paraphrase, correction, map and SQLite restore',
+      (tester) async {
+    final store = MgdStateStore26.instance;
     await store.clearAll();
-    await MemoryCheckpoint319().save(PlasticLanguageBrain04(),MgdWorld06(),
-      ResearchMemory11(enabled:false)..state317.addAll({
-        'migrationComplete':true,'recovery320Complete':true}),MgdLanguage20());
+    await MemoryCheckpoint319().save(
+        PlasticLanguageBrain04(),
+        MgdWorld06(),
+        ResearchMemory11(enabled: false)
+          ..state317
+              .addAll({'migrationComplete': true, 'recovery320Complete': true}),
+        MgdLanguage20());
     await tester.pumpWidget(const MgdNeuro04App());
     await waitBoot319(tester);
     Future<void> send(String text) async {
-      await tester.enterText(find.byType(TextField),text);
+      await tester.enterText(find.byType(TextField), text);
       await tester.tap(find.byIcon(Icons.arrow_upward));
-      for(var n=0;n<150;n++) {
-        await tester.pump(const Duration(milliseconds:100));
-        final button=find.ancestor(of:find.byIcon(Icons.arrow_upward),matching:find.byType(IconButton));
-        if(button.evaluate().isNotEmpty&&tester.widget<IconButton>(button).onPressed!=null) break;
+      for (var n = 0; n < 150; n++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        final button = find.ancestor(
+            of: find.byIcon(Icons.arrow_upward),
+            matching: find.byType(IconButton));
+        if (button.evaluate().isNotEmpty &&
+            tester.widget<IconButton>(button).onPressed != null) break;
       }
     }
+
     await send('Il norvente insegue il talverio.');
     await send('Da chi viene rincorso il talverio?');
-    expect(find.textContaining('norvente insegue talverio'),findsOneWidget);
+    expect(find.textContaining('norvente insegue talverio'), findsOneWidget);
     await send('Correggi: Il norvente insegue il felvario.');
-    expect(find.textContaining('Correzione salvata.'),findsOneWidget);
+    expect(find.textContaining('Correzione salvata.'), findsOneWidget);
     await send('Il norvente rincorre chi?');
-    expect(find.textContaining('norvente insegue felvario'),findsOneWidget);
-    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
-    expect(RelationalMemory324.stats(live.research)['current'],1);
-    expect(RelationalMemory324.stats(live.research)['history'],1);
-    expect(RelationalMemory324.answer(live.research,'Chi rincorre il talverio?'),startsWith('Non ho'));
-    await tester.tap(find.text('Mente'));await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('1 relazioni apprese'),250,
-      scrollable:find.byType(Scrollable).first);
-    await tester.pumpAndSettle();await tester.tap(find.text('1 relazioni apprese').hitTestable());
+    expect(find.textContaining('norvente insegue felvario'), findsOneWidget);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(RelationalMemory324.stats(live.research)['current'], 1);
+    expect(RelationalMemory324.stats(live.research)['history'], 1);
+    expect(
+        RelationalMemory324.answer(live.research, 'Chi rincorre il talverio?'),
+        startsWith('Non ho'));
+    await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Relazioni apprese'),findsOneWidget);
-    expect(find.textContaining('norvente → insegue → felvario'),findsOneWidget);
-    await tester.pageBack();await tester.pumpAndSettle();
-    await tester.tap(find.text('Mondo'));await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Visualizza mappa'),300,
-      scrollable:find.byType(Scrollable).first);
-    await tester.pumpAndSettle();await tester.tap(find.text('Visualizza mappa').hitTestable());
+    await tester.scrollUntilVisible(find.text('1 relazioni apprese'), 250,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField),'norvente');
+    await tester.tap(find.text('1 relazioni apprese').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.text('Relazioni apprese'), findsOneWidget);
+    expect(
+        find.textContaining('norvente → insegue → felvario'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mondo'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Visualizza mappa'), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Visualizza mappa').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'norvente');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
-    expect(find.text('Focus: norvente • 1 collegamenti'),findsOneWidget);
-    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
-    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
+    expect(find.text('Focus: norvente • 1 collegamenti'), findsOneWidget);
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
     await store.close319();
-    await tester.pumpWidget(const MgdNeuro04App());await waitBoot319(tester);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
     await send('Chi rincorre il felvario?');
-    expect(find.textContaining('norvente insegue felvario'),findsOneWidget);
-    final restored=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
-    expect(RelationalMemory324.stats(restored.research)['history'],1);
-    print('ANDROID324 '+jsonEncode({'oneRead':true,'passiveParaphrase':true,
-      'correction':true,'history':true,'worldMap':true,'sqliteRestart':true}));
-    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
-    await store.clearAll();await store.close319();
+    expect(find.textContaining('norvente insegue felvario'), findsOneWidget);
+    final restored = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(RelationalMemory324.stats(restored.research)['history'], 1);
+    print('ANDROID324 ' +
+        jsonEncode({
+          'oneRead': true,
+          'passiveParaphrase': true,
+          'correction': true,
+          'history': true,
+          'worldMap': true,
+          'sqliteRestart': true
+        }));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.clearAll();
+    await store.close319();
+  });
+  testWidgets(
+      'Android multimodal experiences persist, learn in UI and delete coherently',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        r = ResearchMemory11(enabled: false),
+        l = MgdLanguage20();
+    for (final red in [true, false]) {
+      for (final hz in [330.0, 880.0]) {
+        w.experience33.learn({
+          'vision:v1': MgdWorld06.encodeVision33(picture33(red)),
+          'audio:v1': MgdWorld06.encodeAudio33(tone33(hz))
+        }, label: '$red $hz');
+      }
+    }
+    r.state317.addAll({
+      'migrationComplete': true,
+      'recovery318Complete': true,
+      'languagePassages': 0,
+      'languageEvidence': 0
+    });
+    await MemoryCheckpoint319().save(b, w, r, l);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(live.world.experience33.episodes.length, 4);
+    final cycles = live.world.thoughtCycles;
+    await tester.pump(const Duration(seconds: 12));
+    expect(live.world.thoughtCycles, cycles);
+    expect(live.world.eventDriven33, true);
+    await tester.tap(find.text('Mondo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Impara dall’esperienza').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.byKey(const ValueKey('experience-input')), 'saluto breve');
+    await tester.enterText(
+        find.byKey(const ValueKey('experience-label')), 'ciao');
+    await tester.ensureVisible(find.byKey(const ValueKey('experience-teach')));
+    await tester.tap(find.byKey(const ValueKey('experience-teach')));
+    for (var n = 0; n < 100; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find
+          .textContaining('Esperienza confermata e salvata: ciao')
+          .evaluate()
+          .isNotEmpty) break;
+    }
+    expect(live.world.experience33.episodes.length, 5);
+    expect(
+        live.world.experience33.predict(
+            {'text:v1': ExperienceMemory33.textFeatures('saluto breve')}).best,
+        'ciao');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await KnowledgeDeletion33.delete(
+        brain: live.brain,
+        world: live.world,
+        research: live.research,
+        language: live.language,
+        mode: 'mondo',
+        node: 'ciao');
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.close319();
+    final restored = await WorldPersistence06().load();
+    expect(restored!.experience33.episodes.length, 4);
+    expect(restored.experience33.episodes.any((e) => e.label == 'ciao'), false);
+    expect(
+        restored.experience33.predict({
+          'vision:v1': MgdWorld06.encodeVision33(picture33(false)),
+          'audio:v1': MgdWorld06.encodeAudio33(tone33(880))
+        }).best,
+        'false 880.0');
+    print('ANDROID330 ' +
+        jsonEncode({
+          'realPngPcm': true,
+          'uiLearning': true,
+          'sqliteRestart': true,
+          'deletionRetained': true,
+          'idleTrainingDisabled': true
+        }));
+    await store.clearAll();
+    await store.close319();
   });
 }

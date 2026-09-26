@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'dart:ui' show FrameTiming;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/scheduler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -35,6 +36,8 @@ import 'relational_memory_page_v0324.dart';
 import 'learned_reader_v0324.dart';
 import 'knowledge_inspector_v0315.dart';
 import 'curiosity_actions_v0316.dart';
+import 'experience_page_v0330.dart';
+import 'knowledge_deletion_v0330.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +55,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.32.4',
+      title: 'MGD Neuro 0.33.0',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -283,6 +286,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     _mindTimer?.cancel();
     _mindTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!mounted || !_ready || _bootError318 != null || _mindBusy320) return;
+      if (_world.eventDriven33) {
+        _world.runtime319['state']='su evento: pronto, ripasso automatico disattivato';
+        return;
+      }
       if (_lifecycle319 != AppLifecycleState.resumed ||
           _busy ||
           _researchBusy ||
@@ -1259,18 +1266,27 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _bindSense06() async {
+    if(_busy || _researchBusy || _maintenance317) return;
     if (_lastSense == null) return;
     final label = _senseLabel.text.trim();
     if (label.isEmpty) return;
-    final canonical = _world.bindLastNatural071(_brain, label);
-    _world.think(_brain, cycles: 24, seedText: canonical);
-    _senseLabel.clear();
-    if (mounted) {
-      setState(() => _status =
-          'Percezione collegata all’entità “$canonical” nel world model');
+    setState(()=>_busy=true);
+    try {
+      final canonical = _world.bindLastNatural071(_brain, label);
+      final features=_world.lastFeatures33;
+      if(features!=null) {
+        _world.experience33=await compute(learnWorker33,(memory:_world.experience33.toJson(),
+          features:{'${_lastSense!.observation.modality}:v1':features},
+          label:canonical,context:'generale',description:'Percezione confermata in chat'));
+      }
+      _world.step++;
+      _senseLabel.clear();
+      await _save('Esperienza confermata e salvata: $canonical');
+    } catch(e) {
+      if(mounted) setState(()=>_status='Conferma non completata: $e');
+    } finally {
+      if(mounted) setState(()=>_busy=false);
     }
-    await _save('Binding multimodale consolidato');
-    _maybeAskCuriosity09();
   }
 
   Future<void> _saveTeacherImport271(
@@ -1521,6 +1537,30 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
+  Future<void> _openExperience33() async {
+    if(_busy||_researchBusy||_maintenance317) return;
+    setState(()=>_busy=true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>
+        ExperiencePage33(world:_world,onSave:_checkpoint319)));
+    } finally {if(mounted) setState(()=>_busy=false);}
+  }
+
+  Future<void> _openMap33() async {
+    if(_busy||_researchBusy||_maintenance317) return;
+    setState(()=>_busy=true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>SemanticMapPage14(
+        brain:_brain,research:_researchMemory,language:_language20,world:_world,
+        onDelete33:(mode,node) async {
+          await KnowledgeDeletion33.delete(brain:_brain,world:_world,research:_researchMemory,
+            language:_language20,mode:mode,node:node);
+          _lastSense=null;
+          await _checkpoint319();
+        })));
+    } finally {if(mounted) setState(()=>_busy=false);}
+  }
+
   Future<void> _think06() async {
     if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
@@ -1562,7 +1602,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.32.4')),
+          appBar: AppBar(title: const Text('MGD Neuro 0.33.0')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1613,6 +1653,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         busy: _busy || _maintenance317 || _researchBusy,
         onImportTeacher: _importTeacherPack08,
         onEdit: _openEditor12,
+        onExperience33:_openExperience33,
+        onMap33:_openMap33,
       ),
       _MindPage07(
         brain: _brain,
@@ -1641,7 +1683,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.32.4'),
+        title: const Text('MGD Neuro 0.33.0'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -1987,6 +2029,7 @@ class _WorldPage07 extends StatelessWidget {
   final bool busy;
   final Future<void> Function() onImportTeacher;
   final Future<void> Function() onEdit;
+  final Future<void> Function() onExperience33, onMap33;
 
   const _WorldPage07({
     required this.language,
@@ -1997,6 +2040,8 @@ class _WorldPage07 extends StatelessWidget {
     required this.busy,
     required this.onImportTeacher,
     required this.onEdit,
+    required this.onExperience33,
+    required this.onMap33,
   });
 
   @override
@@ -2020,6 +2065,9 @@ class _WorldPage07 extends StatelessWidget {
           label: const Text('Modifica Mondo / conoscenza'),
         ),
         const SizedBox(height: 12),
+        FilledButton.icon(onPressed:busy?null:onExperience33,
+          icon:const Icon(Icons.auto_stories_outlined),label:const Text('Impara dall’esperienza')),
+        Text('${world.experience33.episodes.length} episodi confermati · ${world.experience33.conceptCount} categorie esperienziali'),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -2120,12 +2168,7 @@ class _WorldPage07 extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 FilledButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => SemanticMapPage14(
-                          brain: brain, research: research, language: language),
-                    ),
-                  ),
+                  onPressed: busy?null:onMap33,
                   icon: const Icon(Icons.open_in_full),
                   label: const Text('Visualizza mappa'),
                 ),
@@ -2285,7 +2328,7 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.32.4',
+                          Text('Memorie MGD 0.33.0',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(
