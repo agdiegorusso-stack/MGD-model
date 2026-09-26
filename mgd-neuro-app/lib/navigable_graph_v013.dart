@@ -11,6 +11,8 @@ import 'web_knowledge_explorer_v11.dart';
 import 'mgd_language_v020.dart';
 import 'relational_memory_v0324.dart';
 import 'native_mgd_engine_v09.dart';
+import 'sensory_world_v06.dart';
+import 'knowledge_deletion_v0330.dart' show conceptNode33, episodeNode33;
 
 typedef SemanticLink13 = ({
   String from,
@@ -25,6 +27,8 @@ class NavigableSemanticGraph13 extends StatefulWidget {
   final MgdLanguage20? language;
   final int initialNodeLimit;
   final bool fullPage;
+  final MgdWorld06? world;
+  final Future<void> Function(String mode,String node)? onDelete33;
 
   const NavigableSemanticGraph13({
     super.key,
@@ -33,6 +37,8 @@ class NavigableSemanticGraph13 extends StatefulWidget {
     this.language,
     this.initialNodeLimit = 40,
     this.fullPage = false,
+    this.world,
+    this.onDelete33,
   });
 
   @override
@@ -44,12 +50,14 @@ class SemanticMapPage14 extends StatelessWidget {
   final PlasticLanguageBrain04 brain;
   final ResearchMemory11 research;
   final MgdLanguage20 language;
+  final MgdWorld06? world;
+  final Future<void> Function(String mode,String node)? onDelete33;
 
   const SemanticMapPage14(
       {super.key,
       required this.brain,
       required this.research,
-      required this.language});
+      required this.language, this.world, this.onDelete33});
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +91,8 @@ class SemanticMapPage14 extends StatelessWidget {
             language: language,
             initialNodeLimit: 40,
             fullPage: true,
+            world:world,
+            onDelete33:onDelete33,
           ),
         ),
       ),
@@ -91,6 +101,26 @@ class SemanticMapPage14 extends StatelessWidget {
 }
 
 class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
+  bool _deleting33=false;
+  Future<void> _deleteFocus33() async {
+    final node=_focus;
+    if(node==null || _deleting33 || widget.onDelete33==null) return;
+    final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(
+      title:Text('Eliminare “$node”?'),
+      content:Text(_memoryMode24=='esperienze'
+        ? 'Elimina gli episodi selezionati e ricostruisce la metrica. Le altre memorie restano consultabili nelle rispettive viste.'
+        : 'Elimina il nodo e i riferimenti attivi associati, comprese le fonti conservate che potrebbero ricrearlo. Una nuova esposizione potrà insegnarlo di nuovo. Gli export precedenti non vengono modificati.'),
+      actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Annulla')),
+        FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Elimina'))]));
+    if(yes!=true || !mounted) return;
+    setState(()=>_deleting33=true);
+    try {
+      await widget.onDelete33!(_memoryMode24,node);
+      if(mounted) setState((){_focus=null;_search.clear();_history.clear();_refreshGraphCache();});
+    } catch(e) {
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Eliminazione non completata: $e')));
+    } finally {if(mounted) setState(()=>_deleting33=false);}
+  }
   final TransformationController _transform = TransformationController();
   final TextEditingController _search = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
@@ -137,7 +167,11 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
     final links = <SemanticLink13>[];
     final research = widget.research;
     final nodes = <String>{};
-    if (mode == 'lingua') {
+    if (mode == 'esperienze') {
+      for(final e in widget.world?.experience33.episodes ?? const []) {
+        links.add((from:conceptNode33(e),relation:'confermato in',to:episodeNode33(e),confidence:1.0));
+      }
+    } else if (mode == 'lingua') {
       final language = widget.language;
       if (language != null) {
         nodes.addAll(
@@ -156,7 +190,8 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
       links.addAll(widget.brain
           .semanticGraph(limit: 10000000)
           .where((x) => x.confidence >= _minConfidence));
-      nodes.addAll(widget.brain.entities.map((e) => e.label));
+      nodes.addAll(widget.brain.entities.where((e)=>e.kind!='deleted'&&e.label.isNotEmpty).map((e) => e.label));
+      for(final e in widget.world?.experience33.episodes ?? const []) {nodes.add(e.label);}
       if (research != null) {
         for(final r in RelationalMemory324.rows(research,includeHistory:false)) {
           links.add((
@@ -345,6 +380,7 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
       'concetti',
       'episodi',
       'ipotesi'
+      ,'esperienze'
     };
     final data = {for (final mode in modes) mode: _graphData322(mode)};
     for (final exact in [true, false]) {
@@ -820,6 +856,11 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
                       ? '${_modeLabels322[_memoryMode24]} • ${layout.nodes.length}/${_cachedNodes.length} nodi • ${layout.links.length} collegamenti'
                       : 'Focus: $_focus • ${connections.length} collegamenti',
                   style: Theme.of(context).textTheme.titleSmall),
+              if(_focus!=null && widget.onDelete33!=null)
+                TextButton.icon(onPressed:_deleting33?null:_deleteFocus33,
+                  icon:const Icon(Icons.delete_outline),label:Text(_deleting33?'Eliminazione in corso…':'Elimina nodo e riferimenti')),
+              if(_memoryMode24=='esperienze')
+                const Text('Categorie confermate dall’utente e stimoli conservati; il collegamento non certifica una verità sul mondo.'),
               if (_memoryMode24 == 'lingua')
                 Text(_focus == null
                     ? 'Parole osservate e successioni nel testo. Non rappresentano fatti verificati.'
@@ -846,6 +887,7 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
     'concetti': 'Concetti',
     'episodi': 'Episodi',
     'ipotesi': 'Da verificare'
+    ,'esperienze':'Esperienze'
   };
 
   Widget _controls322(_GraphLayout13 layout) => Padding(
@@ -973,7 +1015,7 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
   Widget build(BuildContext context) {
     final layout = _layout();
     _lastCanvasSize = layout.canvasSize;
-    return LayoutBuilder(
+    return PopScope(canPop:!_deleting33,child:LayoutBuilder(
         builder: (context, constraints) => Card(
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -1001,7 +1043,7 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
                             SingleChildScrollView(child: _details322(layout)))
                   else
                     _details322(layout),
-                ])));
+                ]))));
   }
 }
 

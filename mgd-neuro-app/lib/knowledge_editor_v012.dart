@@ -376,7 +376,7 @@ class _KnowledgeEditor12State extends State<KnowledgeEditor12> {
 
   Widget _entitiesTab() {
     final entities = widget.brain.entities
-        .where((e) => e.kind != 'self' && e.kind != 'user')
+        .where((e) => e.kind != 'self' && e.kind != 'user' && e.kind != 'deleted')
         .toList();
     return ListView(
       padding: const EdgeInsets.all(12),
