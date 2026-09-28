@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'plastic_language_brain_v04.dart';
 import 'native_mgd_engine_v09.dart';
 import 'experience_memory_v0330.dart';
+import 'consolidation_v0331.dart';
 
 part 'curiosity_policy_v0316.dart';
 
@@ -22,6 +23,9 @@ class WorldEdge06 {
   int lastUsed;
   double curvature;
   bool curvatureMeasured320;
+  double consolidationMaterial331;
+  final Set<String> consolidationEvidence331;
+  final Set<String> blockedConsolidationEvidence331;
 
   WorldEdge06({
     required this.a,
@@ -35,7 +39,29 @@ class WorldEdge06 {
     this.lastUsed = 0,
     this.curvature = 0,
     this.curvatureMeasured320 = false,
-  });
+    this.consolidationMaterial331 = 0,
+    Set<String>? consolidationEvidence331,
+    Set<String>? blockedConsolidationEvidence331,
+  })  : consolidationEvidence331 = consolidationEvidence331 ?? <String>{},
+        blockedConsolidationEvidence331 =
+            blockedConsolidationEvidence331 ?? <String>{};
+
+  bool get consolidationEligible331 => consolidationEvidence331
+      .any((key) => !blockedConsolidationEvidence331.contains(key));
+  bool get consolidationReplayBlocked331 =>
+      blockedConsolidationEvidence331.isNotEmpty && !consolidationEligible331;
+  bool get inConsolidationBasin331 =>
+      consolidationEligible331 &&
+      cost <= Consolidation331.defaults.epsilon &&
+      consolidationMaterial331 >= Consolidation331.defaults.threshold;
+
+  static double _readMaterial331(Map<String, dynamic> j) {
+    final value = (j['consolidationMaterial331'] as num?)?.toDouble() ?? 0;
+    if (!value.isFinite || value < 0 || value > 1) {
+      throw const FormatException('Invalid consolidation material');
+    }
+    return value;
+  }
 
   Map<String, dynamic> toJson() => {
         'a': a,
@@ -49,6 +75,10 @@ class WorldEdge06 {
         'lastUsed': lastUsed,
         'curvature': curvature,
         'curvatureMeasured320': curvatureMeasured320,
+        'consolidationMaterial331': consolidationMaterial331,
+        'consolidationEvidence331': consolidationEvidence331.toList()..sort(),
+        'blockedConsolidationEvidence331':
+            blockedConsolidationEvidence331.toList()..sort(),
       };
 
   factory WorldEdge06.fromJson(Map<String, dynamic> j) => WorldEdge06(
@@ -63,6 +93,15 @@ class WorldEdge06 {
         lastUsed: (j['lastUsed'] as num?)?.toInt() ?? 0,
         curvature: (j['curvature'] as num?)?.toDouble() ?? 0,
         curvatureMeasured320: j['curvatureMeasured320'] == true,
+        consolidationMaterial331: _readMaterial331(j),
+        consolidationEvidence331:
+            ((j['consolidationEvidence331'] as List?) ?? const [])
+                .map((x) => x as String)
+                .toSet(),
+        blockedConsolidationEvidence331:
+            ((j['blockedConsolidationEvidence331'] as List?) ?? const [])
+                .map((x) => x as String)
+                .toSet(),
       );
 }
 
@@ -253,7 +292,8 @@ class MgdWorld06 {
   ExperienceMemory33 experience33 = ExperienceMemory33();
   // Heavy work is triggered by input or an explicit command, not an idle clock.
   bool eventDriven33 = true;
-  Map<String,double>? lastFeatures33;
+  bool consolidationEnabled331 = false;
+  Map<String, double>? lastFeatures33;
   int step = 0;
   int nextObservationId = 1;
   int thoughtCycles = 0;
@@ -277,6 +317,65 @@ class MgdWorld06 {
   int lastThinkPeakActiveNodes16 = 0;
   int lastThinkMicros16 = 0;
   final Set<String> _curvatureDirty18 = <String>{};
+
+  int get consolidationBasinCount331 => consolidationEnabled331
+      ? edges.values.where((e) => e.inConsolidationBasin331).length
+      : 0;
+  int get consolidationEligibleCount331 => consolidationEnabled331
+      ? edges.values.where((e) => e.consolidationEligible331).length
+      : 0;
+  int get consolidationRevokedCount331 =>
+      edges.values.where((e) => e.consolidationReplayBlocked331).length;
+
+  void setConsolidationEnabled331(bool enabled) {
+    if (enabled == consolidationEnabled331) return;
+    consolidationEnabled331 = enabled;
+    // Disabling removes the new self-support, not the original observations.
+    if (!enabled) {
+      for (final e in edges.values) {
+        e.consolidationMaterial331 = 0;
+      }
+    }
+    step++; // Invalidates any worker computed with the previous setting.
+  }
+
+  void _revokeConsolidation331(WorldEdge06 e) {
+    e.blockedConsolidationEvidence331.addAll(e.consolidationEvidence331);
+    final next = Consolidation331.evolve(
+        cost: e.cost, material: e.consolidationMaterial331, revoke: true);
+    e.cost = next.cost;
+    e.consolidationMaterial331 = 0;
+    e.curvatureMeasured320 = false;
+    _curvatureDirty18.add(_edgeKey(e.a, e.b));
+  }
+
+  /// Reconcile with retained, externally acquired assertions before replay.
+  /// Keys contain the exact assertion and source, not a confidence or replay count.
+  void syncConsolidationEvidence331(Map<String, Set<String>> evidenceByEdge) {
+    var changed = false;
+    for (final entry in edges.entries) {
+      final e = entry.value;
+      final incoming = evidenceByEdge[entry.key] ?? const <String>{};
+      if (incoming.length == e.consolidationEvidence331.length &&
+          incoming.containsAll(e.consolidationEvidence331)) continue;
+      final wasEligible = e.consolidationEligible331;
+      e.blockedConsolidationEvidence331
+          .addAll(e.consolidationEvidence331.difference(incoming));
+      final stillEligible = incoming
+          .any((key) => !e.blockedConsolidationEvidence331.contains(key));
+      if (wasEligible && !stillEligible) _revokeConsolidation331(e);
+      e.consolidationEvidence331
+        ..clear()
+        ..addAll(incoming);
+      changed = true;
+    }
+    if (changed) step++;
+  }
+
+  static String semanticEdgeKey331(int a, int b) {
+    final x = 'e:$a', y = 'e:$b';
+    return x.compareTo(y) <= 0 ? '$x|$y' : '$y|$x';
+  }
 
   String _pNode(int id) => 'p:$id';
   String _eNode(int id) => 'e:$id';
@@ -340,7 +439,14 @@ class MgdWorld06 {
 
   void _plasticUpdate(WorldEdge06 e,
       {required double reward, double coactivity = 1.0}) {
-    final oldMaterial = e.slow;
+    if (reward >= 0 && e.consolidationReplayBlocked331) return;
+    final oldCost = e.cost;
+    final useConsolidation =
+        consolidationEnabled331 && e.consolidationEligible331;
+    if (reward < 0 &&
+        (useConsolidation || e.consolidationEvidence331.isNotEmpty)) {
+      _revokeConsolidation331(e);
+    }
     e.curvatureMeasured320 = false;
     e.elig = (0.84 * e.elig + 0.24 * coactivity).clamp(0.0, 1.0).toDouble();
     final evolved = MgdMath09.evolve(
@@ -352,6 +458,15 @@ class MgdWorld06 {
       reward: reward.clamp(-1.0, 1.0).toDouble(),
     );
     e.cost = evolved.weight;
+    if (useConsolidation && reward >= 0) {
+      // Replace the legacy cost drift; never add its pressure terms to the theorem.
+      final next = Consolidation331.evolve(
+          cost: oldCost,
+          material: e.consolidationMaterial331,
+          activation: coactivity.clamp(0.0, 1.0).toDouble());
+      e.cost = next.cost;
+      e.consolidationMaterial331 = next.material;
+    }
     e.fast = evolved.memory;
     e.slow = evolved.material;
     e.meta = evolved.coherenceAverage;
@@ -359,7 +474,7 @@ class MgdWorld06 {
     e.lastUsed = step;
     lastEntropicFlux09 = evolved.informationalFlux;
     entropicAge += evolved.informationalFlux;
-    if (e.uses % 3 == 0 || evolved.active) {
+    if (e.uses % 3 == 0 || e.cost <= MgdMath09.defaults.epsilon) {
       _curvatureDirty18.add(_edgeKey(e.a, e.b));
     }
   }
@@ -684,8 +799,9 @@ class MgdWorld06 {
     return _observe('vision', encodeVision33(bytes));
   }
 
-  static Map<String,double> encodeVision33(Uint8List bytes) {
-    if (bytes.length > 16 * 1024 * 1024) throw StateError('Immagine troppo grande.');
+  static Map<String, double> encodeVision33(Uint8List bytes) {
+    if (bytes.length > 16 * 1024 * 1024)
+      throw StateError('Immagine troppo grande.');
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw StateError('Immagine non decodificabile.');
     final resized = img.copyResize(decoded,
@@ -694,10 +810,11 @@ class MgdWorld06 {
   }
 
   SensoryResult06 observeAudioPcm(Uint8List bytes, {int sampleRate = 16000}) {
-    return _observe('audio', encodeAudio33(bytes, sampleRate:sampleRate));
+    return _observe('audio', encodeAudio33(bytes, sampleRate: sampleRate));
   }
 
-  static Map<String,double> encodeAudio33(Uint8List bytes, {int sampleRate = 16000}) {
+  static Map<String, double> encodeAudio33(Uint8List bytes,
+      {int sampleRate = 16000}) {
     if (bytes.length < 800) throw StateError('Registrazione troppo breve.');
     if (sampleRate != 16000 || bytes.length.isOdd || bytes.length > 640000) {
       throw StateError('Usa audio PCM16 mono a 16 kHz, massimo 20 secondi.');
@@ -1295,6 +1412,7 @@ class MgdWorld06 {
     if (sim < 0.05 || conf <= 0) return;
 
     final e = _edge(_eNode(entityA), _eNode(entityB));
+    if (e.consolidationReplayBlocked331) return;
     final prior = sim * (0.25 + 0.55 * conf);
     // Teacher geometry is deliberately sub-threshold or barely active: it is
     // a prior, not a frozen truth. Lived co-activation must consolidate it.
@@ -1307,13 +1425,18 @@ class MgdWorld06 {
     e.lastUsed = step;
   }
 
-  void rehearseExternalFact319(int a, int b) {
-    if (a == b) return;
+  bool rehearseExternalFact319(int a, int b, {Set<String>? evidence331}) {
+    if (a == b) return false;
     final e = _edge(_eNode(a), _eNode(b));
+    if (evidence331 != null) {
+      e.consolidationEvidence331.addAll(evidence331);
+    }
+    if (e.consolidationReplayBlocked331) return false;
     step++;
     for (var i = 0; i < 3; i++) {
       _plasticUpdate(e, reward: 0.25, coactivity: 0.80);
     }
+    return true;
   }
 
   void maintainCurvature319() {
@@ -1330,11 +1453,16 @@ class MgdWorld06 {
     final key = _edgeKey(_eNode(a), _eNode(b));
     final e = edges[key];
     if (e == null) return;
+    if (e.consolidationEvidence331.isNotEmpty ||
+        e.consolidationMaterial331 > 0) {
+      _revokeConsolidation331(e);
+    }
     e.cost = max(e.cost, MgdMath09.defaults.epsilon + 0.02);
     e.fast = min(e.fast, 0.05);
     e.slow = min(e.slow, 0.03);
     e.meta = min(e.meta, 0.03);
     _curvatureDirty18.add(key);
+    step++;
   }
 
   void reinforceSemanticHypothesis030(
@@ -1777,6 +1905,8 @@ class MgdWorld06 {
           (a, b) => (_strength(b) + b.slow).compareTo(_strength(a) + a.slow));
     lastEntropicFlux09 = 0;
     for (final e in ranked.take(min(cycles, ranked.length))) {
+      if (e.consolidationReplayBlocked331) continue;
+      final oldCost = e.cost;
       final replay = MgdMath09.evolve(
         weight: e.cost,
         memory: e.fast,
@@ -1786,9 +1916,17 @@ class MgdWorld06 {
         reward: e.uses >= 2 ? 0.35 : 0.0,
       );
       e.cost = replay.weight;
+      if (consolidationEnabled331 && e.consolidationEligible331) {
+        final next = Consolidation331.evolve(
+            cost: oldCost, material: e.consolidationMaterial331);
+        e.cost = next.cost;
+        e.consolidationMaterial331 = next.material;
+      }
       e.fast = replay.memory;
       e.slow = replay.material;
       e.meta = replay.coherenceAverage;
+      e.curvatureMeasured320 = false;
+      _curvatureDirty18.add(_edgeKey(e.a, e.b));
       e.elig *= 0.82;
       lastEntropicFlux09 += replay.informationalFlux;
       entropicAge += replay.informationalFlux;
@@ -1815,8 +1953,12 @@ class MgdWorld06 {
       }
     }
     return MgdWorldStats06(
-      visualPatterns: prototypes.where((p) => p.modality == 'vision' && p.centroid.isNotEmpty).length,
-      auditoryPatterns: prototypes.where((p) => p.modality == 'audio' && p.centroid.isNotEmpty).length,
+      visualPatterns: prototypes
+          .where((p) => p.modality == 'vision' && p.centroid.isNotEmpty)
+          .length,
+      auditoryPatterns: prototypes
+          .where((p) => p.modality == 'audio' && p.centroid.isNotEmpty)
+          .length,
       worldEdges: edges.length,
       semanticBindings:
           prototypes.where((p) => p.semanticEntityId != null).length,
@@ -1838,6 +1980,8 @@ class MgdWorld06 {
         'version': version,
         'experience33': experience33.toJson(),
         'eventDriven33': eventDriven33,
+        'consolidationModel331': Consolidation331.model,
+        'consolidationEnabled331': consolidationEnabled331,
         'step': step,
         'nextObservationId': nextObservationId,
         'thoughtCycles': thoughtCycles,
@@ -1872,6 +2016,8 @@ class MgdWorld06 {
   /// Apply only the state changed by a replay worker, retaining the world object
   /// held by open inspectors. The caller must reject stale worker results.
   void applyRuntime320(Map<String, dynamic> data) {
+    final sourceStep = data['runtimeBaseStep331'];
+    if (sourceStep is int && sourceStep != step) return;
     final n = MgdWorld06.fromJson(data);
     final savedAt = runtime319['lastSavedAt'];
     edges
@@ -1907,9 +2053,16 @@ class MgdWorld06 {
   factory MgdWorld06.fromJson(Map<String, dynamic> j) {
     final w = MgdWorld06();
     if (j['experience33'] is Map) {
-      w.experience33 = ExperienceMemory33.fromJson(Map<String,dynamic>.from(j['experience33'] as Map));
+      w.experience33 = ExperienceMemory33.fromJson(
+          Map<String, dynamic>.from(j['experience33'] as Map));
     }
     w.eventDriven33 = j['eventDriven33'] as bool? ?? true;
+    final model331 = j['consolidationModel331'];
+    if (model331 != null && model331 != Consolidation331.model) {
+      throw const FormatException('Unknown consolidation dynamics version');
+    }
+    w.consolidationEnabled331 = model331 == Consolidation331.model &&
+        j['consolidationEnabled331'] == true;
     if (j['runtime319'] is Map)
       w.runtime319.addAll(Map<String, dynamic>.from(j['runtime319'] as Map));
     final metrics = j['lastThinkMetrics321'] as Map? ?? {};

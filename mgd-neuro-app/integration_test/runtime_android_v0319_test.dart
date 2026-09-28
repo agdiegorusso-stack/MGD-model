@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:mgd_neuro_mobile/consolidation_v0331.dart';
 import 'package:mgd_neuro_mobile/experience_memory_v0330.dart';
 import 'package:mgd_neuro_mobile/knowledge_deletion_v0330.dart';
 import '../test/experience_v0330_test.dart' show cue33, picture33, tone33;
@@ -157,7 +158,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.33.0'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.33.1'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;
@@ -639,5 +640,292 @@ void main() {
         }));
     await store.clearAll();
     await store.close319();
+  });
+
+  testWidgets(
+      'Android 0331 rejection and provenance revocation survive SQLite restart and replay',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    try {
+      final brain = PlasticLanguageBrain04(),
+          world = MgdWorld06(),
+          research = ResearchMemory11(enabled: false),
+          language = MgdLanguage20();
+      const prompt = 'Quale risposta uso per il sigillo zorquale?',
+          rejectedAnswer = 'Ventalume';
+      brain.teachResponse(prompt, rejectedAnswer);
+      expect(brain.respond(prompt), contains(rejectedAnswer));
+      // The same public feedback API used by the chat must reject in one step.
+      brain.reinforcePair(prompt, rejectedAnswer, false);
+      expect(brain.responseOptions028(prompt), isNot(contains(rejectedAnswer)));
+      expect(brain.respond(prompt).toLowerCase(),
+          isNot(contains(rejectedAnswer.toLowerCase())));
+
+      brain.importTeacherFact08(
+          subject: 'Zelquario',
+          relation: 'tipo di',
+          object: 'Vorselmo',
+          confidence: .9,
+          source: 'Android 0331 fixture');
+      final subject = brain.ensureSemanticEntity06('Zelquario'),
+          object = brain.ensureSemanticEntity06('Vorselmo'),
+          edgeKey = MgdWorld06.semanticEdgeKey331(subject, object);
+      Map<String, dynamic> evidenceOf(PlasticLanguageBrain04 b) {
+        final fact = b.slots.values
+            .where((s) => s.subjectId == subject)
+            .expand((s) => s.candidates.values)
+            .singleWhere((c) =>
+                c.objectKey ==
+                PlasticLanguageBrain04.canonicalObject('Vorselmo'));
+        return {
+          'episodes': fact.sourceEpisodes.toList()..sort(),
+          'families': fact.sourceFamilies.toList()..sort(),
+          'supports': fact.supports,
+          'confidence': fact.confidence,
+          'status': fact.epistemicStatus,
+        };
+      }
+
+      final originalEvidence = evidenceOf(brain);
+      expect(
+          (originalEvidence['episodes'] as List).isNotEmpty ||
+              (originalEvidence['families'] as List).isNotEmpty,
+          isTrue);
+      world.setConsolidationEnabled331(true);
+      for (var n = 0; n < 16; n++) {
+        MemoryRuntime319.pulse(brain, world, cycles: 0);
+      }
+      final trained = world.edges[edgeKey]!;
+      expect(trained.inConsolidationBasin331, isTrue);
+      final sourceKeys = Set<String>.of(trained.consolidationEvidence331),
+          savedMaterial = trained.consolidationMaterial331,
+          savedCost = trained.cost;
+      expect(sourceKeys, isNotEmpty);
+      expect(evidenceOf(brain), originalEvidence,
+          reason: 'Geometric rehearsal must not manufacture factual support');
+      await MemoryCheckpoint319().save(brain, world, research, language);
+      expect(await store.getMap('checkpoint_v0319'), isNotNull);
+      await store.close319();
+
+      // Real Android SQLite loads, not an in-memory JSON round trip.
+      final loadedBrain = await Brain04Persistence().load(),
+          loadedWorld = await WorldPersistence06().load(),
+          loadedResearch = await ResearchPersistence11().load(),
+          loadedLanguage = await MgdLanguagePersistence20().load();
+      expect(loadedBrain, isNotNull);
+      expect(loadedBrain!.migrated, isFalse);
+      expect(loadedWorld, isNotNull);
+      expect(loadedResearch, isNotNull);
+      expect(loadedLanguage, isNotNull);
+      final restoredBrain = loadedBrain.brain,
+          restoredWorld = loadedWorld!,
+          restoredEdge = restoredWorld.edges[edgeKey]!;
+      expect(restoredWorld.consolidationEnabled331, isTrue);
+      expect(restoredEdge.inConsolidationBasin331, isTrue);
+      expect(restoredEdge.consolidationMaterial331, savedMaterial);
+      expect(restoredEdge.cost, savedCost);
+      expect(restoredEdge.consolidationEvidence331, sourceKeys);
+      expect(
+          restoredBrain.responseAttractors028.values
+              .expand((s) => s.candidates.values)
+              .singleWhere((c) => c.text == rejectedAnswer)
+              .revoked331,
+          isTrue);
+      expect(restoredBrain.responseOptions028(prompt),
+          isNot(contains(rejectedAnswer)));
+      for (var n = 0; n < 16; n++) {
+        restoredBrain.sleepReplay(cycles: 8);
+        restoredWorld.sleepReplay(cycles: 8);
+      }
+      expect(restoredEdge.inConsolidationBasin331, isTrue,
+          reason: 'An eligible basin persists without new external activation');
+      expect(restoredBrain.respond(prompt).toLowerCase(),
+          isNot(contains(rejectedAnswer.toLowerCase())));
+      expect(evidenceOf(restoredBrain), originalEvidence);
+      expect(restoredEdge.consolidationEvidence331, sourceKeys);
+
+      restoredWorld.retireResearchLink317(subject, object);
+      expect(restoredEdge.consolidationMaterial331, 0);
+      expect(restoredEdge.consolidationReplayBlocked331, isTrue);
+      expect(restoredEdge.blockedConsolidationEvidence331, sourceKeys);
+      await MemoryCheckpoint319()
+          .save(restoredBrain, restoredWorld, loadedResearch!, loadedLanguage!);
+      await store.close319();
+
+      final finalBrainState = await Brain04Persistence().load(),
+          finalWorld = await WorldPersistence06().load(),
+          finalResearch = await ResearchPersistence11().load();
+      expect(finalBrainState, isNotNull);
+      expect(finalBrainState!.migrated, isFalse);
+      expect(finalWorld, isNotNull);
+      final finalBrain = finalBrainState.brain,
+          finalEdge = finalWorld!.edges[edgeKey]!;
+      expect(finalEdge.blockedConsolidationEvidence331, sourceKeys);
+      for (var n = 0; n < 16; n++) {
+        MemoryRuntime319.pulse(finalBrain, finalWorld, cycles: 0);
+        finalBrain.sleepReplay(cycles: 8);
+        finalWorld.sleepReplay(cycles: 8);
+      }
+      expect(finalEdge.consolidationReplayBlocked331, isTrue);
+      expect(finalEdge.inConsolidationBasin331, isFalse);
+      expect(finalEdge.consolidationMaterial331, 0);
+      expect(finalEdge.cost, greaterThan(Consolidation331.defaults.epsilon));
+      expect(finalEdge.consolidationEvidence331, sourceKeys);
+      expect(finalEdge.blockedConsolidationEvidence331, sourceKeys);
+      expect(
+          finalBrain.responseAttractors028.values
+              .expand((s) => s.candidates.values)
+              .singleWhere((c) => c.text == rejectedAnswer)
+              .revoked331,
+          isTrue);
+      expect(finalBrain.responseOptions028(prompt),
+          isNot(contains(rejectedAnswer)));
+      expect(finalBrain.respond(prompt).toLowerCase(),
+          isNot(contains(rejectedAnswer.toLowerCase())));
+      expect(evidenceOf(finalBrain), originalEvidence);
+      expect(finalResearch!.evidence, isEmpty);
+      expect(finalResearch.claims, isEmpty);
+      print('ANDROID331 ${jsonEncode({
+            'sqliteRestarts': 2,
+            'negativeFeedbackRetained': true,
+            'sleepDoesNotRearmAnswer': true,
+            'basinRetained': true,
+            'provenanceRevocationRetained': true,
+            'sameSourceDoesNotRearm': true,
+            'noManufacturedEvidence': true,
+          })}');
+    } finally {
+      await store.clearAll();
+      await store.close319();
+    }
+  });
+
+  testWidgets(
+      'Android 0331 relational chat thumbs down gates repeated answers after SQLite restart',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    try {
+      const question = 'Chi rincorre il zavrente?',
+          statement = 'Il melquario insegue il zavrente.';
+      final research = ResearchMemory11(enabled: false)
+        ..state317.addAll({
+          'migrationComplete': true,
+          'recovery318Complete': true,
+          'recovery320Complete': true,
+          'languagePassages': 0,
+          'languageEvidence': 0,
+        });
+      final intake = RelationalMemory324.learn(research, statement,
+          source: 'Fonte UI Android 0331');
+      expect(intake.added, 1);
+      final originalAnswer =
+          RelationalMemory324.answerIfKnown(research, question)!;
+      expect(originalAnswer, contains('melquario insegue zavrente'));
+      final originalRows = RelationalMemory324.rows(research);
+      await MemoryCheckpoint319().save(
+          PlasticLanguageBrain04(), MgdWorld06(), research, MgdLanguage20());
+      await store.close319();
+      await tester.pumpWidget(const MgdNeuro04App());
+      await waitBoot319(tester);
+
+      LivePage07 livePage() =>
+          tester.widget<LivePage07>(find.byType(LivePage07));
+      Future<void> waitReady() async {
+        await tester.pump(const Duration(milliseconds: 100));
+        for (var n = 0; n < 150 && livePage().busy; n++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(livePage().busy, isFalse,
+            reason: 'Chat/feedback must finish its real persistence operation');
+        await tester.pumpAndSettle();
+      }
+
+      Future<String> ask() async {
+        await waitReady();
+        final previous = livePage()
+            .messages
+            .where((m) => !m.user && m.prompt == question)
+            .length;
+        await tester.enterText(find.byType(TextField), question);
+        await tester.tap(find.byIcon(Icons.arrow_upward));
+        for (var n = 0; n < 150; n++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          final page = livePage();
+          if (!page.busy &&
+              page.controller.text.isEmpty &&
+              page.messages
+                      .where((m) => !m.user && m.prompt == question)
+                      .length >
+                  previous) break;
+        }
+        await waitReady();
+        final replies = livePage()
+            .messages
+            .where((m) => !m.user && m.prompt == question)
+            .toList();
+        expect(replies.length, previous + 1,
+            reason: 'The question must be consumed and produce a new UI reply');
+        expect(livePage().controller.text, isEmpty);
+        return replies.last.text;
+      }
+
+      expect(await ask(), originalAnswer);
+      expect(find.text(originalAnswer), findsOneWidget);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      final thumbsDown = find.byIcon(Icons.thumb_down_alt_outlined);
+      expect(thumbsDown, findsOneWidget);
+      await tester.ensureVisible(thumbsDown);
+      await tester.pumpAndSettle();
+      await tester.tap(thumbsDown.hitTestable());
+      await waitReady();
+      // Read the database without explicitly checkpointing: the feedback UI
+      // itself must have saved the rejection before any subsequent question.
+      final savedBrain = await Brain04Persistence().load();
+      expect(savedBrain, isNotNull);
+      expect(savedBrain!.brain.guardResponse331(question, originalAnswer),
+          isNot(originalAnswer));
+      final secondAnswer = await ask();
+      expect(secondAnswer, isNot(contains('melquario insegue zavrente')));
+      expect(find.text(secondAnswer), findsOneWidget);
+      final beforeRestart = tester
+          .widget<InspectorScope315>(find.byType(InspectorScope315))
+          .inspector;
+      expect(RelationalMemory324.rows(beforeRestart.research), originalRows,
+          reason: 'Rejecting an answer must not silently delete its source');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await store.close319();
+
+      await tester.pumpWidget(const MgdNeuro04App());
+      await waitBoot319(tester);
+      final afterRestart = tester
+          .widget<InspectorScope315>(find.byType(InspectorScope315))
+          .inspector;
+      afterRestart.brain.sleepReplay(cycles: 8);
+      afterRestart.world.sleepReplay(cycles: 8);
+      final restartedAnswer = await ask();
+      expect(restartedAnswer, isNot(contains('melquario insegue zavrente')));
+      expect(find.text(restartedAnswer), findsOneWidget);
+      expect(RelationalMemory324.rows(afterRestart.research), originalRows);
+      expect(afterRestart.brain.guardResponse331(question, originalAnswer),
+          isNot(originalAnswer));
+      print('ANDROID331_UI ${jsonEncode({
+            'realQuestion': true,
+            'realThumbsDown': true,
+            'feedbackAutosaved': true,
+            'relationalOutputGate': true,
+            'sqliteRestart': true,
+            'sleepDoesNotRearm': true,
+            'originalSourceRetained': true,
+          })}');
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await store.clearAll();
+      await store.close319();
+    }
   });
 }
