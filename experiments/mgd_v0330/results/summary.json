@@ -1,0 +1,19 @@
+{
+  "appCorrect": 571,
+  "transformerCorrect": 570,
+  "fixedKernelCorrect": 574,
+  "holdoutTotal": 576,
+  "pairedCorrectDifferencesBySeed": [
+    0,
+    0,
+    1,
+    -1,
+    1,
+    0
+  ],
+  "exactPairedSignFlipP": 1.0,
+  "appAccepted": 533,
+  "appAcceptedCorrect": 533,
+  "host": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "cpuModel": "AMD EPYC 9V74 80-Core Processor"
+}

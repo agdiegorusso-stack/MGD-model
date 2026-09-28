@@ -177,6 +177,19 @@ class MgdLanguage20 {
       const {'.', '!', '?', ',', ';', ':'}.contains(x);
   String _ek(String a, String b) => '$a\u0001$b';
 
+  void forgetNode33(String label) {
+    final n=PlasticLanguageBrain04.normalizeText(label);
+    bool mentions(String text)=>PlasticLanguageBrain04.containsLabel33(text,n);
+    tokenCount.remove(n);
+    edges.removeWhere((_,e)=>e.a==n||e.b==n);
+    chunks.removeWhere((_,c)=>mentions(c.text));
+    frames320.removeWhere((k,_)=>mentions(k));
+    for(final frame in frames320.values) {frame.removeWhere((k,_)=>mentions(k));}
+    subjectPlural320.removeWhere((k,_)=>mentions(k));
+    webSeen317.removeWhere((_,v)=>v is Map && mentions('${v['text']??''}'));
+    _rebuildIndexes21();
+  }
+
   void _indexEdge21(_LangEdge20 e) {
     final xs = _outgoing21.putIfAbsent(e.a, () => <_LangEdge20>[]);
     if (!xs.contains(e)) xs.add(e);

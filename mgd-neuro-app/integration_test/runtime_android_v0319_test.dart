@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'package:mgd_neuro_mobile/consolidation_v0331.dart';
+import 'package:mgd_neuro_mobile/experience_memory_v0330.dart';
+import 'package:mgd_neuro_mobile/knowledge_deletion_v0330.dart';
+import '../test/experience_v0330_test.dart' show cue33, picture33, tone33;
 import 'package:mgd_neuro_mobile/relational_memory_v0324.dart';
 import '../test/research_v0318_test.dart' show Sources318;
 import 'package:flutter/material.dart';
@@ -128,6 +132,8 @@ void main() {
         confidence: .5,
         source: 'Android fixture'));
     for (var n = 0; n < 6; n++) MemoryRuntime319.pulse(b, w);
+    w.eventDriven33 =
+        false; // This legacy test explicitly exercises the idle scheduler.
     final initialCycles = w.thoughtCycles,
         initialEdges = w.edges.length,
         initialAge = w.entropicAge,
@@ -152,7 +158,7 @@ void main() {
     await waitBoot319(tester);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Memorie MGD 0.32.4'), findsOneWidget);
+    expect(find.text('Memorie MGD 0.33.1'), findsOneWidget);
     final live = tester
         .widget<InspectorScope315>(find.byType(InspectorScope315))
         .inspector;
@@ -359,105 +365,656 @@ void main() {
     await store.close319();
   });
 
-  testWidgets('Android unparsed source is answered in chat, inspectable and retained by SQLite', (tester) async {
-    final store=MgdStateStore26.instance;
+  testWidgets(
+      'Android unparsed source is answered in chat, inspectable and retained by SQLite',
+      (tester) async {
+    final store = MgdStateStore26.instance;
     await store.clearAll();
-    final b=PlasticLanguageBrain04(),w=MgdWorld06(),
-      r=ResearchMemory11(enabled:false),l=MgdLanguage20();
-    const text='Il norvente viene osservato soltanto quando il rilevatore è acceso.';
-    SourceMemory323.retain(r,const WebDocument11(provider:'Fonte Android',
-      family:'android',title:'Norvente',url:'https://example.invalid/norvente',
-      text:text,trust:.8));
-    r.state317.addAll({'migrationComplete':true,'recovery320Complete':true});
-    await MemoryCheckpoint319().save(b,w,r,l);
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        r = ResearchMemory11(enabled: false),
+        l = MgdLanguage20();
+    const text =
+        'Il norvente viene osservato soltanto quando il rilevatore è acceso.';
+    SourceMemory323.retain(
+        r,
+        const WebDocument11(
+            provider: 'Fonte Android',
+            family: 'android',
+            title: 'Norvente',
+            url: 'https://example.invalid/norvente',
+            text: text,
+            trust: .8));
+    r.state317.addAll({'migrationComplete': true, 'recovery320Complete': true});
+    await MemoryCheckpoint319().save(b, w, r, l);
     await tester.pumpWidget(const MgdNeuro04App());
     await waitBoot319(tester);
-    await tester.enterText(find.byType(TextField),'Che cosa è il norvente?');
+    await tester.enterText(find.byType(TextField), 'Che cosa è il norvente?');
     await tester.tap(find.byIcon(Icons.arrow_upward));
-    for(var n=0;n<150;n++) {
-      await tester.pump(const Duration(milliseconds:100));
-      if(find.textContaining('Passaggi pertinenti conservati').evaluate().isNotEmpty) break;
+    for (var n = 0; n < 150; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find
+          .textContaining('Passaggi pertinenti conservati')
+          .evaluate()
+          .isNotEmpty) break;
     }
-    expect(find.textContaining('Passaggi pertinenti conservati'),findsOneWidget);
-    expect(find.textContaining(text),findsOneWidget);
-    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
-    expect(live.research.claims,isEmpty);
+    expect(
+        find.textContaining('Passaggi pertinenti conservati'), findsOneWidget);
+    expect(find.textContaining(text), findsOneWidget);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(live.research.claims, isEmpty);
     await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('1 passaggi consultabili'),250,
-      scrollable:find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('1 passaggi consultabili'), 250,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('1 passaggi consultabili').hitTestable());
     await tester.pumpAndSettle();
-    expect(find.text('Passaggi e fonti'),findsOneWidget);
-    expect(find.text(text),findsOneWidget);
-    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
+    expect(find.text('Passaggi e fonti'), findsOneWidget);
+    expect(find.text(text), findsOneWidget);
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle(); await store.close319();
-    final restored=await ResearchPersistence11().load();
-    expect(SourceMemory323.stats(restored!)['passages'],1);
-    expect(SourceMemory323.answer('Che cosa è il norvente?',restored),contains(text));
-    print('ANDROID323 '+jsonEncode({'sourceInChat':true,'sourceInspector':true,
-      'sqliteRestore':true,'noInventedClaim':restored.claims.isEmpty}));
-    await store.clearAll(); await store.close319();
+    await tester.pumpAndSettle();
+    await store.close319();
+    final restored = await ResearchPersistence11().load();
+    expect(SourceMemory323.stats(restored!)['passages'], 1);
+    expect(SourceMemory323.answer('Che cosa è il norvente?', restored),
+        contains(text));
+    print('ANDROID323 ' +
+        jsonEncode({
+          'sourceInChat': true,
+          'sourceInspector': true,
+          'sqliteRestore': true,
+          'noInventedClaim': restored.claims.isEmpty
+        }));
+    await store.clearAll();
+    await store.close319();
   });
 
-  testWidgets('Android learned roles: chat teaching, paraphrase, correction, map and SQLite restore',(tester) async {
-    final store=MgdStateStore26.instance;
+  testWidgets(
+      'Android learned roles: chat teaching, paraphrase, correction, map and SQLite restore',
+      (tester) async {
+    final store = MgdStateStore26.instance;
     await store.clearAll();
-    await MemoryCheckpoint319().save(PlasticLanguageBrain04(),MgdWorld06(),
-      ResearchMemory11(enabled:false)..state317.addAll({
-        'migrationComplete':true,'recovery320Complete':true}),MgdLanguage20());
+    await MemoryCheckpoint319().save(
+        PlasticLanguageBrain04(),
+        MgdWorld06(),
+        ResearchMemory11(enabled: false)
+          ..state317
+              .addAll({'migrationComplete': true, 'recovery320Complete': true}),
+        MgdLanguage20());
     await tester.pumpWidget(const MgdNeuro04App());
     await waitBoot319(tester);
     Future<void> send(String text) async {
-      await tester.enterText(find.byType(TextField),text);
-      await tester.tap(find.byIcon(Icons.arrow_upward));
-      for(var n=0;n<150;n++) {
-        await tester.pump(const Duration(milliseconds:100));
-        final button=find.ancestor(of:find.byIcon(Icons.arrow_upward),matching:find.byType(IconButton));
-        if(button.evaluate().isNotEmpty&&tester.widget<IconButton>(button).onPressed!=null) break;
+      await tester.enterText(find.byType(TextField), text);
+      final button = find.ancestor(
+          of: find.byIcon(Icons.arrow_upward),
+          matching: find.byType(IconButton));
+      for (var n = 0;
+          n < 150 && tester.widget<IconButton>(button).onPressed == null;
+          n++) {
+        await tester.pump(const Duration(milliseconds: 100));
       }
+      expect(tester.widget<IconButton>(button).onPressed, isNotNull,
+          reason: 'Chat must become ready before sending');
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      for (var n = 0; n < 150; n++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        final consumed = tester
+            .widget<TextField>(find.byType(TextField))
+            .controller!
+            .text
+            .isEmpty;
+        if (consumed && tester.widget<IconButton>(button).onPressed != null)
+          break;
+      }
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          isEmpty,
+          reason: 'The submitted text must be consumed, not silently ignored');
+      expect(tester.widget<IconButton>(button).onPressed, isNotNull);
+      await tester.pumpAndSettle(); // also wait for the 220 ms message scroll
     }
+
     await send('Il norvente insegue il talverio.');
+    final initialMemory = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(RelationalMemory324.stats(initialMemory.research)['current'], 1);
+    expect(
+        RelationalMemory324.answer(
+            initialMemory.research, 'Da chi viene rincorso il talverio?'),
+        contains('norvente insegue talverio'));
     await send('Da chi viene rincorso il talverio?');
-    expect(find.textContaining('norvente insegue talverio'),findsOneWidget);
+    expect(find.textContaining('norvente insegue talverio'), findsOneWidget);
     await send('Correggi: Il norvente insegue il felvario.');
-    expect(find.textContaining('Correzione salvata.'),findsOneWidget);
+    expect(find.textContaining('Correzione salvata.'), findsOneWidget);
     await send('Il norvente rincorre chi?');
-    expect(find.textContaining('norvente insegue felvario'),findsOneWidget);
-    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
-    expect(RelationalMemory324.stats(live.research)['current'],1);
-    expect(RelationalMemory324.stats(live.research)['history'],1);
-    expect(RelationalMemory324.answer(live.research,'Chi rincorre il talverio?'),startsWith('Non ho'));
-    await tester.tap(find.text('Mente'));await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('1 relazioni apprese'),250,
-      scrollable:find.byType(Scrollable).first);
-    await tester.pumpAndSettle();await tester.tap(find.text('1 relazioni apprese').hitTestable());
+    expect(find.textContaining('norvente insegue felvario'), findsOneWidget);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(RelationalMemory324.stats(live.research)['current'], 1);
+    expect(RelationalMemory324.stats(live.research)['history'], 1);
+    expect(
+        RelationalMemory324.answer(live.research, 'Chi rincorre il talverio?'),
+        startsWith('Non ho'));
+    await tester.tap(find.text('Mente'));
     await tester.pumpAndSettle();
-    expect(find.text('Relazioni apprese'),findsOneWidget);
-    expect(find.textContaining('norvente → insegue → felvario'),findsOneWidget);
-    await tester.pageBack();await tester.pumpAndSettle();
-    await tester.tap(find.text('Mondo'));await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Visualizza mappa'),300,
-      scrollable:find.byType(Scrollable).first);
-    await tester.pumpAndSettle();await tester.tap(find.text('Visualizza mappa').hitTestable());
+    await tester.scrollUntilVisible(find.text('1 relazioni apprese'), 250,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField),'norvente');
+    await tester.tap(find.text('1 relazioni apprese').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.text('Relazioni apprese'), findsOneWidget);
+    expect(
+        find.textContaining('norvente → insegue → felvario'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mondo'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Visualizza mappa'), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Visualizza mappa').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'norvente');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
-    expect(find.text('Focus: norvente • 1 collegamenti'),findsOneWidget);
-    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
-    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
+    expect(find.text('Focus: norvente • 1 collegamenti'), findsOneWidget);
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
     await store.close319();
-    await tester.pumpWidget(const MgdNeuro04App());await waitBoot319(tester);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
     await send('Chi rincorre il felvario?');
-    expect(find.textContaining('norvente insegue felvario'),findsOneWidget);
-    final restored=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
-    expect(RelationalMemory324.stats(restored.research)['history'],1);
-    print('ANDROID324 '+jsonEncode({'oneRead':true,'passiveParaphrase':true,
-      'correction':true,'history':true,'worldMap':true,'sqliteRestart':true}));
-    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
-    await store.clearAll();await store.close319();
+    expect(find.textContaining('norvente insegue felvario'), findsOneWidget);
+    final restored = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(RelationalMemory324.stats(restored.research)['history'], 1);
+    print('ANDROID324 ' +
+        jsonEncode({
+          'oneRead': true,
+          'passiveParaphrase': true,
+          'correction': true,
+          'history': true,
+          'worldMap': true,
+          'sqliteRestart': true
+        }));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.clearAll();
+    await store.close319();
+  });
+  testWidgets(
+      'Android multimodal experiences persist, learn in UI and delete coherently',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    final b = PlasticLanguageBrain04(),
+        w = MgdWorld06(),
+        r = ResearchMemory11(enabled: false),
+        l = MgdLanguage20();
+    for (final red in [true, false]) {
+      for (final hz in [330.0, 880.0]) {
+        w.experience33.learn({
+          'vision:v1': MgdWorld06.encodeVision33(picture33(red)),
+          'audio:v1': MgdWorld06.encodeAudio33(tone33(hz))
+        }, label: '$red $hz');
+      }
+    }
+    r.state317.addAll({
+      'migrationComplete': true,
+      'recovery318Complete': true,
+      'languagePassages': 0,
+      'languageEvidence': 0
+    });
+    await MemoryCheckpoint319().save(b, w, r, l);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    final live = tester
+        .widget<InspectorScope315>(find.byType(InspectorScope315))
+        .inspector;
+    expect(live.world.experience33.episodes.length, 4);
+    final cycles = live.world.thoughtCycles;
+    await tester.pump(const Duration(seconds: 12));
+    expect(live.world.thoughtCycles, cycles);
+    expect(live.world.eventDriven33, true);
+    await tester.tap(find.text('Mondo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Impara dall’esperienza').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.byKey(const ValueKey('experience-input')), 'saluto breve');
+    await tester.enterText(
+        find.byKey(const ValueKey('experience-label')), 'ciao');
+    await tester.ensureVisible(find.byKey(const ValueKey('experience-teach')));
+    await tester.tap(find.byKey(const ValueKey('experience-teach')));
+    for (var n = 0; n < 100; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find
+          .textContaining('Esperienza confermata e salvata: ciao')
+          .evaluate()
+          .isNotEmpty) break;
+    }
+    expect(live.world.experience33.episodes.length, 5);
+    expect(
+        live.world.experience33.predict(
+            {'text:v1': ExperienceMemory33.textFeatures('saluto breve')}).best,
+        'ciao');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await KnowledgeDeletion33.delete(
+        brain: live.brain,
+        world: live.world,
+        research: live.research,
+        language: live.language,
+        mode: 'mondo',
+        node: 'ciao');
+    await MemoryCheckpoint319()
+        .save(live.brain, live.world, live.research, live.language);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await store.close319();
+    final restored = await WorldPersistence06().load();
+    expect(restored!.experience33.episodes.length, 4);
+    expect(restored.experience33.episodes.any((e) => e.label == 'ciao'), false);
+    expect(
+        restored.experience33.predict({
+          'vision:v1': MgdWorld06.encodeVision33(picture33(false)),
+          'audio:v1': MgdWorld06.encodeAudio33(tone33(880))
+        }).best,
+        'false 880.0');
+    print('ANDROID330 ' +
+        jsonEncode({
+          'realPngPcm': true,
+          'uiLearning': true,
+          'sqliteRestart': true,
+          'deletionRetained': true,
+          'idleTrainingDisabled': true
+        }));
+    await store.clearAll();
+    await store.close319();
+  });
+
+  testWidgets(
+      'Android 0331 rejection and provenance revocation survive SQLite restart and replay',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    try {
+      final brain = PlasticLanguageBrain04(),
+          world = MgdWorld06(),
+          research = ResearchMemory11(enabled: false),
+          language = MgdLanguage20();
+      const prompt = 'Quale risposta uso per il sigillo zorquale?',
+          rejectedAnswer = 'Ventalume';
+      brain.teachResponse(prompt, rejectedAnswer);
+      expect(brain.respond(prompt), contains(rejectedAnswer));
+      // The same public feedback API used by the chat must reject in one step.
+      brain.reinforcePair(prompt, rejectedAnswer, false);
+      expect(brain.responseOptions028(prompt), isNot(contains(rejectedAnswer)));
+      expect(brain.respond(prompt).toLowerCase(),
+          isNot(contains(rejectedAnswer.toLowerCase())));
+
+      brain.importTeacherFact08(
+          subject: 'Zelquario',
+          relation: 'tipo di',
+          object: 'Vorselmo',
+          confidence: .9,
+          source: 'Android 0331 fixture');
+      final subject = brain.ensureSemanticEntity06('Zelquario'),
+          object = brain.ensureSemanticEntity06('Vorselmo'),
+          edgeKey = MgdWorld06.semanticEdgeKey331(subject, object);
+      Map<String, dynamic> evidenceOf(PlasticLanguageBrain04 b) {
+        final fact = b.slots.values
+            .where((s) => s.subjectId == subject)
+            .expand((s) => s.candidates.values)
+            .singleWhere((c) =>
+                c.objectKey ==
+                PlasticLanguageBrain04.canonicalObject('Vorselmo'));
+        return {
+          'episodes': fact.sourceEpisodes.toList()..sort(),
+          'families': fact.sourceFamilies.toList()..sort(),
+          'supports': fact.supports,
+          'confidence': fact.confidence,
+          'status': fact.epistemicStatus,
+        };
+      }
+
+      final originalEvidence = evidenceOf(brain);
+      expect(
+          (originalEvidence['episodes'] as List).isNotEmpty ||
+              (originalEvidence['families'] as List).isNotEmpty,
+          isTrue);
+      world.setConsolidationEnabled331(true);
+      for (var n = 0; n < 16; n++) {
+        MemoryRuntime319.pulse(brain, world, cycles: 0);
+      }
+      final trained = world.edges[edgeKey]!;
+      expect(trained.inConsolidationBasin331, isTrue);
+      final sourceKeys = Set<String>.of(trained.consolidationEvidence331),
+          savedMaterial = trained.consolidationMaterial331,
+          savedCost = trained.cost;
+      expect(sourceKeys, isNotEmpty);
+      expect(evidenceOf(brain), originalEvidence,
+          reason: 'Geometric rehearsal must not manufacture factual support');
+      await MemoryCheckpoint319().save(brain, world, research, language);
+      expect(await store.getMap('checkpoint_v0319'), isNotNull);
+      await store.close319();
+
+      // Real Android SQLite loads, not an in-memory JSON round trip.
+      final loadedBrain = await Brain04Persistence().load(),
+          loadedWorld = await WorldPersistence06().load(),
+          loadedResearch = await ResearchPersistence11().load(),
+          loadedLanguage = await MgdLanguagePersistence20().load();
+      expect(loadedBrain, isNotNull);
+      expect(loadedBrain!.migrated, isFalse);
+      expect(loadedWorld, isNotNull);
+      expect(loadedResearch, isNotNull);
+      expect(loadedLanguage, isNotNull);
+      final restoredBrain = loadedBrain.brain,
+          restoredWorld = loadedWorld!,
+          restoredEdge = restoredWorld.edges[edgeKey]!;
+      expect(restoredWorld.consolidationEnabled331, isTrue);
+      expect(restoredEdge.inConsolidationBasin331, isTrue);
+      expect(restoredEdge.consolidationMaterial331, savedMaterial);
+      expect(restoredEdge.cost, savedCost);
+      expect(restoredEdge.consolidationEvidence331, sourceKeys);
+      expect(
+          restoredBrain.responseAttractors028.values
+              .expand((s) => s.candidates.values)
+              .singleWhere((c) => c.text == rejectedAnswer)
+              .revoked331,
+          isTrue);
+      expect(restoredBrain.responseOptions028(prompt),
+          isNot(contains(rejectedAnswer)));
+      for (var n = 0; n < 16; n++) {
+        restoredBrain.sleepReplay(cycles: 8);
+        restoredWorld.sleepReplay(cycles: 8);
+      }
+      expect(restoredEdge.inConsolidationBasin331, isTrue,
+          reason: 'An eligible basin persists without new external activation');
+      expect(restoredBrain.respond(prompt).toLowerCase(),
+          isNot(contains(rejectedAnswer.toLowerCase())));
+      expect(evidenceOf(restoredBrain), originalEvidence);
+      expect(restoredEdge.consolidationEvidence331, sourceKeys);
+
+      restoredWorld.retireResearchLink317(subject, object);
+      expect(restoredEdge.consolidationMaterial331, 0);
+      expect(restoredEdge.consolidationReplayBlocked331, isTrue);
+      expect(restoredEdge.blockedConsolidationEvidence331, sourceKeys);
+      await MemoryCheckpoint319()
+          .save(restoredBrain, restoredWorld, loadedResearch!, loadedLanguage!);
+      await store.close319();
+
+      final finalBrainState = await Brain04Persistence().load(),
+          finalWorld = await WorldPersistence06().load(),
+          finalResearch = await ResearchPersistence11().load();
+      expect(finalBrainState, isNotNull);
+      expect(finalBrainState!.migrated, isFalse);
+      expect(finalWorld, isNotNull);
+      final finalBrain = finalBrainState.brain,
+          finalEdge = finalWorld!.edges[edgeKey]!;
+      expect(finalEdge.blockedConsolidationEvidence331, sourceKeys);
+      for (var n = 0; n < 16; n++) {
+        MemoryRuntime319.pulse(finalBrain, finalWorld, cycles: 0);
+        finalBrain.sleepReplay(cycles: 8);
+        finalWorld.sleepReplay(cycles: 8);
+      }
+      expect(finalEdge.consolidationReplayBlocked331, isTrue);
+      expect(finalEdge.inConsolidationBasin331, isFalse);
+      expect(finalEdge.consolidationMaterial331, 0);
+      expect(finalEdge.cost, greaterThan(Consolidation331.defaults.epsilon));
+      expect(finalEdge.consolidationEvidence331, sourceKeys);
+      expect(finalEdge.blockedConsolidationEvidence331, sourceKeys);
+      expect(
+          finalBrain.responseAttractors028.values
+              .expand((s) => s.candidates.values)
+              .singleWhere((c) => c.text == rejectedAnswer)
+              .revoked331,
+          isTrue);
+      expect(finalBrain.responseOptions028(prompt),
+          isNot(contains(rejectedAnswer)));
+      expect(finalBrain.respond(prompt).toLowerCase(),
+          isNot(contains(rejectedAnswer.toLowerCase())));
+      expect(evidenceOf(finalBrain), originalEvidence);
+      expect(finalResearch!.evidence, isEmpty);
+      expect(finalResearch.claims, isEmpty);
+      print('ANDROID331 ${jsonEncode({
+            'sqliteRestarts': 2,
+            'negativeFeedbackRetained': true,
+            'sleepDoesNotRearmAnswer': true,
+            'basinRetained': true,
+            'provenanceRevocationRetained': true,
+            'sameSourceDoesNotRearm': true,
+            'noManufacturedEvidence': true,
+          })}');
+    } finally {
+      await store.clearAll();
+      await store.close319();
+    }
+  });
+
+  testWidgets(
+      'Android 0331 relational chat thumbs down gates repeated answers after SQLite restart',
+      (tester) async {
+    final store = MgdStateStore26.instance;
+    await store.clearAll();
+    try {
+      const question = 'Chi rincorre il zavrente?',
+          statement = 'Il melquario insegue il zavrente.';
+      final research = ResearchMemory11(enabled: false)
+        ..state317.addAll({
+          'migrationComplete': true,
+          'recovery318Complete': true,
+          'recovery320Complete': true,
+          'languagePassages': 0,
+          'languageEvidence': 0,
+        });
+      final intake = RelationalMemory324.learn(research, statement,
+          source: 'Fonte UI Android 0331');
+      expect(intake.added, 1);
+      final originalAnswer =
+          RelationalMemory324.answerIfKnown(research, question)!;
+      expect(originalAnswer, contains('melquario insegue zavrente'));
+      final originalRows = RelationalMemory324.rows(research);
+      await MemoryCheckpoint319().save(
+          PlasticLanguageBrain04(), MgdWorld06(), research, MgdLanguage20());
+      await store.close319();
+      await tester.pumpWidget(const MgdNeuro04App());
+      await waitBoot319(tester);
+
+      LivePage07 livePage() =>
+          tester.widget<LivePage07>(find.byType(LivePage07));
+      Future<void> waitReady() async {
+        await tester.pump(const Duration(milliseconds: 100));
+        for (var n = 0; n < 150 && livePage().busy; n++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(livePage().busy, isFalse,
+            reason: 'Chat/feedback must finish its real persistence operation');
+        await tester.pumpAndSettle();
+      }
+
+      Future<String> ask() async {
+        await waitReady();
+        final previous = livePage()
+            .messages
+            .where((m) => !m.user && m.prompt == question)
+            .length;
+        final previousUserMessages = livePage()
+            .messages
+            .where((m) => m.user && m.text == question)
+            .length;
+        final input = find.byType(TextField);
+        final editable =
+            find.descendant(of: input, matching: find.byType(EditableText));
+        final sendButton = find.ancestor(
+            of: find.byIcon(Icons.arrow_upward),
+            matching: find.byType(IconButton));
+        Map<String, dynamic> diagnostics(String phase) {
+          final page = livePage();
+          final buttons = sendButton.evaluate();
+          return {
+            'phase': phase,
+            'previousReplies': previous,
+            'busy': page.busy,
+            'controller': page.controller.text,
+            'inputFocused':
+                tester.widget<EditableText>(editable).focusNode.hasFocus,
+            'sendEnabled': buttons.length == 1 &&
+                tester.widget<IconButton>(sendButton).onPressed != null,
+            'sendHitTestable': sendButton.hitTestable().evaluate().length,
+            'sendRect': buttons.length == 1
+                ? tester.getRect(sendButton).toString()
+                : null,
+            'keyboardInset': tester.view.viewInsets.bottom,
+            'userMessages':
+                page.messages.where((m) => m.user && m.text == question).length,
+            'replies': page.messages
+                .where((m) => !m.user && m.prompt == question)
+                .length,
+            'lastMessages': page.messages.reversed
+                .take(3)
+                .map(
+                    (m) => {'user': m.user, 'text': m.text, 'prompt': m.prompt})
+                .toList(),
+            'visibleErrors': tester
+                .widgetList<Text>(find.byType(Text))
+                .map((t) => t.data ?? '')
+                .where((t) =>
+                    t.startsWith('Operazione non completata:') ||
+                    t.startsWith('Salvataggio non completato:'))
+                .toList(),
+          };
+        }
+
+        // IntegrationTest uses the real IME. After unfocus, the binding can
+        // still cache this EditableTextState, so enterText/showKeyboard alone
+        // does not request focus again. Refocus with the same tap a user makes
+        // before typing, then verify the connection's focus before injection.
+        expect(input, findsOneWidget);
+        await tester.ensureVisible(input);
+        await tester.pumpAndSettle();
+        expect(input.hitTestable(), findsOneWidget);
+        await tester.tap(input.hitTestable());
+        await tester.pumpAndSettle();
+        expect(editable, findsOneWidget);
+        expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue,
+            reason: jsonEncode(diagnostics('input-refocused')));
+        await tester.enterText(input, question);
+        final entered = diagnostics('text-entered');
+        print('ANDROID331_UI_SEND ${jsonEncode(entered)}');
+        expect(livePage().controller.text, question,
+            reason: jsonEncode(entered));
+        await tester.pumpAndSettle();
+        expect(livePage().controller.text, question,
+            reason: jsonEncode(diagnostics('text-settled')));
+        expect(sendButton, findsOneWidget);
+        await tester.ensureVisible(sendButton);
+        await tester.pumpAndSettle();
+        final beforeTap = diagnostics('before-tap');
+        print('ANDROID331_UI_SEND ${jsonEncode(beforeTap)}');
+        expect(livePage().controller.text, question,
+            reason: jsonEncode(beforeTap));
+        expect(livePage().busy, isFalse, reason: jsonEncode(beforeTap));
+        expect(tester.widget<IconButton>(sendButton).onPressed, isNotNull,
+            reason: jsonEncode(beforeTap));
+        expect(sendButton.hitTestable(), findsOneWidget,
+            reason: jsonEncode(beforeTap));
+        await tester.tap(sendButton.hitTestable());
+        await tester.pump(const Duration(milliseconds: 100));
+        final afterTap = diagnostics('after-tap');
+        print('ANDROID331_UI_SEND ${jsonEncode(afterTap)}');
+        expect(livePage().controller.text, isEmpty,
+            reason: 'A single real tap must consume the question. '
+                '${jsonEncode(afterTap)}');
+        expect(afterTap['userMessages'], previousUserMessages + 1,
+            reason: 'A single real tap must append exactly one user message. '
+                '${jsonEncode(afterTap)}');
+        for (var n = 0; n < 150; n++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          final page = livePage();
+          if (!page.busy &&
+              page.controller.text.isEmpty &&
+              page.messages
+                      .where((m) => !m.user && m.prompt == question)
+                      .length >
+                  previous) break;
+        }
+        await waitReady();
+        final replies = livePage()
+            .messages
+            .where((m) => !m.user && m.prompt == question)
+            .toList();
+        expect(replies.length, previous + 1,
+            reason: 'The question must be consumed and produce a new UI reply. '
+                '${jsonEncode(diagnostics('reply-complete'))}');
+        expect(livePage().controller.text, isEmpty);
+        return replies.last.text;
+      }
+
+      expect(await ask(), originalAnswer);
+      expect(find.text(originalAnswer), findsOneWidget);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      final thumbsDown = find.byIcon(Icons.thumb_down_alt_outlined);
+      expect(thumbsDown, findsOneWidget);
+      await tester.ensureVisible(thumbsDown);
+      await tester.pumpAndSettle();
+      await tester.tap(thumbsDown.hitTestable());
+      await waitReady();
+      // Read the database without explicitly checkpointing: the feedback UI
+      // itself must have saved the rejection before any subsequent question.
+      final savedBrain = await Brain04Persistence().load();
+      expect(savedBrain, isNotNull);
+      expect(savedBrain!.brain.guardResponse331(question, originalAnswer),
+          isNot(originalAnswer));
+      final secondAnswer = await ask();
+      expect(secondAnswer, isNot(contains('melquario insegue zavrente')));
+      expect(find.text(secondAnswer), findsOneWidget);
+      final beforeRestart = tester
+          .widget<InspectorScope315>(find.byType(InspectorScope315))
+          .inspector;
+      expect(RelationalMemory324.rows(beforeRestart.research), originalRows,
+          reason: 'Rejecting an answer must not silently delete its source');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await store.close319();
+
+      await tester.pumpWidget(const MgdNeuro04App());
+      await waitBoot319(tester);
+      final afterRestart = tester
+          .widget<InspectorScope315>(find.byType(InspectorScope315))
+          .inspector;
+      afterRestart.brain.sleepReplay(cycles: 8);
+      afterRestart.world.sleepReplay(cycles: 8);
+      final restartedAnswer = await ask();
+      expect(restartedAnswer, isNot(contains('melquario insegue zavrente')));
+      expect(find.text(restartedAnswer), findsOneWidget);
+      expect(RelationalMemory324.rows(afterRestart.research), originalRows);
+      expect(afterRestart.brain.guardResponse331(question, originalAnswer),
+          isNot(originalAnswer));
+      print('ANDROID331_UI ${jsonEncode({
+            'realQuestion': true,
+            'realThumbsDown': true,
+            'feedbackAutosaved': true,
+            'relationalOutputGate': true,
+            'sqliteRestart': true,
+            'sleepDoesNotRearm': true,
+            'originalSourceRetained': true,
+          })}');
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await store.clearAll();
+      await store.close319();
+    }
   });
 }

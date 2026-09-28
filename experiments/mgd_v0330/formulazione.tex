@@ -1,0 +1,157 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath,amssymb,amsthm,geometry,graphicx,hyperref}
+\geometry{margin=2.5cm}
+\newtheorem{proposizione}{Proposizione}
+\title{MGD Neuro 0.33.0: memoria esperienziale multimodale\\Garanzie condizionate e limiti verificati}
+\author{Nota tecnica sui sorgenti e sugli esperimenti}
+\date{26 settembre 2026}
+\begin{document}
+\maketitle
+\noindent Questa nota descrive il nuovo classificatore episodico integrato nell'app.
+Non costituisce una dimostrazione dei paper originali MGD, di superiorità generale
+su Transformer, di intelligenza generale o di efficienza energetica biologica.
+
+\section{Esperienze, contesti e geometria}
+Si conserva una successione finita $E=(e_1,\ldots,e_n)$ di esperienze confermate,
+con $e_i=(c_i,y_i,\{z_i^{(m)}\}_{m\in M_i},p_i)$: contesto, etichetta,
+descrittori normalizzati delle modalità presenti e provenienza.
+Le etichette non vengono inserite automaticamente nei descrittori.
+Con una metrica diagonale positiva $w_{cmk}\in[0.05,8]$, si usa la dissimilarità
+\[
+ D_{cm}(z,z_i)=\sum_k w_{cmk}(z_k-z_{ik})^2.
+\]
+La radice di questa espressione è una distanza sullo spazio dei descrittori;
+la sua versione quadratica è quella usata nei kernel. La rappresentazione di
+immagini o suoni può essere non iniettiva: distanza nulla non dimostra identità
+degli oggetti nel mondo.
+
+Per una query con modalità $M$, i confronti congiunti ammettono soltanto episodi
+che contengono tutte le modalità richieste nello stesso contesto. Posto
+$E_{cyM}=\{i:c_i=c,y_i=y,M\subseteq M_i\}$, si calcola
+\[
+ s_y(z)=\frac1{|E_{cyM}|}\sum_{i\in E_{cyM}}
+ \exp\!\left[-\frac{\beta_c}{|M|}\sum_{m\in M}D_{cm}(z^{(m)},z_i^{(m)})\right],
+ \qquad q_y(z)=\frac{s_y(z)}{\sum_{y'}s_{y'}(z)}.
+\]
+Si tratta di punteggi normalizzati su categorie osservate, non di probabilità
+calibrate della verità nel mondo aperto. In assenza di esempi confrontabili il
+modello si astiene. Si calcolano anche punteggi dei singoli canali per rendere
+visibile il loro contributo. Mediare prodotti all'interno degli episodi conserva
+associazioni che il prodotto di medie marginali perderebbe, come mostra il test XOR.
+
+\section{Aggiornamento e verifica sui ricordi}
+Per ciascun canale, l'aggiornamento propone un passo sulla perdita logaritmica
+del kernel bilanciato per classe, su un insieme di al massimo 48 riferimenti.
+Con $\delta_{ik}=(z_k-z_{ik})^2$, il gradiente rispetto a $w_k$ è
+\[
+ \frac{\partial(-\log q_y)}{\partial w_k}
+ =\beta_c\bigl(\mathbb E[\delta_{ik}\mid y,z]
+                  -\mathbb E[\delta_{ik}\mid z]\bigr).
+\]
+Si proietta poi il passo nell'intervallo consentito. Il candidato viene accettato
+solo se non peggiora la perdita complessiva e non cambia in errata una decisione
+prima corretta su al massimo 24 riferimenti, escludendo ogni riferimento dal suo
+insieme di confronto. Questo controllo campionato non è una garanzia sulle
+esperienze non controllate né sui dati futuri. Il passo ottimizza un obiettivo
+per canale; la verifica usa anche la previsione congiunta.
+
+Ogni otto esempi di un contesto, quando ogni categoria osservata dispone di
+almeno due esempi, $\beta_c$ viene selezionato tra $6,12,24,48$ mediante perdita
+leave-one-out su al massimo 16 riferimenti. Non si accede ai dati di verifica.
+La selezione impedisce di trasformare in errata una previsione corretta dei
+riferimenti controllati e penalizza debolmente valori elevati di $\beta_c$.
+
+\section{Che cosa si può dimostrare}
+\begin{proposizione}[Richiamo condizionato]
+Se una query ha descrittori identici a quelli di almeno un episodio conservato,
+nel contesto richiesto e su tutte le modalità della query, e tutte le
+corrispondenti etichette conservate sono uguali a $y$, la regola di richiamo
+esatto restituisce $y$, indipendentemente dagli aggiornamenti della metrica.
+\end{proposizione}
+\begin{proof}
+Il codice verifica i descrittori prima della decisione per kernel. L'insieme
+delle etichette esattamente corrispondenti è il singoletto $\{y\}$ e il ramo
+di richiamo restituisce tale elemento, senza consultare i pesi. La tolleranza
+numerica implementata è $10^{-9}$ per coordinata. Episodi con etichette
+incompatibili producono invece un'astensione. La conclusione richiede che
+l'episodio resti conservato e che non venga aggiunta una conferma incompatibile.
+\end{proof}
+La proposizione non garantisce riconoscimento di nuove viste di uno stesso
+oggetto, assenza di collisioni del descrittore o assenza di dimenticanza
+nella generalizzazione. Il limite di 2.048 episodi rifiuta ulteriori inserimenti;
+non promette memoria illimitata.
+
+\begin{proposizione}[Ricostruzione dopo eliminazione]
+Fissati descrittori, ordine e algoritmo deterministico di aggiornamento,
+azzerare lo stato adattivo e riprodurre gli episodi superstiti produce lo stesso
+predittore che si sarebbe ottenuto addestrando da zero sui soli superstiti.
+\end{proposizione}
+\begin{proof}
+Per induzione sulla lunghezza della successione superstite: gli stati iniziali
+sono uguali. Al passo successivo sono uguali riferimenti, contesto, parametri,
+proposta di aggiornamento e verifica; quindi anche lo stato successivo è uguale.
+Gli identificatori assoluti e le date non partecipano alle distanze, al
+campionamento ordinato o al criterio di accettazione. La selezione della
+temperatura viene ripetuta agli stessi conteggi per contesto. I contatori di
+valutazione ripartono da zero dopo l'eliminazione, evitando di presentarli come
+misure originali di una storia che è stata modificata.
+\end{proof}
+La conclusione riguarda questo componente; non prova unlearning forense degli
+altri moduli dell'app, di copie precedenti o del sistema operativo.
+
+\begin{proposizione}[Limite della conservazione universale]
+Un sistema con al più $b$ bit di stato persistente non può conservare esattamente
+tutte le successioni binarie di lunghezza $n>b$ e rispondere senza errori a
+qualunque futura domanda sul valore di un loro bit.
+\end{proposizione}
+\begin{proof}
+Ci sono $2^n$ successioni e al più $2^b$ stati. Due successioni differenti hanno
+quindi lo stesso stato. La domanda relativa a una posizione in cui differiscono
+richiede due risposte diverse dallo stesso stato: almeno una sarà errata.
+\end{proof}
+Una compressione utile deve dunque specificare quali predizioni conservare,
+con quale errore tollerato e rispetto a quale distribuzione. Non è stato
+dimostrato né implementato un criterio universale di compressione in questa
+versione. I vincoli di apprendimento senza fine, memoria finita e richiamo
+perfetto di ogni dettaglio non possono essere promessi simultaneamente.
+
+\section{Esperimento e risultato negativo sul primato}
+Su sei seed finali, con 64 esempi di apprendimento e 96 nuovi esempi di verifica
+per seed, il nucleo restituisce il candidato corretto in $571/576$ casi.
+Il Transformer online con replay ottiene $570/576$, mentre il controllo
+episodico con distanza fissa ottiene $574/576$. Il test esatto appaiato per seed
+ha $p=1.00$: non c'è una dimostrazione di vantaggio. La perdita logaritmica
+favorisce il Transformer, $0.1681$ contro $0.2037$.
+
+Il nucleo accetta 533 risposte, tutte corrette nell'esperimento, e richiede
+conferma negli altri 43 casi. La generalizzazione sulle classi precedenti
+non peggiora nei sei flussi; non segue una garanzia fuori da tali flussi.
+I tre canali insieme forniscono circa il 99\% di accuratezza, i singoli
+canali circa il 25\%, due canali circa il 49\%. Il risultato riguarda colori,
+toni e indizi testuali artificiali, non intelligenza generale.
+
+La curvatura e le equazioni native del vecchio motore MGD non determinano
+queste predizioni: il componente aggiunto è un classificatore episodico con
+metrica appresa. Attribuire il risultato a una superiorità della teoria MGD
+sarebbe un errore di inferenza. Tempi CPU non equivalgono a energia; non sono
+stati misurati joule sul telefono.
+
+\begin{thebibliography}{9}
+\bibitem{nca} Goldberger et al., \emph{Neighbourhood Components Analysis},
+NeurIPS 2004. \url{https://www.cs.utoronto.ca/~hinton/absps/nca.pdf}
+\bibitem{cls} \emph{Organizing memories for generalization in complementary
+learning systems}, Nature Neuroscience, 2023.
+\url{https://www.nature.com/articles/s41593-023-01382-9}
+\bibitem{der} Buzzega et al., \emph{Dark Experience for General Continual Learning},
+2020. \url{https://arxiv.org/abs/2004.07211}
+\bibitem{mamba} Lahoti et al., \emph{Mamba-3}, 2026.
+\url{https://arxiv.org/abs/2603.15569}
+\bibitem{bind} Girdhar et al., \emph{ImageBind}, 2023.
+\url{https://arxiv.org/abs/2305.05665}
+\bibitem{nl} Behrouz et al., \emph{Nested Learning}, 2025.
+\url{https://abehrouz.github.io/files/NL.pdf}
+\end{thebibliography}
+\end{document}

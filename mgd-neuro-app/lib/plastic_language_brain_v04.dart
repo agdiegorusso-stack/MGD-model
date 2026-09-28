@@ -45,6 +45,7 @@ class PlasticEdge04 {
   double elig;
   double meta;
   int lastUsed;
+  int lastEvolved;
   int uses;
 
   PlasticEdge04({
@@ -56,8 +57,9 @@ class PlasticEdge04 {
     this.elig = 0,
     this.meta = 0,
     this.lastUsed = 0,
+    int? lastEvolved,
     this.uses = 0,
-  });
+  }) : lastEvolved = lastEvolved ?? lastUsed;
 
   Map<String, dynamic> toJson() => {
         'from': from,
@@ -68,6 +70,7 @@ class PlasticEdge04 {
         'elig': elig,
         'meta': meta,
         'lastUsed': lastUsed,
+        'lastEvolved': lastEvolved,
         'uses': uses,
       };
 
@@ -80,6 +83,9 @@ class PlasticEdge04 {
         elig: (j['elig'] as num).toDouble(),
         meta: (j['meta'] as num?)?.toDouble() ?? 0,
         lastUsed: (j['lastUsed'] as num?)?.toInt() ?? 0,
+        lastEvolved: (j['lastEvolved'] as num?)?.toInt() ??
+            (j['lastUsed'] as num?)?.toInt() ??
+            0,
         uses: (j['uses'] as num?)?.toInt() ?? 0,
       );
 }
@@ -318,6 +324,7 @@ class ResponseCandidate028 {
   double strength;
   int supports;
   int lastUsed;
+  bool revoked331;
   final Set<String> contextCues;
 
   ResponseCandidate028({
@@ -326,6 +333,7 @@ class ResponseCandidate028 {
     this.strength = 0.55,
     this.supports = 1,
     this.lastUsed = -1000000,
+    this.revoked331 = false,
     Set<String>? contextCues,
   }) : contextCues = contextCues ?? <String>{};
 
@@ -335,6 +343,7 @@ class ResponseCandidate028 {
         'strength': strength,
         'supports': supports,
         'lastUsed': lastUsed,
+        'revoked331': revoked331,
         'contextCues': contextCues.toList(),
       };
 
@@ -345,6 +354,7 @@ class ResponseCandidate028 {
         strength: (j['strength'] as num?)?.toDouble() ?? 0.55,
         supports: (j['supports'] as num?)?.toInt() ?? 1,
         lastUsed: (j['lastUsed'] as num?)?.toInt() ?? -1000000,
+        revoked331: j['revoked331'] == true,
         contextCues: ((j['contextCues'] as List?) ?? const [])
             .map((e) => e.toString())
             .toSet(),
@@ -450,6 +460,7 @@ class Episode04 {
   double flux;
   int createdStep;
   int replays;
+  bool responseRevoked331;
 
   Episode04({
     required this.id,
@@ -468,6 +479,7 @@ class Episode04 {
     this.flux = 0,
     this.createdStep = 0,
     this.replays = 0,
+    this.responseRevoked331 = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -487,6 +499,7 @@ class Episode04 {
         'flux': flux,
         'createdStep': createdStep,
         'replays': replays,
+        'responseRevoked331': responseRevoked331,
       };
 
   factory Episode04.fromJson(Map<String, dynamic> j) => Episode04(
@@ -508,6 +521,8 @@ class Episode04 {
         flux: (j['flux'] as num?)?.toDouble() ?? 0,
         createdStep: (j['createdStep'] as num?)?.toInt() ?? 0,
         replays: (j['replays'] as num?)?.toInt() ?? 0,
+        responseRevoked331: j['responseRevoked331'] as bool? ??
+            ((j['reward'] as num?)?.toDouble() ?? 0) < 0,
       );
 }
 
@@ -688,6 +703,76 @@ class PlasticLanguageBrain04 {
   static String canonicalObject(String input) {
     return normalizeText(input)
         .replaceAll(RegExp(r'^[\s,.:;!?]+|[\s,.:;!?]+$'), '');
+  }
+
+  static bool containsLabel33(String text, String label) {
+    final hay = ' ${lexicalTokens(normalizeText(text)).join(' ')} ';
+    final needle = lexicalTokens(normalizeText(label)).join(' ');
+    return needle.isNotEmpty && hay.contains(' $needle ');
+  }
+
+  /// Keep numeric slots stable, but remove active semantic/lexical references.
+  /// A new explicit exposure may learn this name again as a new entity.
+  Set<int> forgetNode33(String label) {
+    final n = normalizeText(label);
+    final ids = entities
+        .where((e) =>
+            e.kind != 'deleted' &&
+            (normalizeText(e.label) == n || e.aliases.contains(n)))
+        .map((e) => e.id)
+        .toSet();
+    bool mentions(String? s) => s != null && containsLabel33(s, label);
+    for (final entry in slots.entries.toList()) {
+      if (ids.contains(entry.value.subjectId)) {
+        slots.remove(entry.key);
+        continue;
+      }
+      entry.value.candidates.removeWhere((_, c) => mentions(c.display));
+      if (entry.value.candidates.isEmpty) slots.remove(entry.key);
+    }
+    episodes.removeWhere((e) =>
+        ids.contains(e.subjectId) ||
+        mentions(e.userText) ||
+        mentions(e.agentText));
+    lexicalSenses028.removeWhere((k, _) => mentions(k));
+    for (final senses in lexicalSenses028.values) {
+      senses.removeWhere((s) =>
+          ids.contains(s.entityId) || mentions(s.label) || mentions(s.gloss));
+    }
+    responseAttractors028
+        .removeWhere((k, v) => mentions(k) || mentions(v.promptSurface));
+    for (final slot in responseAttractors028.values) {
+      slot.candidates.removeWhere((k, c) => mentions(c.text));
+    }
+    for (final id in ids) {
+      entitySurfaceForms031.remove(id);
+      final e = entities[id];
+      if (e.kind == 'self' || e.kind == 'user') continue;
+      _entityKeyToId.removeWhere((_, value) => value == id);
+      entities[id] = EntityMemory04(
+          id: id, key: '@deleted:$id', label: '', kind: 'deleted');
+    }
+    final tokenIds = assemblies
+        .where((a) => normalizeText(a.token) == n)
+        .map((a) => a.id)
+        .toSet();
+    for (final id in tokenIds) {
+      _tokenToId.remove(assemblies[id].token);
+      assemblies[id] =
+          TokenAssembly04(id: id, token: '<deleted:$id>', surface: '');
+      temporal.remove(id);
+      associative.remove(id);
+    }
+    for (final row in temporal.values) {
+      row.removeWhere((k, _) => tokenIds.contains(k));
+    }
+    for (final row in associative.values) {
+      row.removeWhere((k, _) => tokenIds.contains(k));
+    }
+    workingMemory.removeWhere(tokenIds.contains);
+    step++;
+    discoverConcepts();
+    return ids;
   }
 
   static List<String> lexicalTokens(String input) {
@@ -2816,7 +2901,7 @@ class PlasticLanguageBrain04 {
   }
 
   void _lazyDecay(PlasticEdge04 e) {
-    final dt = max(0, step - e.lastUsed);
+    final dt = max(0, step - e.lastEvolved);
     if (dt == 0) return;
     final evolved = MgdMath09.evolve(
       weight: e.cost,
@@ -2832,7 +2917,7 @@ class PlasticLanguageBrain04 {
     e.slow = evolved.material;
     e.meta = evolved.coherenceAverage;
     e.elig *= pow(0.86, min(dt, 24)).toDouble();
-    e.lastUsed = step;
+    e.lastEvolved = step;
   }
 
   double _strength(PlasticEdge04 e) {
@@ -2866,6 +2951,7 @@ class PlasticLanguageBrain04 {
     e.meta = evolved.coherenceAverage;
     e.uses++;
     e.lastUsed = step;
+    e.lastEvolved = step;
 
     return _EdgeChange04(
       (e.slow - oldSlow).abs(),
@@ -3632,7 +3718,7 @@ class PlasticLanguageBrain04 {
   void _teachResponseAttractor028(String prompt, String answer, double reward) {
     final key = _responsePromptKey028(prompt);
     final text = answer.trim();
-    if (key.isEmpty || text.isEmpty) return;
+    if (key.isEmpty || text.isEmpty || reward <= 0) return;
     final slot = responseAttractors028.putIfAbsent(
       key,
       () => ResponseSlot028(promptKey: key, promptSurface: prompt.trim()),
@@ -3649,6 +3735,8 @@ class PlasticLanguageBrain04 {
         contextCues: cues,
       );
     } else {
+      old.revoked331 =
+          false; // Only explicit teaching/positive feedback rearms.
       old.supports++;
       old.text = text;
       old.strength = (old.strength + 0.07 + 0.06 * max(0.0, reward))
@@ -3661,7 +3749,7 @@ class PlasticLanguageBrain04 {
   List<String> responseOptions028(String prompt) {
     final slot = _bestResponseSlot028(prompt);
     if (slot == null) return const <String>[];
-    final xs = slot.candidates.values.toList()
+    final xs = slot.candidates.values.where((c) => !c.revoked331).toList()
       ..sort((a, b) => b.strength.compareTo(a.strength));
     return xs.map((e) => e.text).toList();
   }
@@ -3677,7 +3765,8 @@ class PlasticLanguageBrain04 {
     slot.responseTick++;
     final tick = slot.responseTick;
 
-    final xs = slot.candidates.values.toList();
+    final xs = slot.candidates.values.where((c) => !c.revoked331).toList();
+    if (xs.isEmpty) return null;
     xs.sort((a, b) {
       double score(ResponseCandidate028 x) {
         final overlap = q.isEmpty
@@ -3778,6 +3867,7 @@ class PlasticLanguageBrain04 {
     if (answer == null && interpretation.confidence >= 0.72) {
       answer = _generateFromState(prompt);
     }
+    if (answer != null && _responseRevoked331(prompt, answer)) answer = null;
     if (answer == null || answer.trim().isEmpty) {
       answer =
           'Non ho ancora una rappresentazione abbastanza stabile per rispondere. Insegnamelo o correggimi.';
@@ -3808,7 +3898,10 @@ class PlasticLanguageBrain04 {
     Episode04? best;
     var bestScore = 0.0;
     for (final ep in episodes) {
-      if (ep.agentText == null || ep.agentText!.trim().isEmpty) continue;
+      if (ep.responseRevoked331 ||
+          ep.agentText == null ||
+          ep.agentText!.trim().isEmpty ||
+          _responseRevoked331(query, ep.agentText!)) continue;
       final e = ep.tokenIds.toSet();
       final lexical = q.isEmpty || e.isEmpty
           ? 0.0
@@ -3872,10 +3965,19 @@ class PlasticLanguageBrain04 {
   }
 
   void teachResponse(String prompt, String answer, {double reward = 1.0}) {
+    if (!reward.isFinite) throw ArgumentError.value(reward, 'reward');
+    if (reward < 0) {
+      reinforcePair(prompt, answer, false);
+      return;
+    }
+    if (reward == 0) return;
     final interpretation = interpret(prompt, speaker: 'user', create: true);
     final stateful028 = _isStatefulPrompt028(prompt, interpretation);
     _teachResponseAttractor028(prompt, answer, reward);
-    final ep = _findEpisodeForPrompt(prompt) ??
+    final existingEpisode = _findEpisodeForPrompt(prompt);
+    final ep = (existingEpisode?.responseRevoked331 == true
+            ? null
+            : existingEpisode) ??
         _storeEpisode(
           userText: prompt,
           report: learnSurface(prompt, reward: 0.40),
@@ -3883,6 +3985,16 @@ class PlasticLanguageBrain04 {
           reward: reward,
         );
     ep.agentText = answer.trim();
+    if (reward > 0) {
+      ep.responseRevoked331 = false;
+      final key = _responsePromptKey028(prompt),
+          answerKey = canonicalObject(answer);
+      for (final old in episodes) {
+        if (_responsePromptKey028(old.userText) == key &&
+            canonicalObject(old.agentText ?? '') == answerKey)
+          old.responseRevoked331 = false;
+      }
+    }
     ep.reward = reward.clamp(-1.0, 1.0).toDouble();
     ep.salience = 1.0;
 
@@ -4001,6 +4113,7 @@ class PlasticLanguageBrain04 {
   }
 
   void reinforcePair(String prompt, String response, bool positive) {
+    if (!positive) _revokeResponse331(prompt, response);
     final ep = _findEpisodeForPrompt(prompt);
     if (ep != null) {
       ep.reward =
@@ -4010,6 +4123,45 @@ class PlasticLanguageBrain04 {
     }
     learnSurface(response, reward: positive ? 0.70 : -0.65);
     if (positive) teachResponse(prompt, response, reward: 0.65);
+  }
+
+  bool _responseRevoked331(String prompt, String answer) {
+    final key = canonicalObject(answer);
+    final exact = responseAttractors028[_responsePromptKey028(prompt)];
+    return exact?.candidates[key]?.revoked331 == true ||
+        _bestResponseSlot028(prompt)?.candidates[key]?.revoked331 == true;
+  }
+
+  /// Final output gate shared by relational, sourced and language answer paths.
+  /// It blocks the rejected prompt/answer pair, without claiming a fact is false.
+  String guardResponse331(String prompt, String answer) => _responseRevoked331(
+          prompt, answer)
+      ? 'Non ripropongo la risposta rifiutata. Insegnami una correzione o confermala esplicitamente.'
+      : answer;
+
+  void _revokeResponse331(String prompt, String answer) {
+    final key = _responsePromptKey028(prompt),
+        answerKey = canonicalObject(answer);
+    if (key.isEmpty || answerKey.isEmpty) return;
+    final related = _bestResponseSlot028(prompt);
+    final exact = responseAttractors028.putIfAbsent(key,
+        () => ResponseSlot028(promptKey: key, promptSurface: prompt.trim()));
+    final prompts = {key};
+    for (final slot in {exact, if (related != null) related}) {
+      if (slot == exact || slot.candidates.containsKey(answerKey)) {
+        prompts.add(slot.promptKey);
+        final candidate = slot.candidates.putIfAbsent(
+            answerKey,
+            () => ResponseCandidate028(
+                key: answerKey, text: answer.trim(), supports: 0));
+        candidate.revoked331 = true;
+      }
+    }
+    for (final ep in episodes) {
+      if (prompts.contains(_responsePromptKey028(ep.userText)) &&
+          canonicalObject(ep.agentText ?? '') == answerKey)
+        ep.responseRevoked331 = true;
+    }
   }
 
   LearningReport04 _learnSingleEvent061(
@@ -4112,7 +4264,10 @@ class PlasticLanguageBrain04 {
         _trainRelationAttractor(ri.relationId!, ri.relationCues, replayReward);
       }
       sleepFlux += r1.flux;
-      if (ep.agentText != null && ep.agentText!.trim().isNotEmpty) {
+      if (!ep.responseRevoked331 &&
+          ep.agentText != null &&
+          ep.agentText!.trim().isNotEmpty &&
+          !_responseRevoked331(ep.userText, ep.agentText!)) {
         sleepFlux += learnSurface(ep.agentText!,
                 reward: 0.18 + 0.22 * max(0.0, ep.reward))
             .flux;
@@ -4834,7 +4989,7 @@ class PlasticLanguageBrain04 {
     return Brain04Stats(
       vocabulary: max(0, assemblies.length - 2),
       synapses: _edgeCount(temporal) + _edgeCount(associative),
-      entities: entities.length,
+      entities: entities.where((e) => e.kind != 'deleted').length,
       relations:
           relations.where((r) => _canonicalRelation(r.id) == r.id).length,
       episodes: episodes.length,
@@ -5110,6 +5265,12 @@ class PlasticLanguageBrain04 {
       ..clear()
       ..addAll(((j['episodes'] as List?) ?? const [])
           .map((e) => Episode04.fromJson(Map<String, dynamic>.from(e as Map))));
+    // Legacy snapshots only expose aggregate reward; preserve every explicit
+    // revocation we can recover, without guessing at positive/neutral episodes.
+    for (final ep in b.episodes.where((e) => e.responseRevoked331)) {
+      final answer = ep.agentText;
+      if (answer != null) b._revokeResponse331(ep.userText, answer);
+    }
     b.concepts = ((j['concepts'] as List?) ?? const [])
         .map((e) => Concept04.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();

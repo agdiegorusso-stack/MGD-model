@@ -6,13 +6,16 @@ import 'plastic_language_brain_v04.dart';
 import 'sensory_world_v06.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'mgd_language_v020.dart';
+import 'consolidation_provenance_v0331.dart';
 
 /// One external observation updates both the relational and language memories.
 /// Replays remain exposure counts, never additional independent evidence.
 class LearningService321 {
   static Future<int> learnText(PlasticLanguageBrain04 brain, MgdWorld06 world,
       MgdLanguage20 language, String text,
-      {int passes = 1, ResearchMemory11? memory, void Function(int done, int total)? progress}) async {
+      {int passes = 1,
+      ResearchMemory11? memory,
+      void Function(int done, int total)? progress}) async {
     final chunks = text
         .split(RegExp(r'(?<=[.!?])\s+|\n+'))
         .map((s) => s.trim())
@@ -31,11 +34,17 @@ class LearningService321 {
       }
     }
     if (memory != null) {
-      await RelationalMemory324.learnAsync(memory,text);
+      await RelationalMemory324.learnAsync(memory, text);
       final id = ResearchSemantics317.digest(ResearchSemantics317.norm(text));
-      SourceMemory323.retain(memory, WebDocument11(provider: 'Testo insegnato',
-        family: 'locale:utente', title: 'Testo insegnato',
-        url: 'local://corpus/' + id, text: text, trust: .75));
+      SourceMemory323.retain(
+          memory,
+          WebDocument11(
+              provider: 'Testo insegnato',
+              family: 'locale:utente',
+              title: 'Testo insegnato',
+              url: 'local://corpus/' + id,
+              text: text,
+              trust: .75));
     }
     brain.discoverConcepts();
     world.runtime319['lastLearning321'] = {
@@ -73,9 +82,15 @@ class LearningService321 {
       })> sleep(PlasticLanguageBrain04 brain, MgdWorld06 world,
           ResearchMemory11 research) =>
       Isolate.run(() {
+        final baseStep = world.step;
         brain.sleepReplay(cycles: 72);
+        ConsolidationEvidence331.sync(brain, world);
         world.sleepReplay(cycles: 72);
         world.think(brain, cycles: 32);
-        return (brain: brain, world: world.toJson(), research: research);
+        return (
+          brain: brain,
+          world: world.toJson()..['runtimeBaseStep331'] = baseStep,
+          research: research
+        );
       });
 }
