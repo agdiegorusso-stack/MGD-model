@@ -852,6 +852,9 @@ void main() {
             .messages
             .where((m) => m.user && m.text == question)
             .length;
+        final input = find.byType(TextField);
+        final editable =
+            find.descendant(of: input, matching: find.byType(EditableText));
         final sendButton = find.ancestor(
             of: find.byIcon(Icons.arrow_upward),
             matching: find.byType(IconButton));
@@ -863,6 +866,8 @@ void main() {
             'previousReplies': previous,
             'busy': page.busy,
             'controller': page.controller.text,
+            'inputFocused':
+                tester.widget<EditableText>(editable).focusNode.hasFocus,
             'sendEnabled': buttons.length == 1 &&
                 tester.widget<IconButton>(sendButton).onPressed != null,
             'sendHitTestable': sendButton.hitTestable().evaluate().length,
@@ -890,12 +895,27 @@ void main() {
           };
         }
 
-        await tester.enterText(find.byType(TextField), question);
-        // enterText guarantees the controller value, not a laid-out frame after
-        // its update. Here it also refocuses the field after the thumbs-down
-        // step dismissed the keyboard. Settle that layout before locating and
-        // tapping the actual button; do not retry or call its callback directly.
+        // IntegrationTest uses the real IME. After unfocus, the binding can
+        // still cache this EditableTextState, so enterText/showKeyboard alone
+        // does not request focus again. Refocus with the same tap a user makes
+        // before typing, then verify the connection's focus before injection.
+        expect(input, findsOneWidget);
+        await tester.ensureVisible(input);
         await tester.pumpAndSettle();
+        expect(input.hitTestable(), findsOneWidget);
+        await tester.tap(input.hitTestable());
+        await tester.pumpAndSettle();
+        expect(editable, findsOneWidget);
+        expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue,
+            reason: jsonEncode(diagnostics('input-refocused')));
+        await tester.enterText(input, question);
+        final entered = diagnostics('text-entered');
+        print('ANDROID331_UI_SEND ${jsonEncode(entered)}');
+        expect(livePage().controller.text, question,
+            reason: jsonEncode(entered));
+        await tester.pumpAndSettle();
+        expect(livePage().controller.text, question,
+            reason: jsonEncode(diagnostics('text-settled')));
         expect(sendButton, findsOneWidget);
         await tester.ensureVisible(sendButton);
         await tester.pumpAndSettle();
