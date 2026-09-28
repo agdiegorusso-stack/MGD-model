@@ -848,8 +848,76 @@ void main() {
             .messages
             .where((m) => !m.user && m.prompt == question)
             .length;
+        final previousUserMessages = livePage()
+            .messages
+            .where((m) => m.user && m.text == question)
+            .length;
+        final sendButton = find.ancestor(
+            of: find.byIcon(Icons.arrow_upward),
+            matching: find.byType(IconButton));
+        Map<String, dynamic> diagnostics(String phase) {
+          final page = livePage();
+          final buttons = sendButton.evaluate();
+          return {
+            'phase': phase,
+            'previousReplies': previous,
+            'busy': page.busy,
+            'controller': page.controller.text,
+            'sendEnabled': buttons.length == 1 &&
+                tester.widget<IconButton>(sendButton).onPressed != null,
+            'sendHitTestable': sendButton.hitTestable().evaluate().length,
+            'sendRect': buttons.length == 1
+                ? tester.getRect(sendButton).toString()
+                : null,
+            'keyboardInset': tester.view.viewInsets.bottom,
+            'userMessages':
+                page.messages.where((m) => m.user && m.text == question).length,
+            'replies': page.messages
+                .where((m) => !m.user && m.prompt == question)
+                .length,
+            'lastMessages': page.messages.reversed
+                .take(3)
+                .map(
+                    (m) => {'user': m.user, 'text': m.text, 'prompt': m.prompt})
+                .toList(),
+            'visibleErrors': tester
+                .widgetList<Text>(find.byType(Text))
+                .map((t) => t.data ?? '')
+                .where((t) =>
+                    t.startsWith('Operazione non completata:') ||
+                    t.startsWith('Salvataggio non completato:'))
+                .toList(),
+          };
+        }
+
         await tester.enterText(find.byType(TextField), question);
-        await tester.tap(find.byIcon(Icons.arrow_upward));
+        // enterText guarantees the controller value, not a laid-out frame after
+        // its update. Here it also refocuses the field after the thumbs-down
+        // step dismissed the keyboard. Settle that layout before locating and
+        // tapping the actual button; do not retry or call its callback directly.
+        await tester.pumpAndSettle();
+        expect(sendButton, findsOneWidget);
+        await tester.ensureVisible(sendButton);
+        await tester.pumpAndSettle();
+        final beforeTap = diagnostics('before-tap');
+        print('ANDROID331_UI_SEND ${jsonEncode(beforeTap)}');
+        expect(livePage().controller.text, question,
+            reason: jsonEncode(beforeTap));
+        expect(livePage().busy, isFalse, reason: jsonEncode(beforeTap));
+        expect(tester.widget<IconButton>(sendButton).onPressed, isNotNull,
+            reason: jsonEncode(beforeTap));
+        expect(sendButton.hitTestable(), findsOneWidget,
+            reason: jsonEncode(beforeTap));
+        await tester.tap(sendButton.hitTestable());
+        await tester.pump(const Duration(milliseconds: 100));
+        final afterTap = diagnostics('after-tap');
+        print('ANDROID331_UI_SEND ${jsonEncode(afterTap)}');
+        expect(livePage().controller.text, isEmpty,
+            reason: 'A single real tap must consume the question. '
+                '${jsonEncode(afterTap)}');
+        expect(afterTap['userMessages'], previousUserMessages + 1,
+            reason: 'A single real tap must append exactly one user message. '
+                '${jsonEncode(afterTap)}');
         for (var n = 0; n < 150; n++) {
           await tester.pump(const Duration(milliseconds: 100));
           final page = livePage();
@@ -866,7 +934,8 @@ void main() {
             .where((m) => !m.user && m.prompt == question)
             .toList();
         expect(replies.length, previous + 1,
-            reason: 'The question must be consumed and produce a new UI reply');
+            reason: 'The question must be consumed and produce a new UI reply. '
+                '${jsonEncode(diagnostics('reply-complete'))}');
         expect(livePage().controller.text, isEmpty);
         return replies.last.text;
       }
