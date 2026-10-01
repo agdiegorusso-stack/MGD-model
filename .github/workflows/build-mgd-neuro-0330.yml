@@ -2,10 +2,7 @@ name: MGD Neuro 0.34.1 - Book import crash repair
 on:
   pull_request:
     branches: [mgd-neuro-mobile]
-    paths:
-      - 'mgd-neuro-app/**'
-      - 'mgd-neuro/v0341/**'
-      - '.github/workflows/build-mgd-neuro-0330.yml'
+    paths: ['mgd-neuro-app/**', 'mgd-neuro/v0341/**', '.github/workflows/build-mgd-neuro-0330.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -50,7 +47,6 @@ jobs:
           data=p.read_bytes()
           expected='0444c772c8cf6503990636df139b6c34616da6ee7889e47ff6f38ab18d084203'
           if hashlib.sha256(data).hexdigest()!=expected:
-              # Repair two known text-transport insertions; reject ANY other alteration.
               text=base64.b64encode(data).decode().replace('NHTFOtCV2Drwpade6','NHTFOtCV2Drwpde6').replace('GBJJwoYfOTL','GBJwoYfOTL')
               text+='='*(-len(text)%4)
               data=base64.b64decode(text)
@@ -61,7 +57,8 @@ jobs:
               z.extractall('mgd-neuro-app')
           PY
           python3 mgd-neuro-app/tool/fix_book_0341.py mgd-neuro-app
-          dart format mgd-neuro-app/lib/book_import_v0341.dart mgd-neuro-app/lib/mgd_language_v020.dart mgd-neuro-app/lib/main.dart mgd-neuro-app/lib/corpus_semantic_bridge_v022.dart mgd-neuro-app/lib/mgd_state_store_v026.dart mgd-neuro-app/lib/research_semantics_v0317.dart mgd-neuro-app/test/book_import_v0341_test.dart mgd-neuro-app/integration_test/book_android_v0341_test.dart
+          python3 mgd-neuro-app/tool/refine_book_0341.py
+          dart format mgd-neuro-app/lib/book_import_v0341.dart mgd-neuro-app/lib/mgd_language_v020.dart mgd-neuro-app/lib/main.dart mgd-neuro-app/lib/corpus_semantic_bridge_v022.dart mgd-neuro-app/lib/mgd_state_store_v026.dart mgd-neuro-app/lib/research_semantics_v0317.dart mgd-neuro-app/test/book_import_v0341_test.dart mgd-neuro-app/test/product_v0321_test.dart mgd-neuro-app/integration_test/book_android_v0341_test.dart
       - name: Dependencies
         working-directory: mgd-neuro-app
         run: flutter pub get
