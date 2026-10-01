@@ -60,7 +60,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.33.1',
+      title: 'MGD Neuro $mgdAppVersion319',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -1677,7 +1677,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.33.1')),
+          appBar: AppBar(title: const Text('MGD Neuro $mgdAppVersion319')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1759,7 +1759,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.33.1'),
+        title: const Text('MGD Neuro $mgdAppVersion319'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -2411,7 +2411,7 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.33.1',
+                          Text('Memorie MGD $mgdAppVersion319',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(

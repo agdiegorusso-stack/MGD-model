@@ -1,3 +1,4 @@
+// CLS_MEDIA_ATLAS_0340
 // CLS_REFINEMENT_0340_2
 import 'dart:async';
 import 'dart:convert';
@@ -11,6 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 import 'cls_core_v0340.dart';
+import 'cls_media_v0340.dart';
 import 'cls_store_v0340.dart';
 import 'experience_page_v0330.dart';
 import 'sensory_world_v06.dart';
@@ -40,6 +42,7 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
   List<Map<String, Object?>> _rows = [];
   Recall340? _fast, _slow, _neighbors;
   Pattern340? _focus;
+  Map<int, MediaPreview340> _previews = {};
   bool _busy = true,
       _cancel = false,
       _auto = true,
@@ -329,10 +332,29 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
   Future<void> _select(Pattern340 focus) => _run(() async {
         final neighbors = await _store!
             .recall(focus.cue, context: focus.context, neighborhood: true);
+        final previews = <int, MediaPreview340>{};
+        final ids = {focus.id, ...neighbors.evidence.take(24).map((e) => e.id)};
+        for (final id in ids) {
+          if (_cancel || !mounted || !_foreground) break;
+          if (_previews.containsKey(id)) {
+            previews[id] = _previews[id]!;
+            continue;
+          }
+          final rows = await _store!.db.query('episodes',
+              columns: ['image', 'audio'], where: 'id=?', whereArgs: [id]);
+          if (rows.isEmpty) continue;
+          final media = <String, Uint8List>{
+            for (final e in rows.single.entries)
+              if (e.value is Uint8List) e.key: e.value as Uint8List
+          };
+          if (media.isNotEmpty)
+            previews[id] = await compute(mediaPreview340, media);
+        }
         if (mounted)
           setState(() {
             _focus = focus;
             _neighbors = neighbors;
+            _previews = previews;
           });
       });
   Future<void> _legacyDelete(String uid) async {
@@ -620,6 +642,7 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
                           child: ExperienceAtlas340(
                               focus: _focus!,
                               neighbors: _neighbors!.evidence.take(24).toList(),
+                              previews: _previews,
                               onOpen: _detail)),
                     if (_focus != null)
                       const Text(
@@ -708,11 +731,13 @@ class ExperienceAtlas340 extends StatelessWidget {
   final Pattern340 focus;
   final List<Pattern340> neighbors;
   final ValueChanged<int> onOpen;
+  final Map<int, MediaPreview340> previews;
   const ExperienceAtlas340(
       {super.key,
       required this.focus,
       required this.neighbors,
-      required this.onOpen});
+      required this.onOpen,
+      this.previews = const {}});
   @override
   Widget build(BuildContext context) {
     const center = Offset(550, 400);
@@ -757,11 +782,17 @@ class ExperienceAtlas340 extends StatelessWidget {
                                 child: Padding(
                                     padding: const EdgeInsets.all(8),
                                     child: Column(children: [
-                                      Icon(nodes[i].cue.containsKey('vision:v1')
-                                          ? Icons.image
-                                          : nodes[i].cue.containsKey('audio:v1')
-                                              ? Icons.graphic_eq
-                                              : Icons.notes),
+                                      ExperiencePreview340(
+                                          preview: previews[nodes[i].id],
+                                          fallback: nodes[i]
+                                                  .cue
+                                                  .containsKey('vision:v1')
+                                              ? Icons.image
+                                              : nodes[i]
+                                                      .cue
+                                                      .containsKey('audio:v1')
+                                                  ? Icons.graphic_eq
+                                                  : Icons.notes),
                                       Text(nodes[i].label,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis),
