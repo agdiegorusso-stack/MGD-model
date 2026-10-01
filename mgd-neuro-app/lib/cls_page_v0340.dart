@@ -537,9 +537,8 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
                             ? null
                             : () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                    builder: (_) => ExperiencePage33(
-                                        world: widget.world,
-                                        onSave: widget.onSave))),
+                                    builder: (_) => LegacySnapshotView340(
+                                        world: widget.world))),
                         icon: const Icon(Icons.history),
                         tooltip: 'Archivio precedente')
                   ],
@@ -821,4 +820,34 @@ class _AtlasEdges340 extends CustomPainter {
   @override
   bool shouldRepaint(covariant _AtlasEdges340 old) =>
       old.points != points || old.color != color;
+}
+
+// CLS_LEGACY_READONLY_0340
+/// Edits happen only through the migrated archive, never through two unsynced
+/// copies. The legacy snapshot remains inspectable for compatibility.
+class LegacySnapshotView340 extends StatelessWidget {
+  final MgdWorld06 world;
+  const LegacySnapshotView340({super.key, required this.world});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('Archivio precedente · sola lettura')),
+      body: SafeArea(
+          child: Column(children: [
+        const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+                'Questa è la copia di compatibilità. Per imparare, correggere o eliminare usa Esperienza e Atlante: le modifiche devono avere un solo percorso.')),
+        Expanded(
+            child: ListView.builder(
+                itemCount: world.experience33.episodes.length,
+                itemBuilder: (context, index) {
+                  final e = world.experience33.episodes[index];
+                  return ListTile(
+                      title: Text(e.label),
+                      subtitle: Text(
+                          '${e.context} · ${e.source}\n${e.description}',
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis));
+                }))
+      ])));
 }
