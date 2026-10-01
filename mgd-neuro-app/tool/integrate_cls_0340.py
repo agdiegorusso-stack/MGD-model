@@ -1,69 +1,22 @@
-"""Apply the reviewed integration delta to 0.33.1; fail on unknown source.
-The CI commits these materialized files before running the verification suite.
+"""Validate integrated runtime and materialize native Android support.
+Existing .33 snapshots remain untouched. Run from the committed .34 branch.
 """
 from pathlib import Path
 import re
-import sys
-
+import runpy
 root=Path(__file__).resolve().parents[1]
+checks={
+ 'pubspec.yaml':['version: 0.34.0+66','sqflite_common_ffi:'],
+ 'lib/main.dart':['ClsBridge340.active = await ClsStore340.shared','ClsPage340(world: _world','await ClsBridge340.clear()','await ClsBridge340.observeText'],
+ 'lib/cls_store_v0340.dart':['VACUUM INTO'],
+ 'lib/learning_service_v0321.dart':['await ClsBridge340.observeText'],
+}
+for path,markers in checks.items():
+    text=(root/path).read_text()
+    for marker in markers:
+        if marker not in text:raise RuntimeError(f'{path}: missing committed integration {marker}')
+runpy.run_path(str(root/'tool/refine_cls_0340.py'))
 
-def replace(path,old,new,count=1):
-    p=root/path;s=p.read_text()
-    if new in s:return
-    if s.count(old)!=count:
-        raise RuntimeError(f'{path}: expected {count} integration anchors, got {s.count(old)}')
-    p.write_text(s.replace(old,new))
-
-replace('pubspec.yaml','version: 0.33.1+65','version: 0.34.0+66')
-replace('pubspec.yaml','dev_dependencies:\n','dev_dependencies:\n  sqflite_common_ffi: 2.3.7\n  sqlite3: ^2.9.4\n')
-replace('lib/memory_runtime_v0319.dart',"const mgdAppVersion319 = '0.33.1';","const mgdAppVersion319 = '0.34.0';")
-replace('lib/main.dart',"import 'experience_page_v0330.dart';", "import 'experience_page_v0330.dart';\nimport 'cls_page_v0340.dart';\nimport 'cls_store_v0340.dart';\nimport 'cls_bridge_v0340.dart';")
-replace('lib/main.dart','      _language20.bootstrapFromBrain(_brain);','      _language20.bootstrapFromBrain(_brain);\n      ClsBridge340.active = await ClsStore340.shared;')
-replace('lib/main.dart','ExperiencePage33(world: _world, onSave: _checkpoint319)', 'ClsPage340(world: _world, onSave: _checkpoint319)')
-replace('lib/main.dart',"      _language20.ingestText(text, reward: 0.38);", "      await ClsBridge340.observeText(text, source: 'Chat utente');\n      _language20.ingestText(text, reward: 0.38);")
-replace('lib/main.dart','      final semanticAnswer = sourced317 ?? grounded ?? languageAnswer;', "      final episodic340 = sourced317 == null && grounded == null\n          ? await ClsBridge340.quote(text) : null;\n      final semanticAnswer = sourced317 ?? episodic340 ?? grounded ?? languageAnswer;")
-replace('lib/main.dart','          : (sourced317 ??\n              fluent ??','          : (sourced317 ??\n              episodic340 ??\n              fluent ??')
-replace('lib/main.dart','    await _languagePersistence20.clear();','    await _languagePersistence20.clear();\n    await ClsBridge340.clear();')
-replace('lib/main.dart',"      if (_world.eventDriven33) {", "      if (_lifecycle319 == AppLifecycleState.resumed && !_busy && !_researchBusy &&\n          _uiIdle18 && _chat.text.isEmpty && ClsBridge340.active != null) {\n        try {\n          if (await ClsBridge340.active!.readSetting('auto') != 'false') {\n            await ClsBridge340.active!.consolidate(budget: 8);\n          }\n        } catch (e) {\n          if (mounted) setState(() => _status = 'Consolidamento CLS sospeso: $e');\n        }\n      }\n      if (_world.eventDriven33) {")
-replace('lib/main.dart',"'su evento: pronto, ripasso automatico disattivato'", "'MGD su evento; consolidamento CLS secondo le impostazioni'")
-old="""        _world.experience33 = await compute(learnWorker33, (
-          memory: _world.experience33.toJson(),
-          features: {'${_lastSense!.observation.modality}:v1': features},
-          label: canonical,
-          context: 'generale',
-          description: 'Percezione confermata in chat'
-        ));"""
-new="""        await (await ClsStore340.shared).learn(
-          {'${_lastSense!.observation.modality}:v1': features},
-          label: canonical,
-          text: 'Percezione confermata in chat',
-          source: 'Sensore MGD: descrittori senza allegato originale',
-        );"""
-replace('lib/main.dart',old,new)
-# The legacy counter remains explicitly labeled; the new page reads disk totals.
-replace('lib/main.dart',"'${world.experience33.episodes.length} episodi confermati · ${world.experience33.conceptCount} categorie esperienziali'", "'Archivio precedente: ${world.experience33.episodes.length} episodi. Apri Esperienze per i totali CLS e l’atlante.'")
-replace('lib/learning_service_v0321.dart',"import 'dart:isolate';", "import 'dart:isolate';\nimport 'cls_bridge_v0340.dart';")
-replace('lib/learning_service_v0321.dart','    brain.discoverConcepts();',"    await ClsBridge340.observeText(text, source: 'Testo insegnato');\n    brain.discoverConcepts();")
-replace('lib/knowledge_deletion_v0330.dart',"import 'package:flutter/foundation.dart';", "import 'package:flutter/foundation.dart';\nimport 'cls_bridge_v0340.dart';")
-replace('lib/knowledge_deletion_v0330.dart',"        if (episodeNode33(e) == node || conceptNode33(e) == node) {", "        if (episodeNode33(e) == node || conceptNode33(e) == node) {\n          if (episodeNode33(e) == node) {\n            await ClsBridge340.deleteLegacy(e.id);\n          } else {\n            await ClsBridge340.forgetLabel(e.label);\n          }")
-replace('lib/knowledge_deletion_v0330.dart',"    bool matches(String s) => PlasticLanguageBrain04.containsLabel33(s, node);", "    await ClsBridge340.forgetLabel(node);\n    bool matches(String s) => PlasticLanguageBrain04.containsLabel33(s, node);")
-# Avoid re-reading an image selected by the user.
-replace('lib/cls_page_v0340.dart',"    final bytes=await file.readAsBytes(),f=await compute(imageWorker33,await file.readAsBytes());", "    final bytes=await file.readAsBytes();\n    final f=await compute(imageWorker33,bytes);")
-# Consistent backup even if another connection writes concurrently.
-old="""    await db.rawQuery('PRAGMA wal_checkpoint(FULL)');
-    // DB export is guarded by the caller's editing lock. Sidecar WAL is flushed.
-    return File(db.path).readAsBytes();"""
-new="""    final snapshot=File('${db.path}.export-${DateTime.now().microsecondsSinceEpoch}');
-    try {
-      await db.execute('VACUUM INTO ?', [snapshot.path]);
-      return await snapshot.readAsBytes();
-    } finally {
-      if(await snapshot.exists()) await snapshot.delete();
-    }"""
-replace('lib/cls_store_v0340.dart',old,new)
-
-# Flutter's generated MainActivity is otherwise empty. Do not replace unknown
-# custom native code, and keep all recorder/camera permissions from baseline.
 activities=list((root/'android/app/src/main').rglob('MainActivity.kt'))
 if activities:
     if len(activities)!=1:raise RuntimeError('Ambiguous MainActivity')
@@ -124,4 +77,4 @@ class MainActivity : FlutterActivity() {
     override fun onStop() { stopPlayback(); super.onStop() }
 }
 ''')
-print('CLS 0.34.0 integration materialized successfully')
+print('CLS 0.34.0 integration validated')
