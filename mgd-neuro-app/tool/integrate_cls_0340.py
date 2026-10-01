@@ -16,6 +16,7 @@ for path,markers in checks.items():
     for marker in markers:
         if marker not in text:raise RuntimeError(f'{path}: missing committed integration {marker}')
 runpy.run_path(str(root/'tool/refine_cls_0340.py'))
+runpy.run_path(str(root/'tool/polish_cls_0340.py'))
 
 activities=list((root/'android/app/src/main').rglob('MainActivity.kt'))
 if activities:
