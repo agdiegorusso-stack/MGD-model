@@ -1,3 +1,4 @@
+// CLS_REFINEMENT_0340_2
 /// Sparse modern Hopfield retrieval and language statistics, without pretrained
 /// weights. Inspired by CLS; not a reconstruction of biological neural tissue.
 library;
@@ -248,6 +249,32 @@ class Italian340 {
 }
 
 class StudyPriority340 {
+  /// Select only authorized topics using observed novelty, exploration and cost.
+  static String choose(List<String> topics, Map history, int now) {
+    if (topics.isEmpty) throw ArgumentError('Nessun argomento autorizzato.');
+    String selected = topics.first;
+    double best = -1;
+    for (final topic in topics) {
+      final item = history[topic];
+      if (item is! Map) return topic;
+      final visits = (item['visits'] as num?)?.toDouble() ?? 0;
+      final gain = (item['gain'] as num?)?.toDouble() ?? 0;
+      final age = max(0, now - ((item['at'] as num?)?.toInt() ?? 0)) / 3600000;
+      final cost = max(0, (item['cost'] as num?)?.toDouble() ?? 0);
+      final value = score(
+          novelty: max(0, gain) / (1 + max(0, gain)),
+          uncertainty: 1 / (1 + max(0, visits)),
+          contradiction: 0,
+          userInterest: 1 + min(age, 24) / 24,
+          estimatedCost: cost / 60);
+      if (value > best) {
+        best = value;
+        selected = topic;
+      }
+    }
+    return selected;
+  }
+
   /// A transparent scheduling score, not consciousness or a personal desire.
   static double score(
       {required double novelty,

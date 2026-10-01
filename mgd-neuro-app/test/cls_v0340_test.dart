@@ -1,3 +1,4 @@
+// CLS_REFINEMENT_0340_2
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -269,6 +270,51 @@ void main() {
         await File(dest)
             .writeAsString(const JsonEncoder.withIndent('  ').convert(report));
     }, timeout: const Timeout(Duration(minutes: 4)));
+    test('different original media with identical descriptors are not lost',
+        () async {
+      final a = await store.learn(cue(1),
+          label: 'same', image: Uint8List.fromList([1, 2]));
+      final b = await store.learn(cue(1),
+          label: 'same', image: Uint8List.fromList([3, 4]));
+      expect(a, isNot(b));
+      expect((await store.stats())['episodes'], 2);
+    });
+    test('partial exact query discovers a conflicting class beyond shortlist',
+        () async {
+      for (var i = 0; i < 140; i++)
+        await store.learn({
+          'vision:v1': {'shape': 1},
+          'audio:v1': {'sound$i': 1}
+        }, label: 'majority', uid: 'repeat$i');
+      await store.learn({
+        'vision:v1': {'shape': 1},
+        'audio:v1': {'rare': 1}
+      }, label: 'minority');
+      final r = await store.recall({
+        'vision:v1': {'shape': 1}
+      }, budget: 8);
+      expect(r.conflict, true);
+      expect(r.accepted, false);
+    });
+    test('exact recall has a fast path while atlas still finds neighbors',
+        () async {
+      await store.learn(cue(1), label: 'a');
+      await store.learn(cue(1, noise: .1), label: 'a');
+      expect((await store.recall(cue(1))).evidence.length, 1);
+      expect(
+          (await store.recall(cue(1), neighborhood: true)).evidence.length, 2);
+    });
+    test('study scheduler explores unseen authorized topics', () {
+      expect(
+          StudyPriority340.choose([
+            'italiano',
+            'biologia'
+          ], {
+            'italiano': {'visits': 1}
+          }, 100),
+          'biologia');
+      expect(() => StudyPriority340.choose([], {}, 100), throwsArgumentError);
+    });
     test('failed validation cannot leave half an episode', () async {
       await expectLater(
           store.learn({
@@ -336,7 +382,16 @@ void main() {
     await tester.enterText(
         find.byKey(const ValueKey('cls-input')), 'saluto breve');
     await tester.enterText(find.byKey(const ValueKey('cls-label')), 'ciao');
-    await tester.ensureVisible(find.byKey(const ValueKey('cls-teach')));
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('cls-teach')), 180,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const ValueKey('cls-experience-list')),
+                matching: find.byType(Scrollable))
+            .first);
+
     await tester.tap(find.byKey(const ValueKey('cls-teach')));
     await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 600)));

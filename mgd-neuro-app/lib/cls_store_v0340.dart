@@ -1,3 +1,4 @@
+// CLS_REFINEMENT_0340_2
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -75,6 +76,10 @@ class ClsStore340 {
             },
             onCreate: (db, _) async {
               await db.execute(
+                  'CREATE TABLE cue_keys(episode INTEGER NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,context TEXT NOT NULL,signature TEXT NOT NULL,PRIMARY KEY(episode,signature))');
+              await db.execute(
+                  'CREATE INDEX cue_lookup ON cue_keys(context,signature,episode)');
+              await db.execute(
                   'CREATE TABLE episodes(id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT UNIQUE NOT NULL, label TEXT NOT NULL, context TEXT NOT NULL, text TEXT NOT NULL, source TEXT NOT NULL, created TEXT NOT NULL, features BLOB NOT NULL, image BLOB, audio BLOB, signature TEXT NOT NULL, consolidated INTEGER NOT NULL DEFAULT 0, language_delta BLOB)');
               await db.execute(
                   'CREATE INDEX episode_context ON episodes(context,id)');
@@ -107,7 +112,10 @@ class ClsStore340 {
     final channels = cue.keys.toList()..sort();
     final sorted = {
       for (final c in channels)
-        c: {for (final k in (cue[c]!.keys.toList()..sort())) k: cue[c]![k]}
+        c: {
+          for (final k in (cue[c]!.keys.toList()..sort()))
+            k: double.parse(cue[c]![k]!.toStringAsFixed(10))
+        }
     };
     return sha256.convert(utf8.encode(jsonEncode(sorted))).toString();
   }
@@ -138,10 +146,12 @@ class ClsStore340 {
         c = norm340(context),
         l = norm340(label);
     final signature = _signature(cue);
+    final mediaIdentity =
+        '${image == null ? '' : sha256.convert(image)}:${audio == null ? '' : sha256.convert(audio)}';
     final key = uid ??
         sha256
-            .convert(utf8
-                .encode('$c\u0000$l\u0000$text\u0000$source\u0000$signature'))
+            .convert(utf8.encode(
+                '$c\u0000$l\u0000$text\u0000$source\u0000$signature\u0000$mediaIdentity'))
             .toString();
     final id = await db.transaction((tx) async {
       final old = await tx.query('episodes',
@@ -160,6 +170,15 @@ class ClsStore340 {
         'signature': signature
       });
       final batch = tx.batch();
+      final channels = cue.keys.toList();
+      for (var mask = 1; mask < (1 << channels.length); mask++) {
+        final part = <String, Map<String, double>>{
+          for (var i = 0; i < channels.length; i++)
+            if ((mask & (1 << i)) != 0) channels[i]: cue[channels[i]]!
+        };
+        batch.insert('cue_keys',
+            {'episode': id, 'context': c, 'signature': _signature(part)});
+      }
       for (final channel in cue.entries) {
         for (final feature in channel.value.entries) {
           batch.insert('postings', {
@@ -235,9 +254,22 @@ class ClsStore340 {
   }
 
   Future<List<Pattern340>> candidates(Cue340 input,
-      {String context = 'generale', int budget = 128}) async {
+      {String context = 'generale',
+      int budget = 128,
+      bool neighborhood = false}) async {
     if (budget < 8 || budget > 512) throw ArgumentError('Budget non valido.');
     final cue = Hopfield340.normalize(input), c = norm340(context);
+    final exact = await db.rawQuery(
+        'SELECT MIN(e.id) AS id FROM cue_keys k JOIN episodes e ON e.id=k.episode WHERE k.context=? AND k.signature=? GROUP BY e.label ORDER BY id LIMIT 2',
+        [c, _signature(cue)]);
+    final ids = exact.map((r) => r['id'] as int).toSet();
+    if (ids.isNotEmpty && !neighborhood) {
+      final selected = await db.query('episodes',
+          columns: _cols,
+          where: 'id IN (${List.filled(ids.length, '?').join(',')})',
+          whereArgs: ids.toList());
+      return selected.map(pattern340).toList();
+    }
     final terms = <List<Object>>[];
     for (final m in cue.entries) {
       final ranked = m.value.entries.toList()
@@ -250,15 +282,7 @@ class ClsStore340 {
     final rows = await db.rawQuery(
         'WITH q(channel,feature,value) AS (VALUES $values) SELECT p.episode AS id,SUM(p.value*q.value) AS relevance FROM postings p JOIN q ON p.channel=q.channel AND p.feature=q.feature WHERE p.context=? GROUP BY p.episode ORDER BY relevance DESC,p.episode ASC LIMIT ?',
         [...terms.expand((x) => x), c, budget]);
-    final ids = rows.map((r) => r['id'] as int).toSet();
-    // Exact full-cue matches have an independent indexed route, including rare
-    // conflicting labels that might otherwise be hidden by a top-k shortlist.
-    final exact = await db.rawQuery(
-        'SELECT MIN(id) AS id FROM episodes WHERE context=? AND signature=? GROUP BY label LIMIT ?',
-        [c, _signature(cue), budget]);
-    for (final r in exact) {
-      ids.add(r['id'] as int);
-    }
+    ids.addAll(rows.map((r) => r['id'] as int));
     if (ids.isEmpty) return [];
     final selected = await db.query('episodes',
         columns: _cols,
@@ -268,9 +292,12 @@ class ClsStore340 {
   }
 
   Future<Recall340> recall(Cue340 cue,
-      {String context = 'generale', int budget = 128}) async {
+      {String context = 'generale',
+      int budget = 128,
+      bool neighborhood = false}) async {
     final timer = Stopwatch()..start();
-    final records = await candidates(cue, context: context, budget: budget);
+    final records = await candidates(cue,
+        context: context, budget: budget, neighborhood: neighborhood);
     lastCandidates = records.length;
     final result = await compute(
         recallWorker340, (cue: cue, records: records, context: context));

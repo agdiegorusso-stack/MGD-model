@@ -1,4 +1,6 @@
+// CLS_REFINEMENT_0340_2
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -48,7 +50,7 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
   Timer? _timer;
   AudioRecorder? _recorder;
   DateTime _lastWeb = DateTime.fromMillisecondsSinceEpoch(0);
-  int _topicCursor = 0;
+
   static const _audioChannel = MethodChannel('mgd.cls/audio');
 
   @override
@@ -274,7 +276,13 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
         .where((x) => x.length >= 3 && x.length <= 100)
         .toList();
     if (topics.isEmpty) throw StateError('Indica gli argomenti autorizzati.');
-    final topic = topics[_topicCursor++ % topics.length];
+    final before = (await _store!.stats())['episodes']!;
+    final timer = Stopwatch()..start();
+    final history =
+        jsonDecode(await _store!.readSetting('studyProgress') ?? '{}') as Map;
+    final topic = StudyPriority340.choose(
+        topics, history, DateTime.now().millisecondsSinceEpoch);
+
     _lastWeb = DateTime.now();
     await _store!.setting('topics', _topics.text);
     if (mounted)
@@ -295,10 +303,19 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
           context: _context.text,
           cancelled: () => _cancel || !mounted || !_foreground);
     }
+    final after = (await _store!.stats())['episodes']!;
+    final previous = history[topic] as Map? ?? {};
+    history[topic] = {
+      'visits': ((previous['visits'] as num?) ?? 0) + 1,
+      'gain': max(0, after - before),
+      'cost': timer.elapsedMilliseconds / 1000,
+      'at': DateTime.now().millisecondsSinceEpoch
+    };
+    await _store!.setting('studyProgress', jsonEncode(history));
     await _refresh();
     if (mounted)
       setState(() => _status =
-          'Studio di “$topic”: $n passaggi elaborati, con fonte conservata.');
+          'Studio di “$topic”: $n passaggi elaborati, ${after - before} nuovi episodi.');
   }
 
   Future<void> _generate() => _run(() async {
@@ -310,8 +327,8 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
               : value);
       });
   Future<void> _select(Pattern340 focus) => _run(() async {
-        final neighbors =
-            await _store!.recall(focus.cue, context: focus.context);
+        final neighbors = await _store!
+            .recall(focus.cue, context: focus.context, neighborhood: true);
         if (mounted)
           setState(() {
             _focus = focus;
@@ -393,7 +410,7 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
                 ]));
     await _stopAudio();
     final label = corrected.text;
-    corrected.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 500), corrected.dispose);
     if (!mounted) return;
     if (action == 'delete') {
       final yes = await showDialog<bool>(
@@ -531,58 +548,63 @@ class _ClsPage340State extends State<ClsPage340> with WidgetsBindingObserver {
                     ])),
                 Expanded(
                     child: TabBarView(children: [
-                  ListView(padding: const EdgeInsets.all(16), children: [
-                    const Text(
-                        'Il testo, la foto e l’audio appartengono allo stesso episodio. Il nome da imparare resta separato dagli stimoli.'),
-                    TextField(
-                        controller: _context,
-                        enabled: !_busy,
-                        decoration:
-                            const InputDecoration(labelText: 'Contesto')),
-                    TextField(
-                        key: const ValueKey('cls-input'),
-                        controller: _text,
-                        enabled: !_busy,
-                        maxLines: 4,
-                        maxLength: 16000,
-                        decoration: const InputDecoration(
-                            labelText: 'Testo dell’esperienza')),
-                    TextField(
-                        key: const ValueKey('cls-label'),
-                        controller: _label,
-                        enabled: !_busy,
-                        maxLength: 160,
-                        decoration: const InputDecoration(
-                            labelText: 'Nome / etichetta da imparare')),
-                    if (_imageBytes != null)
-                      Image.memory(_imageBytes!, height: 140, cacheWidth: 300),
-                    Wrap(children: [
-                      _button('Fotocamera', () => _image(ImageSource.camera),
-                          icon: Icons.camera_alt),
-                      _button('Galleria', () => _image(ImageSource.gallery),
-                          icon: Icons.photo),
-                      _button('Registra audio', _record, icon: Icons.mic),
-                      _button(
-                          'Rimuovi stimoli',
-                          () => setState(() {
-                                _vision = null;
-                                _audio = null;
-                                _imageBytes = null;
-                                _audioBytes = null;
-                              }),
-                          icon: Icons.clear)
-                    ]),
-                    FilledButton(
-                        key: const ValueKey('cls-teach'),
-                        onPressed: _busy ? null : _teach,
-                        child: const Text('Conferma e impara')),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                        onPressed: _busy ? null : _recall,
-                        child: const Text('Richiama per associazione')),
-                    _prediction('Memoria episodica rapida', _fast),
-                    _prediction('Memoria concettuale lenta', _slow)
-                  ]),
+                  ListView(
+                      key: const ValueKey('cls-experience-list'),
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        const Text(
+                            'Il testo, la foto e l’audio appartengono allo stesso episodio. Il nome da imparare resta separato dagli stimoli.'),
+                        TextField(
+                            controller: _context,
+                            enabled: !_busy,
+                            decoration:
+                                const InputDecoration(labelText: 'Contesto')),
+                        TextField(
+                            key: const ValueKey('cls-input'),
+                            controller: _text,
+                            enabled: !_busy,
+                            maxLines: 4,
+                            maxLength: 16000,
+                            decoration: const InputDecoration(
+                                labelText: 'Testo dell’esperienza')),
+                        TextField(
+                            key: const ValueKey('cls-label'),
+                            controller: _label,
+                            enabled: !_busy,
+                            maxLength: 160,
+                            decoration: const InputDecoration(
+                                labelText: 'Nome / etichetta da imparare')),
+                        if (_imageBytes != null)
+                          Image.memory(_imageBytes!,
+                              height: 140, cacheWidth: 300),
+                        Wrap(children: [
+                          _button(
+                              'Fotocamera', () => _image(ImageSource.camera),
+                              icon: Icons.camera_alt),
+                          _button('Galleria', () => _image(ImageSource.gallery),
+                              icon: Icons.photo),
+                          _button('Registra audio', _record, icon: Icons.mic),
+                          _button(
+                              'Rimuovi stimoli',
+                              () => setState(() {
+                                    _vision = null;
+                                    _audio = null;
+                                    _imageBytes = null;
+                                    _audioBytes = null;
+                                  }),
+                              icon: Icons.clear)
+                        ]),
+                        FilledButton(
+                            key: const ValueKey('cls-teach'),
+                            onPressed: _busy ? null : _teach,
+                            child: const Text('Conferma e impara')),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                            onPressed: _busy ? null : _recall,
+                            child: const Text('Richiama per associazione')),
+                        _prediction('Memoria episodica rapida', _fast),
+                        _prediction('Memoria concettuale lenta', _slow)
+                      ]),
                   ListView(padding: const EdgeInsets.all(16), children: [
                     TextField(
                         controller: _query,
@@ -712,43 +734,44 @@ class ExperienceAtlas340 extends StatelessWidget {
       similarities.add(s);
     }
     return InteractiveViewer(
-        constrained: false,
-        minScale: .25,
-        maxScale: 3,
-        child: SizedBox(
-            width: 1100,
-            height: 800,
-            child: Stack(children: [
-              Positioned.fill(
-                  child: CustomPaint(
-                      painter: _AtlasEdges340(
-                          points, Theme.of(context).colorScheme.outline))),
-              for (var i = 0; i < nodes.length; i++)
-                Positioned(
-                    left: points[i].dx - 70,
-                    top: points[i].dy - 35,
-                    width: 140,
-                    child: Card(
-                        child: InkWell(
-                            onTap: () => onOpen(nodes[i].id),
-                            child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(children: [
-                                  Icon(nodes[i].cue.containsKey('vision:v1')
-                                      ? Icons.image
-                                      : nodes[i].cue.containsKey('audio:v1')
-                                          ? Icons.graphic_eq
-                                          : Icons.notes),
-                                  Text(nodes[i].label,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis),
-                                  Text(
-                                      '#${nodes[i].id} · ${similarities[i].toStringAsFixed(2)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall)
-                                ])))))
-            ])));
+        minScale: 1,
+        maxScale: 8,
+        child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+                width: 1100,
+                height: 800,
+                child: Stack(children: [
+                  Positioned.fill(
+                      child: CustomPaint(
+                          painter: _AtlasEdges340(
+                              points, Theme.of(context).colorScheme.outline))),
+                  for (var i = 0; i < nodes.length; i++)
+                    Positioned(
+                        left: points[i].dx - 70,
+                        top: points[i].dy - 35,
+                        width: 140,
+                        child: Card(
+                            child: InkWell(
+                                onTap: () => onOpen(nodes[i].id),
+                                child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(children: [
+                                      Icon(nodes[i].cue.containsKey('vision:v1')
+                                          ? Icons.image
+                                          : nodes[i].cue.containsKey('audio:v1')
+                                              ? Icons.graphic_eq
+                                              : Icons.notes),
+                                      Text(nodes[i].label,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis),
+                                      Text(
+                                          '#${nodes[i].id} · ${similarities[i].toStringAsFixed(2)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall)
+                                    ])))))
+                ]))));
   }
 }
 

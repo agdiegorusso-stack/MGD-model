@@ -1,3 +1,4 @@
+// CLS_REFINEMENT_0340_2
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,14 +55,24 @@ void main() {
             world: MgdWorld06(), onSave: () async {}, store: store)));
     for (var i = 0; i < 50; i++) {
       await tester.pump(const Duration(milliseconds: 100));
-      final button =
-          tester.widget<FilledButton>(find.byKey(const ValueKey('cls-teach')));
-      if (button.onPressed != null) break;
+      final status =
+          tester.widget<Text>(find.byKey(const ValueKey('cls-status'))).data ??
+              '';
+      if (status.contains('Archivio pronto')) break;
     }
     await tester.enterText(
         find.byKey(const ValueKey('cls-input')), 'Il gatto dorme sul divano.');
     await tester.enterText(find.byKey(const ValueKey('cls-label')), 'gatto');
-    await tester.ensureVisible(find.byKey(const ValueKey('cls-teach')));
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('cls-teach')), 180,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const ValueKey('cls-experience-list')),
+                matching: find.byType(Scrollable))
+            .first);
+
     await tester.tap(find.byKey(const ValueKey('cls-teach')));
     for (var i = 0; i < 50; i++) {
       await tester.pump(const Duration(milliseconds: 100));
