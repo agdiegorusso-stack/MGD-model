@@ -9,7 +9,7 @@ import 'mgd_language_v020.dart';
 import 'mgd_state_store_v026.dart';
 import 'consolidation_provenance_v0331.dart';
 
-const mgdAppVersion319 = '0.33.1';
+const mgdAppVersion319 = '0.34.0';
 
 /// Rehearsal changes graph familiarity, NEVER evidence or factual confidence.
 /// It only replays externally experienced/confirmed facts, not generated thoughts.

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'cls_bridge_v0340.dart';
 import 'relational_memory_v0324.dart';
 
 import 'plastic_language_brain_v04.dart';
@@ -46,6 +47,7 @@ class LearningService321 {
               text: text,
               trust: .75));
     }
+    await ClsBridge340.observeText(text, source: 'Testo insegnato');
     brain.discoverConcepts();
     world.runtime319['lastLearning321'] = {
       'kind': 'testo insegnato',

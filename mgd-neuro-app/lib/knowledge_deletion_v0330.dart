@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'cls_bridge_v0340.dart';
 
 import 'experience_page_v0330.dart' show deleteWorker33;
 import 'experience_memory_v0330.dart';
@@ -26,6 +27,11 @@ class KnowledgeDeletion33 {
       final episodes = world.experience33.episodes;
       for (final e in episodes) {
         if (episodeNode33(e) == node || conceptNode33(e) == node) {
+          if (episodeNode33(e) == node) {
+            await ClsBridge340.deleteLegacy(e.id);
+          } else {
+            await ClsBridge340.forgetLabel(e.label);
+          }
           world.experience33 = await compute(deleteWorker33, (
             memory: world.experience33.toJson(),
             id: episodeNode33(e) == node ? e.id : null,
@@ -51,6 +57,7 @@ class KnowledgeDeletion33 {
       research.narrativeLinks.removeWhere((e) => e.episodeId == 'e24:$id');
       return;
     }
+    await ClsBridge340.forgetLabel(node);
     bool matches(String s) => PlasticLanguageBrain04.containsLabel33(s, node);
     bool deep(dynamic v) => v is String
         ? matches(v)

@@ -37,6 +37,9 @@ import 'learned_reader_v0324.dart';
 import 'knowledge_inspector_v0315.dart';
 import 'curiosity_actions_v0316.dart';
 import 'experience_page_v0330.dart';
+import 'cls_page_v0340.dart';
+import 'cls_store_v0340.dart';
+import 'cls_bridge_v0340.dart';
 import 'knowledge_deletion_v0330.dart';
 import 'consolidation_provenance_v0331.dart';
 import 'consolidation_settings_v0331.dart';
@@ -219,6 +222,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
       _language20 = language ?? MgdLanguage20();
       _language20.bootstrapFromBrain(_brain);
+      ClsBridge340.active = await ClsStore340.shared;
 
       // v0.19: never block first usable frame behind repair passes or rewrites.
       // Legacy maintenance is deferred and only runs for an actual migration.
@@ -288,9 +292,19 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     _mindTimer?.cancel();
     _mindTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!mounted || !_ready || _bootError318 != null || _mindBusy320) return;
+      if (_lifecycle319 == AppLifecycleState.resumed && !_busy && !_researchBusy &&
+          _uiIdle18 && _chat.text.isEmpty && ClsBridge340.active != null) {
+        try {
+          if (await ClsBridge340.active!.readSetting('auto') != 'false') {
+            await ClsBridge340.active!.consolidate(budget: 8);
+          }
+        } catch (e) {
+          if (mounted) setState(() => _status = 'Consolidamento CLS sospeso: $e');
+        }
+      }
       if (_world.eventDriven33) {
         _world.runtime319['state'] =
-            'su evento: pronto, ripasso automatico disattivato';
+            'MGD su evento; consolidamento CLS secondo le impostazioni';
         return;
       }
       if (_lifecycle319 != AppLifecycleState.resumed ||
@@ -723,6 +737,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||
           RegExp(r'^\s*correggi\s*:', caseSensitive: false).hasMatch(text)) {
@@ -794,7 +809,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
               ResearchSemantics317.answer(text, _researchMemory,
                   realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
               SourceMemory323.answer(text, _researchMemory);
-      final semanticAnswer = sourced317 ?? grounded ?? languageAnswer;
+      final episodic340 = sourced317 == null && grounded == null
+          ? await ClsBridge340.quote(text) : null;
+      final semanticAnswer = sourced317 ?? episodic340 ?? grounded ?? languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||
               curiosityAnswer != null)
@@ -810,6 +827,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final proposed = sensoryGrounding != null
           ? 'Ho collegato questa percezione a $sensoryGrounding.'
           : (sourced317 ??
+              episodic340 ??
               fluent ??
               semanticAnswer ??
               'Ho incorporato questa esperienza.');
@@ -1215,6 +1233,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     await _worldPersistence.clear();
     await _researchPersistence.clear();
     await _languagePersistence20.clear();
+    await ClsBridge340.clear();
     setState(() {
       _brain = PlasticLanguageBrain04();
       _world = MgdWorld06();
@@ -1314,13 +1333,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final canonical = _world.bindLastNatural071(_brain, label);
       final features = _world.lastFeatures33;
       if (features != null) {
-        _world.experience33 = await compute(learnWorker33, (
-          memory: _world.experience33.toJson(),
-          features: {'${_lastSense!.observation.modality}:v1': features},
+        await (await ClsStore340.shared).learn(
+          {'${_lastSense!.observation.modality}:v1': features},
           label: canonical,
-          context: 'generale',
-          description: 'Percezione confermata in chat'
-        ));
+          text: 'Percezione confermata in chat',
+          source: 'Sensore MGD: descrittori senza allegato originale',
+        );
       }
       _world.step++;
       _senseLabel.clear();
@@ -1586,7 +1604,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     try {
       await Navigator.of(context).push(MaterialPageRoute<void>(
           builder: (_) =>
-              ExperiencePage33(world: _world, onSave: _checkpoint319)));
+              ClsPage340(world: _world, onSave: _checkpoint319)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -2130,7 +2148,7 @@ class _WorldPage07 extends StatelessWidget {
             icon: const Icon(Icons.auto_stories_outlined),
             label: const Text('Impara dall’esperienza')),
         Text(
-            '${world.experience33.episodes.length} episodi confermati · ${world.experience33.conceptCount} categorie esperienziali'),
+            'Archivio precedente: ${world.experience33.episodes.length} episodi. Apri Esperienze per i totali CLS e l’atlante.'),
         ConsolidationSettings331(
             world: world, busy: busy, onChanged: onConsolidation331),
         Wrap(
