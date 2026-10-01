@@ -1,6 +1,12 @@
+// BOOK_IMPORT_BINDINGS_0341
+// BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:isolate';
+import 'book_import_v0341.dart';
+import 'cls_bridge_v0340.dart';
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
@@ -178,15 +184,19 @@ class MgdLanguage20 {
   String _ek(String a, String b) => '$a\u0001$b';
 
   void forgetNode33(String label) {
-    final n=PlasticLanguageBrain04.normalizeText(label);
-    bool mentions(String text)=>PlasticLanguageBrain04.containsLabel33(text,n);
+    final n = PlasticLanguageBrain04.normalizeText(label);
+    bool mentions(String text) =>
+        PlasticLanguageBrain04.containsLabel33(text, n);
     tokenCount.remove(n);
-    edges.removeWhere((_,e)=>e.a==n||e.b==n);
-    chunks.removeWhere((_,c)=>mentions(c.text));
-    frames320.removeWhere((k,_)=>mentions(k));
-    for(final frame in frames320.values) {frame.removeWhere((k,_)=>mentions(k));}
-    subjectPlural320.removeWhere((k,_)=>mentions(k));
-    webSeen317.removeWhere((_,v)=>v is Map && mentions('${v['text']??''}'));
+    edges.removeWhere((_, e) => e.a == n || e.b == n);
+    chunks.removeWhere((_, c) => mentions(c.text));
+    frames320.removeWhere((k, _) => mentions(k));
+    for (final frame in frames320.values) {
+      frame.removeWhere((k, _) => mentions(k));
+    }
+    subjectPlural320.removeWhere((k, _) => mentions(k));
+    webSeen317
+        .removeWhere((_, v) => v is Map && mentions('${v['text'] ?? ''}'));
     _rebuildIndexes21();
   }
 
@@ -215,7 +225,8 @@ class MgdLanguage20 {
     if (!_indexesReady21) _rebuildIndexes21();
   }
 
-  void ingestText(String text, {double reward = .35}) {
+  void ingestText(String text,
+      {double reward = .35, bool learnFrames341 = true}) {
     final raw = text.trim();
     if (raw.isEmpty) return;
     characters += raw.length;
@@ -224,7 +235,7 @@ class MgdLanguage20 {
         .where((x) => x.trim().isNotEmpty);
     var flux = 0.0;
     for (final sentence in units) {
-      _learnFrame320(sentence);
+      if (learnFrames341) _learnFrame320(sentence);
       final xs = toks(sentence);
       if (xs.isEmpty) continue;
       sentences++;
@@ -673,6 +684,9 @@ class MgdLanguagePersistence20 {
 }
 
 class MgdLanguageLab20 extends StatefulWidget {
+  final Future<void> Function(Map<String, Uint8List>)? checkpoint341;
+  final void Function(BookModels341)? onModels341;
+  final void Function(bool)? onImportBusy341;
   final MgdLanguage20 language;
   final PlasticLanguageBrain04 brain;
   final MgdWorld06 world;
@@ -680,6 +694,9 @@ class MgdLanguageLab20 extends StatefulWidget {
   final Future<void> Function() onSave;
   const MgdLanguageLab20({
     super.key,
+    this.onModels341,
+    this.checkpoint341,
+    this.onImportBusy341,
     required this.language,
     required this.brain,
     required this.world,
@@ -695,268 +712,274 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
   bool busy = false;
   String status = '';
 
-  String _decodeCorpusBytes(List<int> bytes) {
-    if (bytes.isEmpty) return '';
-    if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
-      final units = <int>[];
-      for (var i = 2; i + 1 < bytes.length; i += 2)
-        units.add(bytes[i] | (bytes[i + 1] << 8));
-      return String.fromCharCodes(units);
-    }
-    if (bytes.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
-      final units = <int>[];
-      for (var i = 2; i + 1 < bytes.length; i += 2)
-        units.add((bytes[i] << 8) | bytes[i + 1]);
-      return String.fromCharCodes(units);
-    }
-    final decoded = utf8.decode(bytes, allowMalformed: true);
-    final replacements = '�'.allMatches(decoded).length;
-    if (replacements > max(8, decoded.length ~/ 200)) {
-      return latin1.decode(bytes, allowInvalid: true);
-    }
-    return decoded;
+  BookModels341? _models341;
+  MgdLanguageStats20? _stats341;
+  bool _cancel341 = false;
+  final _repaint341 = Stopwatch()..start();
+  MgdLanguage20 get _language341 => _models341?.language ?? widget.language;
+  ResearchMemory11 get _research341 => _models341?.research ?? widget.research;
+
+  void _progress341(String message, {bool force = false}) {
+    if (!mounted || (!force && _repaint341.elapsedMilliseconds < 200)) return;
+    _repaint341.reset();
+    setState(() => status = message);
   }
 
   @override
   void dispose() {
+    _cancel341 = true;
     text.dispose();
     super.dispose();
   }
 
-  Future<void> train(String data, {String? sourceName}) async {
-    final raw = data.trim();
-    if (raw.isEmpty) {
-      if (sourceName != null && mounted)
-        setState(
-          () => status =
-              'Il corpus selezionato non contiene testo decodificabile.',
-        );
-      return;
+  void _adopt341(BookModels341 models) {
+    _models341 = models;
+    _stats341 = models.language.stats();
+    widget.onModels341?.call(models);
+  }
+
+  Future<void> _restore341() async {
+    final maps = <String, Map<String, dynamic>>{};
+    for (final key in [
+      'brain_v051',
+      'world_v06',
+      'research_v11',
+      'language_v20'
+    ]) {
+      final map = await MgdStateStore26.instance.getMap(key);
+      if (map == null)
+        throw StateError('Checkpoint di recupero incompleto: $key');
+      maps[key] = map;
     }
+    final recovered = await Isolate.run(() => BookModels341.fromMaps(maps));
+    _adopt341(recovered);
+  }
+
+  Future<void> _import341(
+      Future<File?> Function() select, String Function() source) async {
     if (busy) return;
-    final before = widget.language.stats();
-    if (mounted)
-      setState(() {
-        busy = true;
-        status = sourceName == null
-            ? 'Sto incorporando il testo…'
-            : 'Sto importando $sourceName…';
-      });
+    _cancel341 = false;
+    _stats341 = _language341.stats();
+    setState(() => busy = true);
+    File? staged;
+    var suspended = false, restoreFailed = false;
     try {
-      const chunkSize = 4000;
-      var start = 0;
-      while (start < raw.length) {
-        var end = min(start + chunkSize, raw.length);
-        if (end < raw.length) {
-          final searchStart = max(start, end - 2000);
-          final tail = raw.substring(searchStart, end);
-          final cuts = RegExp(r'[.!?]\s+|\n+').allMatches(tail).toList();
-          if (cuts.isNotEmpty) end = searchStart + cuts.last.end;
-        }
-        if (end <= start) end = min(start + chunkSize, raw.length);
-        widget.language.ingestText(raw.substring(start, end), reward: .42);
-        start = end;
-        if (mounted)
-          setState(
-            () => status = sourceName == null
-                ? 'Sto leggendo… ${(100 * start / raw.length).round()}%'
-                : 'Sto leggendo $sourceName… ${(100 * start / raw.length).round()}%',
-          );
-        await Future<void>.delayed(Duration.zero);
+      staged = await select();
+      if (staged == null || _cancel341) {
+        _progress341('Importazione annullata.', force: true);
+        return;
       }
-      if (mounted)
-        setState(
-          () => status = sourceName == null
-              ? 'Estraggo entità e relazioni dal testo…'
-              : 'Estraggo conoscenza da $sourceName…',
-        );
-      final semantic = await CorpusSemanticBridge22.learn(
-        text: raw,
-        sourceName: sourceName ?? 'testo incollato',
-        sourceFamily: sourceName == null ? 'manuale:incollato' : null,
-        brain: widget.brain,
-        world: widget.world,
-        memory: widget.research,
-      );
+      // Drain older writes BEFORE the worker becomes the sole snapshot writer.
       await widget.onSave();
-      final after = widget.language.stats();
-      final dSent = after.sentences - before.sentences;
-      final dTokSeen = after.tokenOccurrences - before.tokenOccurrences;
-      final dEdgeUses = after.edgeUses - before.edgeUses;
-      final dChunkUses = after.chunkOccurrences - before.chunkOccurrences;
-      final dVocab = after.tokens - before.tokens;
-      final dEdges = after.edges - before.edges;
-      final dChunks = after.chunks - before.chunks;
-      final dMatter = after.meanMaterial - before.meanMaterial;
-      if (mounted)
-        setState(
-          () => status = '${sourceName == null ? 'Testo' : 'Corpus $sourceName'} appreso: '
-              '+$dSent frasi, +$dTokSeen token letti, +$dEdgeUses transizioni rinforzate, '
-              '+$dChunkUses sequenze elaborate. Nuove strutture: +$dVocab parole, '
-              '+$dEdges archi, +$dChunks macro-nodi. Δ materia ${dMatter >= 0 ? '+' : ''}${dMatter.toStringAsFixed(3)}. '
-              '${semantic.summary}.',
-        );
-    } catch (e) {
-      if (mounted) setState(() => status = 'Errore durante l’importazione: $e');
+      widget.onImportBusy341?.call(true);
+      suspended = true;
+      final models = _models341 ??
+          BookModels341(
+              widget.brain, widget.world, widget.research, widget.language);
+      final result = await BookImporter341.run(
+          file: staged,
+          source: source(),
+          models: models,
+          cancelled: () => _cancel341 || !mounted,
+          checkpoint: widget.checkpoint341 ??
+              MgdStateStore26.instance.putEncodedAtomic341,
+          archive: (chunk, name) async {
+            final store = ClsBridge340.active;
+            if (store != null)
+              await store.importText(chunk, source: name, label: 'testo');
+          },
+          progress: (blocks, chars, phase) =>
+              _progress341('$phase: $blocks blocchi, $chars caratteri.'));
+      _adopt341(result.models);
+      _progress341(
+          '${result.cancelled ? 'Interrotto e salvato' : 'Libro elaborato e salvato'}: '
+          '${result.blocks} blocchi, ${result.characters} caratteri. '
+          '${result.skipped} blocchi già appresi, non ricontati. '
+          '${result.oversized} frammenti lunghi conservati senza dedurne fatti. '
+          'Il testo conservato non equivale a comprensione completa.',
+          force: true);
+    } catch (e, st) {
+      if (suspended) {
+        try {
+          await _restore341();
+        } catch (recovery) {
+          restoreFailed = true;
+          _progress341(
+              'Importazione interrotta: $e. Recupero non completato: $recovery. '
+              'Salvataggio automatico sospeso; non cancellare i dati.',
+              force: true);
+        }
+      }
+      if (!restoreFailed)
+        _progress341(
+            'Importazione interrotta: $e. '
+            'Le memorie salvate sono conservate; puoi riselezionare il libro per riprendere.',
+            force: true);
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        await File('${directory.path}/book-import-last-error.txt')
+            .writeAsString('${DateTime.now().toIso8601String()}\n$e\n$st',
+                flush: true);
+      } catch (_) {}
     } finally {
+      if (suspended && !restoreFailed) widget.onImportBusy341?.call(false);
+      if (staged != null) {
+        try {
+          await staged.delete();
+        } catch (_) {}
+      }
       if (mounted) setState(() => busy = false);
     }
   }
 
+  Future<void> train(String data, {String? sourceName}) async {
+    if (data.trim().isEmpty || busy) return;
+    await _import341(() async {
+      final dir = await getTemporaryDirectory();
+      final file = File(
+          '${dir.path}/mgd-book-${DateTime.now().microsecondsSinceEpoch}.txt');
+      await file.writeAsString(data, flush: true);
+      return file;
+    }, () => sourceName ?? 'testo incollato');
+  }
+
   Future<void> pick() async {
-    if (busy) return;
-    try {
-      final r = await FilePicker.platform.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-        withData: false,
-        withReadStream: true,
-      );
-      if (r == null || r.files.isEmpty) {
-        if (mounted) setState(() => status = 'Importazione annullata.');
-        return;
+    var source = 'Libro TXT';
+    await _import341(() async {
+      final result = await FilePicker.platform.pickFiles(
+          type: FileType.any,
+          allowMultiple: false,
+          withData: false,
+          withReadStream: true);
+      if (result == null || result.files.isEmpty) return null;
+      final selected = result.files.single;
+      source = selected.name;
+      BookText341.validateName(source);
+      Stream<List<int>>? stream = selected.readStream;
+      if (stream == null && selected.path != null)
+        stream = File(selected.path!).openRead();
+      if (stream == null && selected.bytes != null)
+        stream = Stream.value(selected.bytes!);
+      if (stream == null)
+        throw StateError('Android non ha fornito un flusso leggibile.');
+      final dir = await getTemporaryDirectory();
+      final file = File(
+          '${dir.path}/mgd-book-${DateTime.now().microsecondsSinceEpoch}.txt');
+      try {
+        await BookText341.stage(stream, file,
+            name: source,
+            cancelled: () => _cancel341,
+            progress: (n) => _progress341(
+                'Lettura di $source: $n byte, senza caricare tutto in RAM.'));
+        return file;
+      } catch (_) {
+        if (await file.exists()) await file.delete();
+        rethrow;
       }
-      final f = r.files.single;
-      final rawBytes = <int>[];
-
-      // Android SAF often exposes a content:// document with no usable filesystem
-      // path. FilePicker's readStream reads the document through the provider
-      // instead of assuming that it is a normal File.
-      final stream = f.readStream;
-      if (stream != null) {
-        await for (final chunk in stream) {
-          rawBytes.addAll(chunk);
-          if (mounted && f.size > 0) {
-            final pct = (100 * rawBytes.length / f.size).clamp(0, 100).round();
-            setState(() => status = 'Sto leggendo ${f.name}… $pct%');
-          }
-        }
-      }
-
-      // Fallbacks for providers/platforms that do expose bytes or a real path.
-      if (rawBytes.isEmpty && f.bytes != null && f.bytes!.isNotEmpty) {
-        rawBytes.addAll(f.bytes!);
-      }
-      if (rawBytes.isEmpty && f.path != null && f.path!.isNotEmpty) {
-        try {
-          final diskFile = File(f.path!);
-          if (await diskFile.exists())
-            rawBytes.addAll(await diskFile.readAsBytes());
-        } catch (_) {}
-      }
-
-      if (rawBytes.isEmpty) {
-        if (mounted)
-          setState(
-            () => status =
-                'Android ha restituito 0 byte per ${f.name}. Riprova scegliendo il file da File/Download, non da una anteprima.',
-          );
-        return;
-      }
-
-      final data = _decodeCorpusBytes(rawBytes);
-      if (data.trim().isEmpty) {
-        if (mounted)
-          setState(
-            () => status =
-                'Il file ${f.name} contiene ${rawBytes.length} byte, ma non è stato possibile decodificarli come testo.',
-          );
-        return;
-      }
-      await train(data, sourceName: f.name);
-    } catch (e) {
-      if (mounted)
-        setState(() => status = 'Impossibile importare il corpus: $e');
-    }
+    }, () => source);
   }
 
   @override
   Widget build(BuildContext context) {
-    final s = widget.language.stats();
-    return PopScope(
-        canPop: !busy,
-        child: Scaffold(
-          appBar: AppBar(title: const Text('MGD Language')),
-          body: ListView(
-            padding: const EdgeInsets.all(14),
-            children: [
-              const Text(
-                'Zero LLM, zero embedding preaddestrati, zero POS tagger. Il testo grezzo modifica memoria, materia, costi e macro-sequenze MGD.',
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+    final s = _stats341 ??= _language341.stats();
+    return InspectorScope315(
+        inspector: MemoryInspector315(
+            brain: _models341?.brain ?? widget.brain,
+            world: _models341?.world ?? widget.world,
+            research: _research341,
+            language: _language341),
+        child: PopScope(
+            canPop: !busy,
+            child: Scaffold(
+              appBar: AppBar(title: const Text('MGD Language')),
+              body: ListView(
+                padding: const EdgeInsets.all(14),
                 children: [
-                  _LMetric20('Vocabolario', '${s.tokens}'),
-                  _LMetric20('Token visti', '${s.tokenOccurrences}'),
-                  _LMetric20('Archi unici', '${s.edges}'),
-                  _LMetric20('Passaggi', '${s.edgeUses}'),
-                  _LMetric20('Macro-nodi', '${s.chunks}'),
-                  _LMetric20('Frasi viste', '${s.sentences}'),
-                  _LMetric20(
-                      'Materia media', s.meanMaterial.toStringAsFixed(3)),
-                  _LMetric20(
-                    'Conoscenze corroborate',
-                    '${widget.research.claims.values.where((c) => c.status == 'accettata' || c.status == 'validata_llm' || c.status == 'appresa_corpus').length}',
+                  const Text(
+                    'Zero LLM, zero embedding preaddestrati, zero POS tagger. Il testo grezzo modifica memoria, materia, costi e macro-sequenze MGD.',
                   ),
-                  _LMetric20(
-                    'Conoscenze documentate',
-                    '${widget.research.claims.values.where((c) => c.status == 'documentata').length}',
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _LMetric20('Vocabolario', '${s.tokens}'),
+                      _LMetric20('Token visti', '${s.tokenOccurrences}'),
+                      _LMetric20('Archi unici', '${s.edges}'),
+                      _LMetric20('Passaggi', '${s.edgeUses}'),
+                      _LMetric20('Macro-nodi', '${s.chunks}'),
+                      _LMetric20('Frasi viste', '${s.sentences}'),
+                      _LMetric20(
+                          'Materia media', s.meanMaterial.toStringAsFixed(3)),
+                      _LMetric20(
+                        'Conoscenze corroborate',
+                        '${_research341.claims.values.where((c) => c.status == 'accettata' || c.status == 'validata_llm' || c.status == 'appresa_corpus').length}',
+                      ),
+                      _LMetric20(
+                        'Conoscenze documentate',
+                        '${_research341.claims.values.where((c) => c.status == 'documentata').length}',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: text,
+                    minLines: 6,
+                    maxLines: 14,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText:
+                          'Incolla qui italiano grezzo: dialoghi, libri, articoli, trascrizioni…',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: busy || text.text.trim().isEmpty
+                            ? null
+                            : () => train(text.text),
+                        icon: const Icon(Icons.psychology),
+                        label: const Text('Impara testo incollato'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: busy ? null : pick,
+                        icon: const Icon(Icons.file_open),
+                        label: const Text('Importa e impara libro/corpus'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Importa e impara libro/corpus è un’azione completa: dopo aver scelto il file MGD lo legge, lo incorpora e lo salva automaticamente. Non serve premere il pulsante del testo incollato.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  if (busy) ...[
+                    const LinearProgressIndicator(),
+                    TextButton.icon(
+                        key: const ValueKey('book-import-cancel'),
+                        onPressed: () => setState(() => _cancel341 = true),
+                        icon: const Icon(Icons.stop_circle_outlined),
+                        label: const Text('Interrompi e conserva i progressi')),
+                  ],
+                  if (status.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(status, key: const ValueKey('book-import-status'))
+                  ],
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Come vengono composte le risposte',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    'Le transizioni ricorrenti abbassano il costo; la memoria lenta le stabilizza; la materia facilita la coerenza ma oltre M* introduce resistenza alla ripetizione. Sequenze ricorrenti di 2–5 token condensano in macro-nodi. Le risposte ricombinano forme osservate attorno a fatti disponibili. Le deduzioni per transitività mostrano le loro premesse e restano distinte dalle fonti.',
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: text,
-                minLines: 6,
-                maxLines: 14,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText:
-                      'Incolla qui italiano grezzo: dialoghi, libri, articoli, trascrizioni…',
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: busy || text.text.trim().isEmpty
-                        ? null
-                        : () => train(text.text),
-                    icon: const Icon(Icons.psychology),
-                    label: const Text('Impara testo incollato'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: busy ? null : pick,
-                    icon: const Icon(Icons.file_open),
-                    label: const Text('Importa e impara libro/corpus'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Importa e impara libro/corpus è un’azione completa: dopo aver scelto il file MGD lo legge, lo incorpora e lo salva automaticamente. Non serve premere il pulsante del testo incollato.',
-                style: TextStyle(fontSize: 12),
-              ),
-              if (status.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(status)
-              ],
-              const SizedBox(height: 18),
-              const Text(
-                'Come vengono composte le risposte',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const Text(
-                'Le transizioni ricorrenti abbassano il costo; la memoria lenta le stabilizza; la materia facilita la coerenza ma oltre M* introduce resistenza alla ripetizione. Sequenze ricorrenti di 2–5 token condensano in macro-nodi. Le risposte ricombinano forme osservate attorno a fatti disponibili. Le deduzioni per transitività mostrano le loro premesse e restano distinte dalle fonti.',
-              ),
-            ],
-          ),
-        ));
+            )));
   }
 }
 

@@ -1,4 +1,6 @@
+// BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
+import 'book_import_v0341.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -271,7 +273,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     }
   }
 
+  bool _bookImportBusy341 = false;
+
   Future<void> _checkpoint319() async {
+    if (_bookImportBusy341) return;
     if (!_ready || _bootError318 != null) return;
     try {
       await _checkpointWriter319.save(
@@ -292,14 +297,19 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     _mindTimer?.cancel();
     _mindTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!mounted || !_ready || _bootError318 != null || _mindBusy320) return;
-      if (_lifecycle319 == AppLifecycleState.resumed && !_busy && !_researchBusy &&
-          _uiIdle18 && _chat.text.isEmpty && ClsBridge340.active != null) {
+      if (_lifecycle319 == AppLifecycleState.resumed &&
+          !_busy &&
+          !_researchBusy &&
+          _uiIdle18 &&
+          _chat.text.isEmpty &&
+          ClsBridge340.active != null) {
         try {
           if (await ClsBridge340.active!.readSetting('auto') != 'false') {
             await ClsBridge340.active!.consolidate(budget: 8);
           }
         } catch (e) {
-          if (mounted) setState(() => _status = 'Consolidamento CLS sospeso: $e');
+          if (mounted)
+            setState(() => _status = 'Consolidamento CLS sospeso: $e');
         }
       }
       if (_world.eventDriven33) {
@@ -705,6 +715,13 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                   brain: _brain,
                   world: _world,
                   research: _researchMemory,
+                  onImportBusy341: (active) => _bookImportBusy341 = active,
+                  onModels341: (models) {
+                    _brain = models.brain;
+                    _world = models.world;
+                    _researchMemory = models.research;
+                    _language20 = models.language;
+                  },
                   onSave: _saveAllSilent22))));
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -810,8 +827,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                   realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
               SourceMemory323.answer(text, _researchMemory);
       final episodic340 = sourced317 == null && grounded == null
-          ? await ClsBridge340.quote(text) : null;
-      final semanticAnswer = sourced317 ?? episodic340 ?? grounded ?? languageAnswer;
+          ? await ClsBridge340.quote(text)
+          : null;
+      final semanticAnswer =
+          sourced317 ?? episodic340 ?? grounded ?? languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||
               curiosityAnswer != null)
@@ -1603,8 +1622,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     setState(() => _busy = true);
     try {
       await Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) =>
-              ClsPage340(world: _world, onSave: _checkpoint319)));
+          builder: (_) => ClsPage340(world: _world, onSave: _checkpoint319)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

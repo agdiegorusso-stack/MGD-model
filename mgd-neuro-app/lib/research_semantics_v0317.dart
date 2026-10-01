@@ -1,3 +1,4 @@
+// BOOK_IMPORT_REPAIR_0341
 part of 'web_knowledge_explorer_v11.dart';
 
 /// Deterministic evidence handling. Geometry/frequency never constitute proof.
@@ -973,6 +974,20 @@ class ResearchSemantics317 {
     m.state317['queue'] = queue;
   }
 
+  // Bounded transient cache: a document is not split again for every sentence
+  // or every 12 ms work slice. It is NOT duplicated into persisted snapshots.
+  static final _queueSentenceCache341 = <String, List<String>>{};
+  static int queueTokenizations341 = 0;
+  static List<String> _queueSentences341(String key, String text) {
+    final cached = _queueSentenceCache341[key];
+    if (cached != null) return cached;
+    if (_queueSentenceCache341.length >= 4)
+      _queueSentenceCache341.remove(_queueSentenceCache341.keys.first);
+    queueTokenizations341++;
+    return _queueSentenceCache341[key] =
+        WebKnowledgeExplorer11._sentences(text);
+  }
+
   static int processQueue(
     PlasticLanguageBrain04 brain,
     MgdWorld06 world,
@@ -993,7 +1008,7 @@ class ResearchSemantics317 {
         (units == 0 || clock.elapsedMilliseconds < 12)) {
       final q = queue.removeAt(0);
       final doc = docFrom(q);
-      final sentences = WebKnowledgeExplorer11._sentences(doc.text);
+      final sentences = _queueSentences341('${q['key']}', doc.text);
       var i = (q['sentence'] as num?)?.toInt() ?? 0;
       if (i >= sentences.length) {
         done.add('${q['key']}');
@@ -1620,8 +1635,10 @@ class ResearchSemantics317 {
       if (ev.isEmpty) continue;
       final e = ev.first;
       final conditions = c.meta317['qualifiers'];
-      final readableConditions = conditions is Map && conditions['descriptiveContext323'] != null
-          ? conditions['descriptiveContext323'].toString() : jsonEncode(conditions);
+      final readableConditions =
+          conditions is Map && conditions['descriptiveContext323'] != null
+              ? conditions['descriptiveContext323'].toString()
+              : jsonEncode(conditions);
       final statement = realize?.call(c.subject, c.relation, c.object) ??
           '${c.subject} — ${c.relation} → ${c.object}.';
       lines.add(
