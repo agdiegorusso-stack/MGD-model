@@ -40,14 +40,14 @@ import 'package:flutter/services.dart';
 import '../lib/book_import_v0341.dart';""",1)
     s=s.replace('    var saved = 0;','''    var saved = 0;
     BookModels341? learned;
-    final dir = await Directory.systemTemp.createTemp('mgd-language-widget-');
+    final dir = Directory.systemTemp.createTempSync('mgd-language-widget-');
     const pathChannel=MethodChannel('plugins.flutter.io/path_provider');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(pathChannel, (_) async => dir.path);
     addTearDown(() async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathChannel,null);
-      await dir.delete(recursive:true);
+      dir.deleteSync(recursive:true);
     });''',1)
     s=s.replace('                onSave: () async {','''                onModels341:(models)=>learned=models,
                 checkpoint341:(_) async {},
@@ -56,5 +56,13 @@ import '../lib/book_import_v0341.dart';""",1)
     s=s.replace('    expect(l.sentences, 1);','''    expect(learned,isNotNull);
     expect(learned!.language.sentences, 1);''',1)
     s=s.replace("ResearchSemantics317.answer('Cosa produce il zorvello?', m),\n        contains('lumina'));\n    await tester.scrollUntilVisible", "ResearchSemantics317.answer('Cosa produce il zorvello?', learned!.research),\n        contains('lumina'));\n    await tester.scrollUntilVisible",1)
-    p.write_text(s)
+# Real filesystem setup cannot await an I/O event in testWidgets' FakeAsync.
+s=s.replace("await Directory.systemTemp.createTemp('mgd-language-widget-')", "Directory.systemTemp.createTempSync('mgd-language-widget-')")
+s=s.replace('await dir.delete(recursive: true);','dir.deleteSync(recursive: true);')
+s=s.replace('await dir.delete(recursive:true);','dir.deleteSync(recursive:true);')
+if 'BOOK_WIDGET_FINAL_IO_341' not in s:
+    marker="        await Future<void>.delayed(const Duration(milliseconds: 20));\n      }\n    });\n    await tester.pumpAndSettle();"
+    if marker in s:
+        s=s.replace(marker,"        await Future<void>.delayed(const Duration(milliseconds: 20));\n      }\n      // BOOK_WIDGET_FINAL_IO_341: drain staging-file cleanup in the real zone.\n      await Future<void>.delayed(const Duration(milliseconds: 100));\n    });\n    await tester.pumpAndSettle();",1)
+p.write_text(s)
 print('Book model bindings and widget-test dependencies refined')
