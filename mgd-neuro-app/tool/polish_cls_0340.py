@@ -1,65 +1,97 @@
+"""Validate materialized atlas and adapt the old Android end-to-end contract.
+The original cold-restore, multimodal and deletion assertions remain; new UI
+learning targets the new store rather than expecting the old one to mutate.
+"""
 from pathlib import Path
-import re
 root=Path(__file__).resolve().parents[1]
-p=root/'lib/main.dart';s=p.read_text()
-s=s.replace("'MGD Neuro 0.33.1'","'MGD Neuro $mgdAppVersion319'")
-s=s.replace("'Memorie MGD 0.33.1'","'Memorie MGD $mgdAppVersion319'")
-p.write_text(s)
-p=root/'lib/cls_page_v0340.dart';s=p.read_text()
-marker='CLS_MEDIA_ATLAS_0340'
+page=(root/'lib/cls_page_v0340.dart').read_text()
+for marker in ['CLS_MEDIA_ATLAS_0340','CLS_LEGACY_READONLY_0340','LegacySnapshotView340']:
+    if marker not in page:raise RuntimeError(f'Missing committed atlas refinement: {marker}')
+main=(root/'lib/main.dart').read_text()
+for marker in ['MGD Neuro $mgdAppVersion319','Memorie MGD $mgdAppVersion319']:
+    if marker not in main:raise RuntimeError(f'Missing version integration: {marker}')
+p=root/'integration_test/runtime_android_v0319_test.dart';s=p.read_text()
+marker='CLS_ANDROID_MIGRATION_0340'
 if marker not in s:
-    def sub(old,new):
-        global s
-        if s.count(old)!=1:raise RuntimeError(f'Unexpected atlas anchor {old!r}: {s.count(old)}')
-        s=s.replace(old,new)
-    sub("import 'cls_core_v0340.dart';","import 'cls_core_v0340.dart';\nimport 'cls_media_v0340.dart';")
-    sub('  Pattern340? _focus;','  Pattern340? _focus;\n  Map<int,MediaPreview340> _previews={};')
-    a=s.index('  Future<void> _select(');b=s.index('  Future<void> _legacyDelete(',a)
-    s=s[:a]+'''  Future<void> _select(Pattern340 focus) => _run(() async {
-    final neighbors=await _store!.recall(focus.cue,context:focus.context,neighborhood:true);
-    final previews=<int,MediaPreview340>{};
-    final ids={focus.id,...neighbors.evidence.take(24).map((e)=>e.id)};
-    for(final id in ids) {
-      if(_cancel||!mounted||!_foreground)break;
-      if(_previews.containsKey(id)){previews[id]=_previews[id]!;continue;}
-      final rows=await _store!.db.query('episodes',columns:['image','audio'],where:'id=?',whereArgs:[id]);
-      if(rows.isEmpty)continue;
-      final media=<String,Uint8List>{for(final e in rows.single.entries)
-        if(e.value is Uint8List)e.key:e.value as Uint8List};
-      if(media.isNotEmpty)previews[id]=await compute(mediaPreview340,media);
+    s=s.replace("import 'dart:convert';", "import 'dart:convert';\nimport 'package:mgd_neuro_mobile/cls_bridge_v0340.dart';\nimport 'package:mgd_neuro_mobile/cls_store_v0340.dart';\nimport 'package:mgd_neuro_mobile/cls_core_v0340.dart';",1)
+    start=s.index("  testWidgets(\n      'Android multimodal experiences persist, learn in UI and delete coherently'")
+    end=s.index("  testWidgets(\n      'Android 0331 rejection and provenance revocation survive SQLite restart and replay'",start)
+    replacement=r'''
+  // CLS_ANDROID_MIGRATION_0340
+  testWidgets(
+      'Android multimodal experiences persist, migrate, learn in CLS UI and delete coherently',
+      (tester) async {
+    final store=MgdStateStore26.instance;
+    await store.clearAll();
+    final cls=await ClsStore340.shared;
+    ClsBridge340.active=cls;
+    await ClsBridge340.clear();
+    final b=PlasticLanguageBrain04(),w=MgdWorld06(),
+      r=ResearchMemory11(enabled:false),l=MgdLanguage20();
+    for(final red in [true,false]) {
+      for(final hz in [330.0,880.0]) {
+        w.experience33.learn({
+          'vision:v1':MgdWorld06.encodeVision33(picture33(red)),
+          'audio:v1':MgdWorld06.encodeAudio33(tone33(hz))
+        },label:'$red $hz');
+      }
     }
-    if(mounted)setState((){_focus=focus;_neighbors=neighbors;_previews=previews;});
+    r.state317.addAll({'migrationComplete':true,'recovery318Complete':true,
+      'languagePassages':0,'languageEvidence':0});
+    await MemoryCheckpoint319().save(b,w,r,l);
+    await tester.pumpWidget(const MgdNeuro04App());
+    await waitBoot319(tester);
+    final live=tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
+    expect(live.world.experience33.episodes.length,4);
+    final cycles=live.world.thoughtCycles;
+    await tester.pump(const Duration(seconds:12));
+    expect(live.world.thoughtCycles,cycles);expect(live.world.eventDriven33,true);
+    await tester.tap(find.text('Mondo'));await tester.pumpAndSettle();
+    await tester.tap(find.text('Impara dall’esperienza').hitTestable());
+    await tester.pumpAndSettle();
+    expect((await cls.stats())['episodes'],4);
+    await tester.enterText(find.byKey(const ValueKey('cls-input')),'saluto breve');
+    await tester.enterText(find.byKey(const ValueKey('cls-label')),'ciao');
+    FocusManager.instance.primaryFocus?.unfocus();await tester.pump();
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('cls-teach')),180,
+      scrollable:find.descendant(of:find.byKey(const ValueKey('cls-experience-list')),
+        matching:find.byType(Scrollable)).first);
+    await tester.tap(find.byKey(const ValueKey('cls-teach')));
+    for(var n=0;n<100;n++) {
+      await tester.pump(const Duration(milliseconds:100));
+      if((await cls.stats())['episodes']==5)break;
+    }
+    expect((await cls.stats())['episodes'],5);
+    expect(live.world.experience33.episodes.length,4,
+      reason:'New learning must not diverge into the compatibility snapshot.');
+    final cue=<String,Map<String,double>>{'text:v1':Italian340.features('saluto breve')};
+    expect((await cls.recall(cue)).best,'ciao');
+    await tester.pumpAndSettle();await tester.pageBack();await tester.pumpAndSettle();
+    await KnowledgeDeletion33.delete(brain:live.brain,world:live.world,
+      research:live.research,language:live.language,mode:'mondo',node:'ciao');
+    expect((await cls.stats())['episodes'],4);
+    expect((await cls.recall(cue)).accepted,false);
+    expect(await cls.db.query('episodes',where:'label=?',whereArgs:['ciao']),isEmpty);
+    await MemoryCheckpoint319().save(live.brain,live.world,live.research,live.language);
+    await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
+    await store.close319();
+    final restored=await WorldPersistence06().load();
+    expect(restored!.experience33.episodes.length,4);
+    expect(restored.experience33.episodes.any((e)=>e.label=='ciao'),false);
+    final multimodal=<String,Map<String,double>>{
+      'vision:v1':MgdWorld06.encodeVision33(picture33(false)),
+      'audio:v1':MgdWorld06.encodeAudio33(tone33(880))};
+    expect(restored.experience33.predict(multimodal).best,'false 880.0');
+    expect((await cls.recall(multimodal)).best,'false 880.0');
+    expect(await cls.migrateLegacy(restored.experience33.episodes.map((e)=>e.toJson())),0);
+    expect((await cls.stats())['episodes'],4);
+    print('ANDROID340_MIGRATION '+jsonEncode({'realPngPcm':true,'uiLearning':true,
+      'legacySqliteRestart':true,'migrationIdempotent':true,'migratedEpisodesRetained':4,
+      'newArchiveDeletion':true,'legacyIdleTrainingDisabled':true}));
+    await ClsBridge340.clear();await store.clearAll();await store.close319();
   });
-''' +s[b:]
-    sub('onOpen: _detail','previews: _previews, onOpen: _detail')
-    sub('  final ValueChanged<int> onOpen;','  final ValueChanged<int> onOpen;\n  final Map<int,MediaPreview340> previews;')
-    sub('      required this.onOpen});','      required this.onOpen, this.previews=const {}});')
-    sub("Icon(nodes[i].cue.containsKey('vision:v1')", "ExperiencePreview340(preview:previews[nodes[i].id], fallback:nodes[i].cue.containsKey('vision:v1')")
-    s='// '+marker+'\n'+s
 
-if 'CLS_LEGACY_READONLY_0340' not in s:
-    s,n=re.subn(r'ExperiencePage33\(\s*world: widget.world,\s*onSave: widget.onSave\)',
-        'LegacySnapshotView340(world: widget.world)',s)
-    if n!=1:raise RuntimeError(f'Expected one legacy route, found {n}')
-    s+='''
-// CLS_LEGACY_READONLY_0340
-/// Edits happen only through the migrated archive, never through two unsynced
-/// copies. The legacy snapshot remains inspectable for compatibility.
-class LegacySnapshotView340 extends StatelessWidget {
-  final MgdWorld06 world;
-  const LegacySnapshotView340({super.key,required this.world});
-  @override Widget build(BuildContext context) => Scaffold(
-    appBar:AppBar(title:const Text('Archivio precedente · sola lettura')),
-    body:SafeArea(child:Column(children:[
-      const Padding(padding:EdgeInsets.all(16),child:Text(
-        'Questa è la copia di compatibilità. Per imparare, correggere o eliminare usa Esperienza e Atlante: le modifiche devono avere un solo percorso.')),
-      Expanded(child:ListView.builder(itemCount:world.experience33.episodes.length,
-        itemBuilder:(context,index) {
-          final e=world.experience33.episodes[index];
-          return ListTile(title:Text(e.label),subtitle:Text(
-            '${e.context} · ${e.source}\\n${e.description}',maxLines:4,overflow:TextOverflow.ellipsis));
-        }))])));
-}
 '''
-p.write_text(s)
-print('Version labels, media atlas and read-only compatibility view integrated')
+    s=s[:start]+replacement+s[end:]
+    p.write_text(s)
+print('Atlas, version and updated Android migration contract validated')
