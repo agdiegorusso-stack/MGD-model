@@ -1,0 +1,180 @@
+name: MGD Neuro 0.34.2 - Book answers and independent exams
+on:
+  pull_request:
+    branches: [mgd-neuro-mobile]
+    paths: ['mgd-neuro-app/**', '.github/workflows/build-mgd-neuro-0330.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mgd-book-0342-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Restore Gradle dependencies
+        id: gradle-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: mgd-gradle-${{ runner.os }}-flutter3475-v1
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mgd-neuro-prototype-signing-v1
+      - name: Check signing continuity
+        run: python3 mgd-neuro/v0315/ci.py signing
+      - name: Generate Android project preserving native audio
+        run: |
+          set -euo pipefail
+          cp mgd-neuro-app/android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/MainActivity.kt /tmp/mgd-main-activity.kt
+          python3 mgd-neuro/v0315/ci.py platform
+          cp /tmp/mgd-main-activity.kt mgd-neuro-app/android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/MainActivity.kt
+      - name: Integrate source-scoped reader and independent evaluation
+        run: |
+          set -euo pipefail
+          python3 mgd-neuro-app/tool/integrate_book_understanding_0342.py mgd-neuro-app
+          python3 mgd-neuro-app/tool/refine_book_understanding_0342.py
+          dart format mgd-neuro-app/lib/book_understanding_v0342.dart mgd-neuro-app/lib/book_lab_service_v0342.dart mgd-neuro-app/lib/book_lab_page_v0342.dart mgd-neuro-app/lib/main.dart mgd-neuro-app/lib/mgd_language_v020.dart mgd-neuro-app/lib/corpus_semantic_bridge_v022.dart mgd-neuro-app/lib/book_import_v0341.dart mgd-neuro-app/lib/knowledge_deletion_v0330.dart mgd-neuro-app/test/book_understanding_v0342_test.dart mgd-neuro-app/tool/book_eval_v0342_test.dart mgd-neuro-app/integration_test/book_understanding_android_v0342_test.dart mgd-neuro-app/integration_test/book_android_v0341_test.dart
+      - name: Dependencies
+        working-directory: mgd-neuro-app
+        run: flutter pub get
+      - name: Record exact integrated source revision
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          test "$TARGET_BRANCH" = 'codex/mgd-book-understanding-0342'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mgd-neuro-app/lib mgd-neuro-app/test mgd-neuro-app/integration_test mgd-neuro-app/tool mgd-neuro-app/pubspec.yaml mgd-neuro-app/pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat(book): materialize reader and independent evaluation paths [skip ci]'
+            git push origin HEAD:"$TARGET_BRANCH"
+          fi
+          git rev-parse HEAD > mgd-neuro-app/BUILD-COMMIT.txt
+      - name: Unit widget SQLite and comprehension regression tests
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          MGD_CLS_BENCHMARK_OUT=benchmark-cls-0.34.2.json flutter test --reporter expanded 2>&1 | tee tests-0.34.2.log
+      - name: Existing one-pass learning benchmark
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          MGD_BENCHMARK_OUT=benchmark-existing-0.34.2.json flutter test tool/learning_benchmark_v0321_test.dart --reporter expanded 2>&1 | tee benchmark-existing-0.34.2.log
+      - name: Mixed prose independent-reference development evaluation
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          MGD_BOOK_EVAL_OUT=benchmark-book-0.34.2.json flutter test tool/book_eval_v0342_test.dart --reporter expanded 2>&1 | tee benchmark-book-0.34.2.log
+      - name: Static analysis
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.34.2.log
+      - name: Publish evaluated reader diagnostics before Android
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.34.2-evaluation
+          path: |
+            mgd-neuro-app/*-0.34.2.log
+            mgd-neuro-app/*-0.34.2.json
+            mgd-neuro-app/book-demo-0.34.2.txt
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
+      - name: Enable Android KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android book lab and all previous lifecycle regressions
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
+          script: |
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_understanding_android_v0342_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-understanding-0.34.2.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-baseline-0.34.2.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/cls_android_v0340_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-cls-0.34.2.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_android_v0341_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-book-0.34.2.log'
+      - name: Build signed release APK
+        working-directory: mgd-neuro-app
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-name 0.34.2 --build-number 68 2>&1 | tee build-0.34.2.log
+      - name: Verify identity and stable certificate
+        run: |
+          set -euo pipefail
+          APK=mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)
+          SIGN=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" > /tmp/badging.txt
+          head -1 /tmp/badging.txt > mgd-neuro-app/APK-VERSION.txt
+          grep -F "name='it.diegorusso.mgdneurostable'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionName='0.34.2'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionCode='68'" mgd-neuro-app/APK-VERSION.txt
+          "$SIGN" verify --verbose --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
+          grep -Fi 'bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589' mgd-neuro-app/APK-SIGNATURE.txt
+          sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
+      - name: Upload verified APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.34.2-Android
+          path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+      - name: Save downloaded Gradle dependencies
+        if: always() && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: mgd-gradle-${{ runner.os }}-flutter3475-v1
+      - name: Upload exact integrated source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.34.2-source
+          path: |
+            mgd-neuro-app/lib
+            mgd-neuro-app/test
+            mgd-neuro-app/integration_test
+            mgd-neuro-app/tool
+            mgd-neuro-app/android/app/src/main
+            mgd-neuro-app/pubspec.yaml
+            mgd-neuro-app/pubspec.lock
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
+      - name: Upload full reports and reproducible example
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.34.2-reports
+          path: |
+            mgd-neuro-app/*-0.34.2.log
+            mgd-neuro-app/*-0.34.2.json
+            mgd-neuro-app/book-demo-0.34.2.txt
+            mgd-neuro-app/APK-*.txt
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
