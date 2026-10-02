@@ -30,3 +30,8 @@ edit('integration_test/runtime_android_v0319_test.dart','RUNTIME_VERSION_ASSERT_
  ("find.text('Memorie MGD 0.34.2')", "find.text('Memorie MGD $mgdAppVersion319')")
 ])
 print('Retained every Android assertion; keyed legacy scroll panes and robustly revealed lazy controls.')
+edit('integration_test/runtime_android_v0319_test.dart','LEGACY_ENTRY_ROUTE_0350',[
+ ("    await tester.tap(find.text('Impara / esplora lingua').hitTestable());\n    await tester.pumpAndSettle();\n    expect(find.byType(TextField), findsOneWidget);", "    await tester.tap(find.text('Impara / esplora lingua').hitTestable());\n    await tester.pumpAndSettle();\n    // The default entry is now closed-book. Exercise the retained legacy UI\n    // through its actual navigation, without weakening the learning assertions.\n    final legacy = find.byTooltip('Archivio precedente e contatori storici');\n    for (var n = 0; n < 200 && tester.widget<IconButton>(legacy).onPressed == null; n++) {\n      await tester.pump(const Duration(milliseconds: 100));\n    }\n    await tester.tap(legacy.hitTestable());\n    await tester.pumpAndSettle();\n    expect(find.byType(TextField), findsOneWidget);"),
+ ("    await tester.ensureVisible(find.text('Impara testo incollato'));", "    await tester.scrollUntilVisible(find.text('Impara testo incollato'), 180,\n        scrollable: find.byType(Scrollable).first);"),
+ ("    expect(learned341.metricRows('Documentate').length, 2);\n    await tester.pageBack();\n    await tester.pumpAndSettle();", "    expect(learned341.metricRows('Documentate').length, 2);\n    await tester.pageBack();\n    await tester.pumpAndSettle();\n    expect(find.text('MGD · A libro chiuso'), findsOneWidget);\n    await tester.pageBack();\n    await tester.pumpAndSettle();"),
+])
