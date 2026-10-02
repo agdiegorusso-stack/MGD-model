@@ -49,16 +49,14 @@ Future<void> waitStatus342(WidgetTester tester, String prefix) async {
 }
 
 Future<void> reveal342(WidgetTester tester, Finder target, String page) async {
-  await tester.scrollUntilVisible(
-    target,
-    180,
-    scrollable: find
-        .descendant(
+  final scrolling = find
+      .descendant(
           of: find.byKey(PageStorageKey(page)),
-          matching: find.byType(Scrollable),
-        )
-        .first,
-  );
+          matching: find.byType(Scrollable))
+      .first;
+  tester.state<ScrollableState>(scrolling).position.jumpTo(0);
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(target, 180, scrollable: scrolling);
   await tester.pumpAndSettle();
 }
 

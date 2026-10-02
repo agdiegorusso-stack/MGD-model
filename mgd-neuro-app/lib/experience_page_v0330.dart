@@ -537,6 +537,7 @@ class _ExperiencePage33State extends State<ExperiencePage33>
               ...groups.entries.map(
                 (g) => Card(
                   child: ExpansionTile(
+                    key: PageStorageKey('experience330:${g.key}'),
                     title: Text(g.key),
                     subtitle: Text('${g.value.length} episodi confermati'),
                     trailing: IconButton(

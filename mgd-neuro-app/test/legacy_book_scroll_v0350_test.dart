@@ -6,16 +6,14 @@ import 'package:mgd_neuro_mobile/book_understanding_v0342.dart';
 import 'package:mgd_neuro_mobile/web_knowledge_explorer_v11.dart';
 
 Future<void> reveal(WidgetTester t, Finder f, String key) async {
-  await t.scrollUntilVisible(
-    f,
-    160,
-    scrollable: find
-        .descendant(
+  final scrolling = find
+      .descendant(
           of: find.byKey(PageStorageKey(key)),
-          matching: find.byType(Scrollable),
-        )
-        .first,
-  );
+          matching: find.byType(Scrollable))
+      .first;
+  t.state<ScrollableState>(scrolling).position.jumpTo(0);
+  await t.pumpAndSettle();
+  await t.scrollUntilVisible(f, 160, scrollable: scrolling);
   await t.pumpAndSettle();
 }
 

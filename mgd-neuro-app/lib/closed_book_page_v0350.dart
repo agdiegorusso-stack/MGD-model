@@ -508,16 +508,22 @@ class _ClosedBookPage350State extends State<ClosedBookPage350> {
                     style: const TextStyle(fontSize: 21)),
                 const SizedBox(height: 12),
                 Text('${answer!['reason']}'),
-                for (final e in (answer!['evidence'] as List? ?? []).take(20))
+                for (final (i, e)
+                    in (answer!['evidence'] as List? ?? []).take(20).indexed)
                   ExpansionTile(
+                      key: PageStorageKey(
+                          'evidence350:$selected:${answer!['answer']}:$i'),
                       title:
                           Text('${e['subject'] ?? e['title'] ?? 'Premessa'}'),
                       children: [
                         Padding(
                             padding: const EdgeInsets.all(12),
-                            child: SelectableText(e['predicate'] == null
-                                ? '${e['text']}'
-                                : Event350.fromJson(e as Map).describe()))
+                            child: SelectableText(
+                                e['predicate'] == null
+                                    ? '${e['text']}'
+                                    : Event350.fromJson(e as Map).describe(),
+                                key: PageStorageKey(
+                                    'evidence-text350:$selected:${answer!['answer']}:$i')))
                       ]),
               ])),
       ]);

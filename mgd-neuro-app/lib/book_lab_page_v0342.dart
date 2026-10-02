@@ -469,10 +469,13 @@ class _BookLabPage342State extends State<BookLabPage342> {
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: 8),
-        SelectableText(
-          '${r['answer']}',
-          key: const ValueKey('book-answer'),
-          style: Theme.of(context).textTheme.titleMedium,
+        KeyedSubtree(
+          key: const PageStorageKey('book-response-answer-scroll'),
+          child: SelectableText(
+            '${r['answer']}',
+            key: const ValueKey('book-answer'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ),
         const SizedBox(height: 8),
         Text('${r['reason']}'),
@@ -486,16 +489,17 @@ class _BookLabPage342State extends State<BookLabPage342> {
               : 'Passaggi utilizzati',
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        for (final e in evidence.isEmpty ? related : evidence)
+        for (final (i, e) in (evidence.isEmpty ? related : evidence).indexed)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText('«${e['text']}»'),
+                SelectableText('«${e['text']}»',key: PageStorageKey('book-response-text-$i')),
                 Text('${e['title']}'),
                 SelectableText(
                   '${e['url']}',
+                  key: PageStorageKey('book-response-url-$i'),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -741,7 +745,7 @@ class _BookLabPage342State extends State<BookLabPage342> {
             value = Map<String, dynamic>.from(row['result'] as Map);
         return Card(
           child: ExpansionTile(
-            key: ValueKey('exam-result-${r['at']}-${c['id']}'),
+            key: PageStorageKey('exam-result-${r['at']}-${c['id']}'),
             title: Text('${c['question']}'),
             subtitle: Text(
               '${row['correct'] == true ? 'Coincide' : 'NON coincide'} con il riferimento • ${c['category']}',
