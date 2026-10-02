@@ -63,6 +63,8 @@ def main():
             pending.replace(target)
             print(f'Materialized and verified: {rel}')
     print(f'0.35.0 overlay verified; {len(staged)} files changed')
+    subprocess.run([sys.executable, str(here / 'fix_android_regressions.py'), str(root)], check=True)
+    subprocess.run(['dart', 'format', str(root / 'lib/book_lab_page_v0342.dart'), str(root / 'integration_test/book_understanding_android_v0342_test.dart'), str(root / 'integration_test/runtime_android_v0319_test.dart'), str(root / 'test/legacy_book_scroll_v0350_test.dart')], check=True)
 
 if __name__ == '__main__':
     main()
