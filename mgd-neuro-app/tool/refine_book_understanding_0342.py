@@ -23,3 +23,16 @@ p=root/'integration_test/runtime_android_v0319_test.dart';s=p.read_text().replac
 p=root/'tool/book_eval_v0342_test.dart';s=p.read_text()
 s=s.replace("    expect((measured['results'] as List).where((r)=>r['correct']==false),isNotEmpty,\n      reason:'This reader is intentionally not presented as a general prose solver.');", "    print('BOOK342_FAILED_CASES ${jsonEncode((measured['results'] as List).where((r)=>r['correct']==false).map((r)=>r['case']['id']).toList())}');")
 p.write_text(s)
+# These are complete source fixtures, not changes to reference answers.
+for path in ['test/book_understanding_v0342_test.dart','tool/book_eval_v0342_test.dart','integration_test/book_understanding_android_v0342_test.dart']:
+    p=root/path;s=p.read_text()
+    if 'BOOK_FIXTURE_PROVENANCE_0342' not in s:
+        assert s.count('WebDocument11(')==1,(path,s.count('WebDocument11('))
+        s=s.replace('WebDocument11(',"WebDocument11(family: 'locale:test342',",1)
+        p.write_text('// BOOK_FIXTURE_PROVENANCE_0342\n'+s)
+p=root/'test/product_v0321_test.dart';s=p.read_text()
+if 'BOOK_SCROLL_REGRESSION_0342' not in s:
+    old="    await tester.ensureVisible(find.text('Impara testo incollato'));"
+    assert s.count(old)==1
+    s=s.replace(old,"    await tester.scrollUntilVisible(find.text('Impara testo incollato'), 200,\n        scrollable: find.byType(Scrollable).first);\n    await tester.pumpAndSettle();")
+    p.write_text('// BOOK_SCROLL_REGRESSION_0342\n'+s)
