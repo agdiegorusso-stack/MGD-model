@@ -700,6 +700,13 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _openLanguage20() async {
+    // BOOK_RECOVERY_GUARD_341
+    if (_bootError318 != null || _bookImportBusy341) {
+      if (mounted)
+        setState(() => _status =
+            'Memoria protetta: riapri l’app per completare il recupero prima di importare. Non cancellare i dati.');
+      return;
+    }
     if (_busy || _researchBusy || _maintenance317) return;
     setState(() => _busy = true);
     try {

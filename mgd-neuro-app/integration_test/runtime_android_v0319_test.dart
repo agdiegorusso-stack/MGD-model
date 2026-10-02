@@ -265,12 +265,17 @@ void main() {
     for (var n = 0; n < 150; n++) {
       await tester.pump(const Duration(milliseconds: 200));
       if (find
-          .textContaining('nuove utilizzabili con fonte')
+          .textContaining('Libro elaborato e salvato')
           .evaluate()
           .isNotEmpty) break;
     }
-    expect(
-        find.textContaining('2 nuove utilizzabili con fonte'), findsOneWidget);
+    // BOOK_ANDROID_ASSERTIONS_341: preserve and strengthen the data assertions.
+    expect(find.textContaining('Libro elaborato e salvato'), findsOneWidget,
+        reason: tester.widgetList<Text>(find.byType(Text)).map((t)=>t.data).join(' | '));
+    final learned341 = tester.widgetList<InspectorScope315>(
+        find.byType(InspectorScope315)).last.inspector;
+    expect(learned341.language.sentences, 2);
+    expect(learned341.metricRows('Documentate').length, 2);
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.tap(find.text('Vivi'));

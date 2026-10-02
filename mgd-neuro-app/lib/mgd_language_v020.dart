@@ -1,3 +1,4 @@
+// BOOK_RECOVERY_GUARD_341
 // BOOK_IMPORT_BINDINGS_0341
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
@@ -715,6 +716,7 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
   BookModels341? _models341;
   MgdLanguageStats20? _stats341;
   bool _cancel341 = false;
+  bool _recoveryBlocked341 = false;
   final _repaint341 = Stopwatch()..start();
   MgdLanguage20 get _language341 => _models341?.language ?? widget.language;
   ResearchMemory11 get _research341 => _models341?.research ?? widget.research;
@@ -757,7 +759,7 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
 
   Future<void> _import341(
       Future<File?> Function() select, String Function() source) async {
-    if (busy) return;
+    if (busy || _recoveryBlocked341) return;
     _cancel341 = false;
     _stats341 = _language341.stats();
     setState(() => busy = true);
@@ -804,6 +806,7 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
           await _restore341();
         } catch (recovery) {
           restoreFailed = true;
+          _recoveryBlocked341 = true;
           _progress341(
               'Importazione interrotta: $e. Recupero non completato: $recovery. '
               'Salvataggio automatico sospeso; non cancellare i dati.',
@@ -939,14 +942,16 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
                     runSpacing: 8,
                     children: [
                       FilledButton.icon(
-                        onPressed: busy || text.text.trim().isEmpty
+                        onPressed: busy ||
+                                _recoveryBlocked341 ||
+                                text.text.trim().isEmpty
                             ? null
                             : () => train(text.text),
                         icon: const Icon(Icons.psychology),
                         label: const Text('Impara testo incollato'),
                       ),
                       OutlinedButton.icon(
-                        onPressed: busy ? null : pick,
+                        onPressed: busy || _recoveryBlocked341 ? null : pick,
                         icon: const Icon(Icons.file_open),
                         label: const Text('Importa e impara libro/corpus'),
                       ),
@@ -954,7 +959,7 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Importa e impara libro/corpus è un’azione completa: dopo aver scelto il file MGD lo legge, lo incorpora e lo salva automaticamente. Non serve premere il pulsante del testo incollato.',
+                    'Questo percorso legge file TXT; non estrae PDF o EPUB. Importa e impara libro/corpus è un’azione completa: dopo aver scelto il file MGD lo legge, lo incorpora e lo salva automaticamente. Non serve premere il pulsante del testo incollato.',
                     style: TextStyle(fontSize: 12),
                   ),
                   if (busy) ...[
