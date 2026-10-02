@@ -22,15 +22,34 @@ jobs:
       - name: Prepare offline development environment (no credentials)
         run: |
           set -euo pipefail
-          mkdir -p dev-env
+          mkdir -p dev-env parts
           tar -czf dev-env/flutter-linux.tar.gz --exclude='*/artifacts/engine/android-*' --exclude='*/artifacts/engine/ios*' --exclude='*/artifacts/engine/darwin-*' --exclude='*/artifacts/engine/windows-*' --exclude='*/artifacts/engine/linux-arm64*' -C "$FLUTTER_ROOT" .
           tar -czf dev-env/pub-packages.tar.gz -C "$HOME/.pub-cache" hosted/pub.dev hosted-hashes/pub.dev
           tar -czf dev-env/project.tar.gz --exclude='.dart_tool' --exclude='build' -C mgd-neuro-app .
           flutter --version > dev-env/TOOLCHAIN.txt
           sha256sum dev-env/*.tar.gz > dev-env/SHA256.txt
+          tar -cf - -C dev-env . | split -b 250m -d - parts/environment.part.
       - uses: actions/upload-artifact@v4
         with:
-          name: MGD-0350-development-environment
-          path: dev-env
+          name: MGD-0350-dev-00
+          path: parts/environment.part.00
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0350-dev-01
+          path: parts/environment.part.01
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0350-dev-02
+          path: parts/environment.part.02
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0350-dev-03
+          path: parts/environment.part.03
           compression-level: 0
           retention-days: 1
