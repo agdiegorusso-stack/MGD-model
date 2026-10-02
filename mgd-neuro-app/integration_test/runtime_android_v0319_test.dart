@@ -1,3 +1,4 @@
+// LEGACY_ENTRY_ROUTE_0350
 // RUNTIME_VERSION_ASSERT_0350
 import 'dart:convert';
 
@@ -298,6 +299,18 @@ void main() {
     expect(find.text('Impara / esplora lingua').hitTestable(), findsOneWidget);
     await tester.tap(find.text('Impara / esplora lingua').hitTestable());
     await tester.pumpAndSettle();
+    // The default entry is now closed-book. Exercise the retained legacy UI
+    // through its actual navigation, without weakening the learning assertions.
+    final legacy = find.byTooltip('Archivio precedente e contatori storici');
+    for (
+      var n = 0;
+      n < 200 && tester.widget<IconButton>(legacy).onPressed == null;
+      n++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(legacy.hitTestable());
+    await tester.pumpAndSettle();
     expect(find.byType(TextField), findsOneWidget);
     await tester.enterText(
       find.byType(TextField),
@@ -305,7 +318,11 @@ void main() {
     );
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Impara testo incollato'));
+    await tester.scrollUntilVisible(
+      find.text('Impara testo incollato'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Impara testo incollato').hitTestable(), findsOneWidget);
     await tester.tap(find.text('Impara testo incollato').hitTestable());
@@ -332,6 +349,9 @@ void main() {
         .inspector;
     expect(learned341.language.sentences, 2);
     expect(learned341.metricRows('Documentate').length, 2);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('MGD · A libro chiuso'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.tap(find.text('Vivi'));
