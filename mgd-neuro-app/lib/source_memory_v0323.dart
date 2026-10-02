@@ -3,6 +3,14 @@ part of 'web_knowledge_explorer_v11.dart';
 /// Exact source memory. Retrieval is not semantic validation and never adds a
 /// claim, changes confidence or turns repeated exposure into another source.
 class SourceMemory323 {
+  static void forget33(ResearchMemory11 m,bool Function(String) matches) {
+    recover(m);
+    _rows(m).removeWhere((_,r)=>r is Map && matches('${r['text']??''}'));
+    final state=_state(m);
+    state['revision']=(state['revision'] as num? ?? 0).toInt()+1;
+    state['sourceCount']=_rows(m).values.whereType<Map>().map((r)=>r['url']).toSet().length;
+    _cache[m]=null;
+  }
   static final _cache = Expando<_SourceIndex323>();
   static Map<String, dynamic> _state(ResearchMemory11 m) {
     final old = m.state317['sourceMemory323'];

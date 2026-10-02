@@ -506,7 +506,7 @@ class MemoryInspector315 {
             .expand((s) => _maps315(s.audit315['verification']))
             .toList();
       case 'Entità':
-        return brain.entities.map((x) => x.toJson()).toList();
+        return brain.entities.where((x) => x.kind != 'deleted').map((x) => x.toJson()).toList();
       case 'Fatti':
         return brain
             .editableFacts12()
@@ -609,13 +609,13 @@ class MemoryInspector315 {
       case 'Visione':
       case 'Pattern visivi':
         return world.prototypes
-            .where((p) => p.modality == 'vision')
+            .where((p) => p.modality == 'vision' && p.centroid.isNotEmpty)
             .map((p) => p.toJson())
             .toList();
       case 'Udito':
       case 'Pattern uditivi':
         return world.prototypes
-            .where((p) => p.modality == 'audio')
+            .where((p) => p.modality == 'audio' && p.centroid.isNotEmpty)
             .map((p) => p.toJson())
             .toList();
       case 'Binding':

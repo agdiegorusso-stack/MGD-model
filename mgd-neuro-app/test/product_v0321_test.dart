@@ -1,4 +1,8 @@
+// BOOK_IMPORT_BINDINGS_0341
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import '../lib/book_import_v0341.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
@@ -246,6 +250,16 @@ void main() {
         m = ResearchMemory11(),
         l = MgdLanguage20();
     var saved = 0;
+    BookModels341? learned;
+    final dir = Directory.systemTemp.createTempSync('mgd-language-widget-');
+    const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathChannel, (_) async => dir.path);
+    addTearDown(() async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(pathChannel, null);
+      dir.deleteSync(recursive: true);
+    });
     final inspector =
         MemoryInspector315(brain: b, world: w, research: m, language: l);
     await tester.pumpWidget(MaterialApp(
@@ -256,6 +270,8 @@ void main() {
                 brain: b,
                 world: w,
                 research: m,
+                onModels341: (models) => learned = models,
+                checkpoint341: (_) async {},
                 onSave: () async {
                   saved++;
                 }))));
@@ -265,9 +281,11 @@ void main() {
     await tester.ensureVisible(find.text('Impara testo incollato'));
     await tester.runAsync(() async {
       await tester.tap(find.text('Impara testo incollato'));
-      for (var n = 0; n < 100 && saved == 0; n++) {
+      for (var n = 0; n < 400 && learned == null; n++) {
         await Future<void>.delayed(const Duration(milliseconds: 20));
       }
+      // BOOK_WIDGET_FINAL_IO_341: drain staging-file cleanup in the real zone.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pumpAndSettle();
     expect(saved, 1,
@@ -275,8 +293,11 @@ void main() {
             .widgetList<Text>(find.byType(Text))
             .map((t) => t.data)
             .join(' | '));
-    expect(l.sentences, 1);
-    expect(ResearchSemantics317.answer('Cosa produce il zorvello?', m),
+    expect(learned, isNotNull);
+    expect(learned!.language.sentences, 1);
+    expect(
+        ResearchSemantics317.answer(
+            'Cosa produce il zorvello?', learned!.research),
         contains('lumina'));
     await tester.scrollUntilVisible(find.text('Conoscenze documentate'), -250,
         scrollable: find.byType(Scrollable).first);

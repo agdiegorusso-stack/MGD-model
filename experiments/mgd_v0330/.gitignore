@@ -1,0 +1,7 @@
+results/dataset-*.json
+results-aot/dataset-*.json
+development-results/dataset-*.json
+*.aux
+*.log
+*.out
+*.pdf

@@ -14,6 +14,11 @@ class Intake324 {
 /// Versioned, source-backed user assertions. No scientific truth is inferred
 /// from geometry or from the classifier's uncalibrated score margin.
 class RelationalMemory324 {
+  static void forget33(ResearchMemory11 memory, bool Function(String) matches) {
+    _records(memory).removeWhere((_,r)=>r is Map &&
+      ['agent','patient','text','contextText','antecedent'].any((k)=>matches('${r[k]??''}')));
+    _bump(memory);
+  }
   static Map<String,dynamic> state(ResearchMemory11 memory) {
     final old=memory.state317['relationalMemory324'];
     if(old is Map<String,dynamic>) return old;

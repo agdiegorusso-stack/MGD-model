@@ -1,3 +1,4 @@
+// BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'plastic_language_brain_v04.dart';
@@ -45,6 +46,7 @@ class CorpusSemanticBridge22 {
     required MgdWorld06 world,
     required ResearchMemory11 memory,
     String? sourceFamily,
+    bool inlineExtraction341 = false,
   }) async {
     final clock = Stopwatch()..start();
     final digest = ResearchSemantics317.digest(ResearchSemantics317.norm(text));
@@ -55,8 +57,11 @@ class CorpusSemanticBridge22 {
         url: 'local://corpus/$digest',
         text: text,
         trust: .75);
-    final learned324=await RelationalMemory324.learnAsync(memory,text,source:sourceName);
-    final claims = await compute(_extract321, doc);
+    final learned324 =
+        await RelationalMemory324.learnAsync(memory, text, source: sourceName);
+    final claims = inlineExtraction341
+        ? _extract321(doc)
+        : await compute(_extract321, doc);
     final count = text
         .split(RegExp(r'(?<=[.!?])\s+|\n+'))
         .where((s) => s.trim().isNotEmpty)
@@ -90,7 +95,10 @@ class CorpusSemanticBridge22 {
       cognitiveSummary = cognitive.summary;
       memory.state317['localSources321'] = sources.toList();
     }
-    session.audit315['learnedReader324']={'added':learned324.added,'unresolved':learned324.unresolved};
+    session.audit315['learnedReader324'] = {
+      'added': learned324.added,
+      'unresolved': learned324.unresolved
+    };
     session.completedAtIso = DateTime.now().toIso8601String();
     session.audit315['elapsedMicros321'] = clock.elapsedMicroseconds;
     world.runtime319['lastLearning321'] = {
