@@ -24,6 +24,14 @@ jobs:
           flutter-version: '3.47.5'
           channel: stable
           cache: true
+      - name: Restore Gradle dependencies
+        id: gradle-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: mgd-gradle-${{ runner.os }}-flutter3475-v1
       - name: Restore stable Android signing key
         uses: actions/cache@v4
         with:
@@ -42,7 +50,7 @@ jobs:
           set -euo pipefail
           python3 mgd-neuro-app/tool/integrate_book_understanding_0342.py mgd-neuro-app
           python3 mgd-neuro-app/tool/refine_book_understanding_0342.py
-          dart format mgd-neuro-app/lib/book_understanding_v0342.dart mgd-neuro-app/lib/book_lab_service_v0342.dart mgd-neuro-app/lib/book_lab_page_v0342.dart mgd-neuro-app/lib/main.dart mgd-neuro-app/lib/mgd_language_v020.dart mgd-neuro-app/lib/corpus_semantic_bridge_v022.dart mgd-neuro-app/lib/book_import_v0341.dart mgd-neuro-app/lib/knowledge_deletion_v0330.dart mgd-neuro-app/test/book_understanding_v0342_test.dart mgd-neuro-app/tool/book_eval_v0342_test.dart mgd-neuro-app/integration_test/book_understanding_android_v0342_test.dart
+          dart format mgd-neuro-app/lib/book_understanding_v0342.dart mgd-neuro-app/lib/book_lab_service_v0342.dart mgd-neuro-app/lib/book_lab_page_v0342.dart mgd-neuro-app/lib/main.dart mgd-neuro-app/lib/mgd_language_v020.dart mgd-neuro-app/lib/corpus_semantic_bridge_v022.dart mgd-neuro-app/lib/book_import_v0341.dart mgd-neuro-app/lib/knowledge_deletion_v0330.dart mgd-neuro-app/test/book_understanding_v0342_test.dart mgd-neuro-app/tool/book_eval_v0342_test.dart mgd-neuro-app/integration_test/book_understanding_android_v0342_test.dart mgd-neuro-app/integration_test/book_android_v0341_test.dart
       - name: Dependencies
         working-directory: mgd-neuro-app
         run: flutter pub get
@@ -80,12 +88,22 @@ jobs:
         run: |
           set -o pipefail
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.34.2.log
+      - name: Publish evaluated reader diagnostics before Android
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neuro-0.34.2-evaluation
+          path: |
+            mgd-neuro-app/*-0.34.2.log
+            mgd-neuro-app/*-0.34.2.json
+            mgd-neuro-app/book-demo-0.34.2.txt
+            mgd-neuro-app/BUILD-COMMIT.txt
+          retention-days: 30
       - name: Enable Android KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Android baseline CLS book import and comprehension lifecycle
+      - name: Android book lab and all previous lifecycle regressions
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -96,10 +114,10 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
           script: |
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_understanding_android_v0342_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-understanding-0.34.2.log'
             cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-baseline-0.34.2.log'
             cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/cls_android_v0340_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-cls-0.34.2.log'
             cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_android_v0341_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-book-0.34.2.log'
-            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_understanding_android_v0342_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-understanding-0.34.2.log'
       - name: Build signed release APK
         working-directory: mgd-neuro-app
         run: |
@@ -125,6 +143,14 @@ jobs:
           name: MGD-Neuro-0.34.2-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+      - name: Save downloaded Gradle dependencies
+        if: always() && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: mgd-gradle-${{ runner.os }}-flutter3475-v1
       - name: Upload exact integrated source
         if: always()
         uses: actions/upload-artifact@v4
