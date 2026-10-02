@@ -1,3 +1,4 @@
+import 'closed_book_service_v0350.dart';
 import 'cls_core_v0340.dart';
 import 'cls_store_v0340.dart';
 import 'web_knowledge_explorer_v11.dart';
@@ -62,6 +63,7 @@ class ClsBridge340 {
   }
 
   static Future<void> forgetLabel(String label) async {
+    await ClosedBookBridge350.forgetConcept(label);
     final store = active;
     if (store == null) return;
     final rows = await store.db.query('episodes',
@@ -72,6 +74,7 @@ class ClsBridge340 {
   }
 
   static Future<void> clear() async {
+    await ClosedBookBridge350.reset();
     final store = active;
     if (store == null) return;
     await store.db.transaction((tx) async {

@@ -1,3 +1,5 @@
+import 'closed_book_service_v0350.dart';
+import 'closed_book_page_v0350.dart';
 // BOOK_CHAT_WIRING_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
@@ -166,6 +168,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    ClosedBookBridge350.enabled = true;
     WidgetsBinding.instance.addObserver(this);
     SchedulerBinding.instance.addTimingsCallback(_onFrameTimings18);
     _boot();
@@ -174,6 +177,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   @override
   void dispose() {
     BookLab342.closeChat();
+    ClosedBookBridge350.close();
     SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings18);
     WidgetsBinding.instance.removeObserver(this);
     _chat.dispose();
@@ -720,19 +724,21 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                   world: _world,
                   research: _researchMemory,
                   language: _language20),
-              child: MgdLanguageLab20(
-                  language: _language20,
-                  brain: _brain,
-                  world: _world,
-                  research: _researchMemory,
-                  onImportBusy341: (active) => _bookImportBusy341 = active,
-                  onModels341: (models) {
-                    _brain = models.brain;
-                    _world = models.world;
-                    _researchMemory = models.research;
-                    _language20 = models.language;
-                  },
-                  onSave: _saveAllSilent22))));
+              child: ClosedBookPage350(
+                  legacyMemory: _researchMemory,
+                  legacyBuilder: () => MgdLanguageLab20(
+                      language: _language20,
+                      brain: _brain,
+                      world: _world,
+                      research: _researchMemory,
+                      onImportBusy341: (active) => _bookImportBusy341 = active,
+                      onModels341: (models) {
+                        _brain = models.brain;
+                        _world = models.world;
+                        _researchMemory = models.research;
+                        _language20 = models.language;
+                      },
+                      onSave: _saveAllSilent22)))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -764,14 +770,18 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
-      final bookReply342 = await BookLab342.chat(_researchMemory, text);
+      final closedReply350 = await ClosedBookBridge350.chat(text);
+      final bookReply342 =
+          closedReply350 ?? await BookLab342.chat(_researchMemory, text);
       if (bookReply342 != null) {
         final guarded = _brain.guardResponse331(text, bookReply342);
         if (!mounted) return;
         setState(() {
           _messages
               .add(ChatMessage04(user: false, text: guarded, prompt: text));
-          _status = 'Risposta dal libro selezionato, con evidenze.';
+          _status = closedReply350 == null
+              ? 'Risposta dall’archivio precedente, con evidenze.'
+              : 'Risposta a libro chiuso dalla memoria degli eventi.';
         });
         _scrollDown();
         await _save(
@@ -1258,9 +1268,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Azzerare MGD-Neuro 0.17?'),
+        title: const Text('Azzerare MGD-Neuro?'),
         content: const Text(
-            'Verranno cancellati episodi, relazioni, concetti e connessioni plastiche.'),
+            'Verranno cancellati episodi, relazioni, concetti, letture, competenze apprese e verifiche. I file originali non vengono eliminati.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -1282,7 +1292,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _world = MgdWorld06();
       _researchMemory = ResearchMemory11();
       _messages.clear();
-      _status = 'Nuovo cervello 0.18 creato';
+      _language20 = MgdLanguage20();
+      _status = 'Nuova memoria MGD 0.35.0 creata';
     });
     await _save();
   }
@@ -2523,6 +2534,7 @@ class _MindPage07 extends StatelessWidget {
                   ]),
                   const SizedBox(height: 10),
                   FilledButton.tonalIcon(
+                    key: const ValueKey('closed-open350'),
                     onPressed: busy ? null : onLanguage20,
                     icon: const Icon(Icons.school_outlined),
                     label: const Text('Impara / esplora lingua'),

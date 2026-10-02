@@ -281,6 +281,22 @@ class BookEngine342 {
             .toDouble();
   }
 
+  /// Closed-book inference: takes only structured assertions and provenance.
+  /// No source passages, search postings or full-text reader are constructed.
+  BookEngine342.fromKnowledge(
+      List<BookFact342> input, Map<String, Map<String, dynamic>> provenance)
+      : rows = const [] {
+    byId.addAll(provenance);
+    facts.addAll(input);
+    for (final f in input) {
+      (f.universal ? rules : bySubject).putIfAbsent(f.subject, () => []).add(f);
+    }
+    averageLength = 1;
+    fingerprint = sha256
+        .convert(utf8.encode(input.map((f) => f.key).join('\n')))
+        .toString();
+  }
+
   static BookFact342? atomic(String text, String id) {
     var s = bookNorm342(text);
     if (s.endsWith('?') ||
