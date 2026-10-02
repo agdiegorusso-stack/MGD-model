@@ -1,3 +1,4 @@
+// BOOK_FIXTURE_PROVENANCE_0342
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -20,6 +21,7 @@ ResearchMemory11 memory342() {
   SourceMemory323.retain(
       r,
       WebDocument11(
+          family: 'locale:test342',
           provider: 'Android fixture',
           title: 'Manuale Android',
           url: 'local://book/android342/1',

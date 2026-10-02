@@ -1,3 +1,4 @@
+// BOOK_SCROLL_REGRESSION_0342
 // BOOK_IMPORT_BINDINGS_0341
 import 'dart:convert';
 import 'dart:io';
@@ -278,7 +279,9 @@ void main() {
     await tester.enterText(
         find.byType(TextField), 'Il zorvello produce lumina.');
     await tester.pump();
-    await tester.ensureVisible(find.text('Impara testo incollato'));
+    await tester.scrollUntilVisible(find.text('Impara testo incollato'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.runAsync(() async {
       await tester.tap(find.text('Impara testo incollato'));
       for (var n = 0; n < 400 && learned == null; n++) {

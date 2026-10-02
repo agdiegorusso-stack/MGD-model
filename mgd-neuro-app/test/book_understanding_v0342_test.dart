@@ -1,3 +1,4 @@
+// BOOK_FIXTURE_PROVENANCE_0342
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -302,6 +303,7 @@ void main() {
     SourceMemory323.retain(
         m,
         WebDocument11(
+            family: 'locale:test342',
             provider: 'Test',
             title: 'Manuale',
             url: 'local://book/abc/1',

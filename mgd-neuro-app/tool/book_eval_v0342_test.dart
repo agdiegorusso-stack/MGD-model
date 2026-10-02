@@ -1,3 +1,4 @@
+// BOOK_FIXTURE_PROVENANCE_0342
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,6 +95,7 @@ void main() {
     SourceMemory323.retain(
         memory,
         WebDocument11(
+            family: 'locale:test342',
             provider: 'Corpus originale di sviluppo',
             title: 'Piccolo mondo di prova',
             url: 'local://book/demo342/1',
