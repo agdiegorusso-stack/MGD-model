@@ -1,3 +1,4 @@
+// BOOK_SOURCE_IDENTITY_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -47,6 +48,7 @@ class CorpusSemanticBridge22 {
     required ResearchMemory11 memory,
     String? sourceFamily,
     bool inlineExtraction341 = false,
+    String? sourceUrl342,
   }) async {
     final clock = Stopwatch()..start();
     final digest = ResearchSemantics317.digest(ResearchSemantics317.norm(text));
@@ -54,7 +56,7 @@ class CorpusSemanticBridge22 {
         provider: 'Corpus locale',
         family: 'locale:utente',
         title: sourceName,
-        url: 'local://corpus/$digest',
+        url: sourceUrl342 ?? 'local://corpus/$digest',
         text: text,
         trust: .75);
     final learned324 =

@@ -1,3 +1,4 @@
+// BOOK_LAB_WIRING_0342
 // BOOK_RECOVERY_GUARD_341
 // BOOK_IMPORT_BINDINGS_0341
 // BOOK_IMPORT_REPAIR_0341
@@ -7,6 +8,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:isolate';
 import 'book_import_v0341.dart';
+import 'book_lab_page_v0342.dart';
 import 'cls_bridge_v0340.dart';
 import 'dart:math';
 
@@ -924,6 +926,28 @@ class _MgdLanguageLab20State extends State<MgdLanguageLab20> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('book-lab-open'),
+                    onPressed: busy || _recoveryBlocked341
+                        ? null
+                        : () async {
+                            setState(() => busy = true);
+                            try {
+                              await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                      builder: (_) => BookLabPage342(
+                                          memory: _research341,
+                                          onSave: widget.onSave)));
+                            } finally {
+                              if (mounted) setState(() => busy = false);
+                            }
+                          },
+                    icon: const Icon(Icons.fact_check_outlined),
+                    label: const Text('Verifica del libro'),
+                  ),
+                  const Text(
+                      'Interroga i passaggi, prova deduzioni e nuove situazioni, misura le risposte con riferimenti separati.'),
                   const SizedBox(height: 16),
                   TextField(
                     controller: text,

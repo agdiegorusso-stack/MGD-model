@@ -1,5 +1,7 @@
+// BOOK_EXAM_DELETION_0342
 import 'package:flutter/foundation.dart';
 import 'cls_bridge_v0340.dart';
+import 'book_lab_service_v0342.dart';
 
 import 'experience_page_v0330.dart' show deleteWorker33;
 import 'experience_memory_v0330.dart';
@@ -62,10 +64,10 @@ class KnowledgeDeletion33 {
     bool deep(dynamic v) => v is String
         ? matches(v)
         : v is Map
-        ? v.values.any(deep)
-        : v is Iterable
-        ? v.any(deep)
-        : false;
+            ? v.values.any(deep)
+            : v is Iterable
+                ? v.any(deep)
+                : false;
     // Rebuild the expensive trainable component off the UI thread BEFORE mutation.
     final next = await compute(deleteWorker33, (
       memory: world.experience33.toJson(),
@@ -135,6 +137,18 @@ class KnowledgeDeletion33 {
     if (queue is List) queue.removeWhere(deep);
     RelationalMemory324.forget33(research, matches);
     SourceMemory323.forget33(research, matches);
+    BookLab342.closeChat();
+    final lab = research.state317['bookLab342'];
+    if (lab is Map) {
+      final tests = lab['cases'];
+      if (tests is Map) {
+        for (final value in tests.values) {
+          if (value is List) value.removeWhere(deep);
+        }
+      }
+      final reports = lab['reports'];
+      if (reports is List) reports.removeWhere(deep);
+    }
     research.lastGoal = null;
     research.lastStatus = 'Memoria modificata dall’utente.';
     world.experience33 = next;

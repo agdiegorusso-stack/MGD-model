@@ -1,6 +1,8 @@
+// BOOK_CHAT_WIRING_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
 import 'book_import_v0341.dart';
+import 'book_lab_service_v0342.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -171,6 +173,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    BookLab342.closeChat();
     SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings18);
     WidgetsBinding.instance.removeObserver(this);
     _chat.dispose();
@@ -761,6 +764,20 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      final bookReply342 = await BookLab342.chat(_researchMemory, text);
+      if (bookReply342 != null) {
+        final guarded = _brain.guardResponse331(text, bookReply342);
+        if (!mounted) return;
+        setState(() {
+          _messages
+              .add(ChatMessage04(user: false, text: guarded, prompt: text));
+          _status = 'Risposta dal libro selezionato, con evidenze.';
+        });
+        _scrollDown();
+        await _save(
+            'Domanda al libro completata; nessuna risposta appresa come nuova conoscenza');
+        return;
+      }
       await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||

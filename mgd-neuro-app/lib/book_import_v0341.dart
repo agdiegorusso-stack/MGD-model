@@ -1,3 +1,4 @@
+// BOOK_SOURCE_IDENTITY_0342
 // Bounded book ingestion. The UI never owns a second in-memory book or parses
 // the complete corpus. Worker checkpoints are committed before acknowledging.
 import 'dart:async';
@@ -27,7 +28,7 @@ class BookModels341 {
         'research_v11': research.toJson(),
         'language_v20': language.toJson(),
         'checkpoint_v0319': {
-          'version': '0.34.1',
+          'version': '0.34.2',
           'at': DateTime.now().toIso8601String(),
           'brainEpisodes': brain.episodes.length,
           'worldCycles': world.thoughtCycles,
@@ -368,7 +369,8 @@ Future<void> _bookWorker341(List<Object> args) async {
               brain: models.brain,
               world: models.world,
               memory: models.research,
-              inlineExtraction341: true);
+              inlineExtraction341: true,
+              sourceUrl342: 'local://book/$identity/$blocks');
         } else {
           oversized++;
           // Raw text is already archived; avoid inferring facts from a severed
