@@ -1,0 +1,567 @@
+{
+  "label": "Valutazione di sviluppo con riferimenti separati; non held-out esterno e non libro utente",
+  "books": [
+    {
+      "id": "d1",
+      "title": "Il prestito",
+      "text": "Capitolo 1\nMarta possedeva una chiave. La prestò a Luca. Luca la nascose sotto il vaso.\nCapitolo 2\nLuca spostò la chiave nella scatola. La lanterna era rossa.",
+      "cases": [
+        {
+          "id": "d1-q1",
+          "question": "Chi prestò la chiave?",
+          "answers": [
+            "marta"
+          ],
+          "expected": "answer",
+          "category": "ruoli",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q2",
+          "question": "A chi Marta prestò la chiave?",
+          "answers": [
+            "luca"
+          ],
+          "expected": "answer",
+          "category": "destinatario",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q3",
+          "question": "Chi nascose la chiave?",
+          "answers": [
+            "luca"
+          ],
+          "expected": "answer",
+          "category": "coreferenza",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q4",
+          "question": "Dove si trova la chiave?",
+          "answers": [
+            "nella scatola"
+          ],
+          "expected": "answer",
+          "category": "cambiamento",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q5",
+          "question": "Di che colore era la lanterna?",
+          "answers": [
+            "rossa"
+          ],
+          "expected": "answer",
+          "category": "proprietà",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q6",
+          "question": "Perché Luca nascose la chiave?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "motivo assente",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q7",
+          "question": "Di che colore è la scatola?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "informazione assente",
+          "assumptions": ""
+        },
+        {
+          "id": "d1-q8",
+          "question": "Dove si trovava la chiave prima di essere spostata?",
+          "answers": [
+            "sotto il vaso"
+          ],
+          "expected": "answer",
+          "category": "ordine temporale complesso",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "title": "Il cancello",
+      "text": "Serena chiuse il cancello perché il vento spostava il telo. Nereo aprì la finestra. Il cane insegue il gatto. Il topo è aiutato dal gatto.",
+      "cases": [
+        {
+          "id": "d2-q1",
+          "question": "Chi chiuse il cancello?",
+          "answers": [
+            "serena"
+          ],
+          "expected": "answer",
+          "category": "ruoli",
+          "assumptions": ""
+        },
+        {
+          "id": "d2-q2",
+          "question": "Perché Serena chiuse il cancello?",
+          "answers": [
+            "Vento spostava telo."
+          ],
+          "expected": "answer",
+          "category": "causa esplicita",
+          "assumptions": ""
+        },
+        {
+          "id": "d2-q3",
+          "question": "Chi aprì la finestra?",
+          "answers": [
+            "nereo"
+          ],
+          "expected": "answer",
+          "category": "passato",
+          "assumptions": ""
+        },
+        {
+          "id": "d2-q4",
+          "question": "Chi insegue il gatto?",
+          "answers": [
+            "cane"
+          ],
+          "expected": "answer",
+          "category": "ruoli",
+          "assumptions": ""
+        },
+        {
+          "id": "d2-q5",
+          "question": "Chi aiuta il topo?",
+          "answers": [
+            "gatto"
+          ],
+          "expected": "answer",
+          "category": "passivo",
+          "assumptions": ""
+        },
+        {
+          "id": "d2-q6",
+          "question": "Chi insegue il cane?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "direzione",
+          "assumptions": ""
+        },
+        {
+          "id": "d2-q7",
+          "question": "Perché Nereo aprì la finestra?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "causa assente",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d3",
+      "title": "Un manuale immaginario",
+      "text": "Ogni neride è un mammifero. Ogni mammifero produce latte. Luma è un neride. Il talarco è una fibra sintetica. Il talverio contiene rame. Il fluro assorbe luce.",
+      "cases": [
+        {
+          "id": "d3-q1",
+          "question": "Che cosa produce Luma?",
+          "answers": [
+            "latte"
+          ],
+          "expected": "answer",
+          "category": "regole",
+          "assumptions": ""
+        },
+        {
+          "id": "d3-q2",
+          "question": "Che cosa significa talarco?",
+          "answers": [
+            "fibra sintetica"
+          ],
+          "expected": "answer",
+          "category": "definizione",
+          "assumptions": ""
+        },
+        {
+          "id": "d3-q3",
+          "question": "Che cosa contiene il talverio?",
+          "answers": [
+            "rame"
+          ],
+          "expected": "answer",
+          "category": "fatto",
+          "assumptions": ""
+        },
+        {
+          "id": "d3-q4",
+          "question": "Che cosa assorbe il fluro?",
+          "answers": [
+            "luce"
+          ],
+          "expected": "answer",
+          "category": "fatto",
+          "assumptions": ""
+        },
+        {
+          "id": "d3-q5",
+          "question": "Che cosa produce Zeta?",
+          "answers": [
+            "latte"
+          ],
+          "expected": "answer",
+          "category": "trasferimento",
+          "assumptions": "Zeta è un neride."
+        },
+        {
+          "id": "d3-q6",
+          "question": "Chi contiene rame?",
+          "answers": [
+            "talverio"
+          ],
+          "expected": "answer",
+          "category": "inversione domanda",
+          "assumptions": ""
+        },
+        {
+          "id": "d3-q7",
+          "question": "Il talverio produce luce?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "assenza",
+          "assumptions": ""
+        },
+        {
+          "id": "d3-q8",
+          "question": "Luma è un mammifero?",
+          "answers": [
+            "Sì"
+          ],
+          "expected": "answer",
+          "category": "regole",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d4",
+      "title": "Dubbi e negazioni",
+      "text": "Luca aiuta Marta. Luca non aiuta Marta. Ada non contiene zinco. Secondo Dario il cofanetto contiene oro. Forse il cofanetto contiene argento. Il vento precede la pioggia.",
+      "cases": [
+        {
+          "id": "d4-q1",
+          "question": "Chi aiuta Marta?",
+          "answers": [],
+          "expected": "conflict",
+          "category": "contraddizione",
+          "assumptions": ""
+        },
+        {
+          "id": "d4-q2",
+          "question": "Ada contiene zinco?",
+          "answers": [
+            "No"
+          ],
+          "expected": "answer",
+          "category": "negazione",
+          "assumptions": ""
+        },
+        {
+          "id": "d4-q3",
+          "question": "Che cosa contiene il cofanetto?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "attribuzione",
+          "assumptions": ""
+        },
+        {
+          "id": "d4-q4",
+          "question": "Che cosa precede il vento?",
+          "answers": [
+            "pioggia"
+          ],
+          "expected": "answer",
+          "category": "ordine dichiarato",
+          "assumptions": ""
+        },
+        {
+          "id": "d4-q5",
+          "question": "La pioggia causa il vento?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "non invertire causa",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d5",
+      "title": "Il laboratorio",
+      "text": "Lidia coltiva il lino. Una molla immagazzina energia. Il metallo viene trasportato dal carro. Il dispositivo converte luce.\nCon il termine ricalco si intende una copia ottenuta seguendo un disegno.",
+      "cases": [
+        {
+          "id": "d5-q1",
+          "question": "Chi coltiva il lino?",
+          "answers": [
+            "lidia"
+          ],
+          "expected": "answer",
+          "category": "verbo nuovo",
+          "assumptions": ""
+        },
+        {
+          "id": "d5-q2",
+          "question": "Che cosa immagazzina la molla?",
+          "answers": [
+            "energia"
+          ],
+          "expected": "answer",
+          "category": "verbo nuovo",
+          "assumptions": ""
+        },
+        {
+          "id": "d5-q3",
+          "question": "Chi trasporta il metallo?",
+          "answers": [
+            "carro"
+          ],
+          "expected": "answer",
+          "category": "passivo",
+          "assumptions": ""
+        },
+        {
+          "id": "d5-q4",
+          "question": "Che cosa converte il dispositivo?",
+          "answers": [
+            "luce"
+          ],
+          "expected": "answer",
+          "category": "fatto",
+          "assumptions": ""
+        },
+        {
+          "id": "d5-q5",
+          "question": "Che cosa significa ricalco?",
+          "answers": [
+            "copia ottenuta seguendo un disegno"
+          ],
+          "expected": "answer",
+          "category": "definizione perifrastica",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d6",
+      "title": "I sacchi e la lettera",
+      "text": "Nel magazzino c’erano due sacchi. Il fattorino ne portò altri tre. Eva lesse la lettera che Milo aveva lasciato prima di partire. Poi la ripiegò con cura. Milo era partito perché temeva il temporale.",
+      "cases": [
+        {
+          "id": "d6-q1",
+          "question": "Quanti sacchi ci sono nel magazzino?",
+          "answers": [
+            "cinque"
+          ],
+          "expected": "answer",
+          "category": "calcolo",
+          "assumptions": ""
+        },
+        {
+          "id": "d6-q2",
+          "question": "Chi aveva lasciato la lettera?",
+          "answers": [
+            "milo"
+          ],
+          "expected": "answer",
+          "category": "subordinata",
+          "assumptions": ""
+        },
+        {
+          "id": "d6-q3",
+          "question": "Chi ripiegò la lettera?",
+          "answers": [
+            "eva"
+          ],
+          "expected": "answer",
+          "category": "coreferenza lunga",
+          "assumptions": ""
+        },
+        {
+          "id": "d6-q4",
+          "question": "Perché Milo era partito?",
+          "answers": [
+            "temeva il temporale"
+          ],
+          "expected": "answer",
+          "category": "motivazione complessa",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d7",
+      "title": "La stanza",
+      "text": "Marta vede Anna. Lei nasconde la chiave. Luca prende il vaso. Luca lo mette nella cassa. Sofia non apre la porta. Il bambino consegna il foglio alla maestra.",
+      "cases": [
+        {
+          "id": "d7-q1",
+          "question": "Chi nasconde la chiave?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "pronome ambiguo",
+          "assumptions": ""
+        },
+        {
+          "id": "d7-q2",
+          "question": "Dove si trova il vaso?",
+          "answers": [
+            "nella cassa"
+          ],
+          "expected": "answer",
+          "category": "clitico maschile",
+          "assumptions": ""
+        },
+        {
+          "id": "d7-q3",
+          "question": "Sofia apre la porta?",
+          "answers": [
+            "No"
+          ],
+          "expected": "answer",
+          "category": "negazione evento",
+          "assumptions": ""
+        },
+        {
+          "id": "d7-q4",
+          "question": "A chi il bambino consegna il foglio?",
+          "answers": [
+            "maestra"
+          ],
+          "expected": "answer",
+          "category": "destinatario",
+          "assumptions": ""
+        },
+        {
+          "id": "d7-q5",
+          "question": "Chi legge il foglio?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "assenza",
+          "assumptions": ""
+        }
+      ]
+    },
+    {
+      "id": "d8",
+      "title": "La promessa",
+      "text": "«La chiave è nella torre», disse il guardiano. In realtà la chiave era nella cassa. Rina promise che sarebbe tornata, ma cambiò idea dopo aver letto il messaggio.",
+      "cases": [
+        {
+          "id": "d8-q1",
+          "question": "Dove si trova la chiave?",
+          "answers": [
+            "nella cassa"
+          ],
+          "expected": "answer",
+          "category": "discorso e realtà",
+          "assumptions": ""
+        },
+        {
+          "id": "d8-q2",
+          "question": "Che cosa promise Rina?",
+          "answers": [
+            "che sarebbe tornata"
+          ],
+          "expected": "answer",
+          "category": "intenzione",
+          "assumptions": ""
+        },
+        {
+          "id": "d8-q3",
+          "question": "Perché Rina cambiò idea?",
+          "answers": [],
+          "expected": "unknown",
+          "category": "motivazione non causale",
+          "assumptions": ""
+        }
+      ]
+    }
+  ],
+  "grammarTraining": [
+    "La porta è aperta.",
+    "Le porte sono aperte.",
+    "Il cassetto è vuoto.",
+    "I cassetti sono vuoti.",
+    "Il bambino apre la porta.",
+    "I bambini aprono la scatola.",
+    "La madre legge il libro.",
+    "Le madri leggono il giornale.",
+    "La bambina chiude la scatola.",
+    "Le bambine chiudono la porta."
+  ],
+  "grammarPairs": [
+    {
+      "correct": "Le chiavi del vicino sono nuove.",
+      "incorrect": "Le chiavi del vicino è nuove."
+    },
+    {
+      "correct": "La chiave dei vicini è nuova.",
+      "incorrect": "La chiave dei vicini sono nuova."
+    },
+    {
+      "correct": "I cancelli del parco sono aperti.",
+      "incorrect": "I cancelli del parco è aperti."
+    },
+    {
+      "correct": "Il cancello dei giardini è aperto.",
+      "incorrect": "Il cancello dei giardini sono aperto."
+    },
+    {
+      "correct": "Le sorelle aprono il baule.",
+      "incorrect": "Le sorelle apre il baule."
+    },
+    {
+      "correct": "La sorella apre il baule.",
+      "incorrect": "La sorella aprono il baule."
+    },
+    {
+      "correct": "I custodi chiudono la finestra.",
+      "incorrect": "I custodi chiude la finestra."
+    },
+    {
+      "correct": "La custode chiude la finestra.",
+      "incorrect": "La custode chiudono la finestra."
+    },
+    {
+      "correct": "Le studentesse leggono il manuale.",
+      "incorrect": "Le studentesse legge il manuale."
+    },
+    {
+      "correct": "La studentessa legge il manuale.",
+      "incorrect": "La studentessa leggono il manuale."
+    },
+    {
+      "correct": "Le città sono antiche.",
+      "incorrect": "Le città è antiche."
+    },
+    {
+      "correct": "La città è antica.",
+      "incorrect": "La città sono antica."
+    },
+    {
+      "correct": "Alex e Sam sono pronti.",
+      "incorrect": "Alex e Sam è pronti."
+    },
+    {
+      "correct": "Il gruppo di bambini è pronto.",
+      "incorrect": "Il gruppo di bambini sono pronto."
+    },
+    {
+      "correct": "Le chiavi non sono nuove.",
+      "incorrect": "Le chiavi non è nuove."
+    },
+    {
+      "correct": "La chiave non è nuova.",
+      "incorrect": "La chiave non sono nuova."
+    }
+  ]
+}
