@@ -35,3 +35,11 @@ edit('integration_test/runtime_android_v0319_test.dart','LEGACY_ENTRY_ROUTE_0350
  ("    await tester.ensureVisible(find.text('Impara testo incollato'));", "    await tester.scrollUntilVisible(find.text('Impara testo incollato'), 180,\n        scrollable: find.byType(Scrollable).first);"),
  ("    expect(learned341.metricRows('Documentate').length, 2);\n    await tester.pageBack();\n    await tester.pumpAndSettle();", "    expect(learned341.metricRows('Documentate').length, 2);\n    await tester.pageBack();\n    await tester.pumpAndSettle();\n    expect(find.text('MGD · A libro chiuso'), findsOneWidget);\n    await tester.pageBack();\n    await tester.pumpAndSettle();"),
 ])
+# A tooltip finder resolves to a Tooltip, not an IconButton. Poll actual app state.
+p=root/'integration_test/runtime_android_v0319_test.dart'
+s=p.read_text()
+old='tester.widget<IconButton>(legacy).onPressed == null'
+if old in s:
+ if s.count(old)!=1:raise ValueError('Ambiguous legacy ready-state wait')
+ s=s.replace(old,"!(tester.widget<Text>(find.byKey(const ValueKey('closed-status'))).data ?? '').startsWith('Pronto.')",1)
+ p.write_text(s)
