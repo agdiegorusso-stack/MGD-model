@@ -251,14 +251,14 @@ void main() {
         l = MgdLanguage20();
     var saved = 0;
     BookModels341? learned;
-    final dir = await Directory.systemTemp.createTemp('mgd-language-widget-');
+    final dir = Directory.systemTemp.createTempSync('mgd-language-widget-');
     const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathChannel, (_) async => dir.path);
     addTearDown(() async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(pathChannel, null);
-      await dir.delete(recursive: true);
+      dir.deleteSync(recursive: true);
     });
     final inspector =
         MemoryInspector315(brain: b, world: w, research: m, language: l);
@@ -284,6 +284,8 @@ void main() {
       for (var n = 0; n < 400 && learned == null; n++) {
         await Future<void>.delayed(const Duration(milliseconds: 20));
       }
+      // BOOK_WIDGET_FINAL_IO_341: drain staging-file cleanup in the real zone.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     await tester.pumpAndSettle();
     expect(saved, 1,
