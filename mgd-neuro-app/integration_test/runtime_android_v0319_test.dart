@@ -304,7 +304,12 @@ void main() {
     final legacy = find.byTooltip('Archivio precedente e contatori storici');
     for (
       var n = 0;
-      n < 200 && tester.widget<IconButton>(legacy).onPressed == null;
+      n < 200 &&
+          !(tester
+                      .widget<Text>(find.byKey(const ValueKey('closed-status')))
+                      .data ??
+                  '')
+              .startsWith('Pronto.');
       n++
     ) {
       await tester.pump(const Duration(milliseconds: 100));
