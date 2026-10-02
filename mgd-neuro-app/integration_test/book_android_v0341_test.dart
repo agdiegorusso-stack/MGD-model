@@ -67,7 +67,9 @@ void main() {
     await tester.enterText(find.byType(TextField).first, text);
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
-    await tester.ensureVisible(find.text('Impara testo incollato'));
+    await tester.scrollUntilVisible(find.text('Impara testo incollato'), 180,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Impara testo incollato'));
     var sawCancel = false, done = false;
     for (var i = 0; i < 1800; i++) {
