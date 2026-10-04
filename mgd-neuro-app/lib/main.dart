@@ -1,5 +1,7 @@
 import 'closed_book_service_v0350.dart';
 import 'closed_book_page_v0350.dart';
+import 'cognitive_core_v0400.dart';
+import 'cognitive_core_page_v0400.dart';
 // BOOK_CHAT_WIRING_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
@@ -178,6 +180,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   void dispose() {
     BookLab342.closeChat();
     ClosedBookBridge350.close();
+    unawaited(CognitiveCoreBridge400.close());
     SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings18);
     WidgetsBinding.instance.removeObserver(this);
     _chat.dispose();
@@ -788,6 +791,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             'Domanda al libro completata; nessuna risposta appresa come nuova conoscenza');
         return;
       }
+      final cognitiveReply400 = await CognitiveCoreBridge400.processChat(text);
       await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||
@@ -864,7 +868,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           ? await ClsBridge340.quote(text)
           : null;
       final semanticAnswer =
-          sourced317 ?? episodic340 ?? grounded ?? languageAnswer;
+          sourced317 ?? cognitiveReply400 ?? episodic340 ?? grounded ?? languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||
               curiosityAnswer != null)
@@ -1287,13 +1291,14 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     await _researchPersistence.clear();
     await _languagePersistence20.clear();
     await ClsBridge340.clear();
+    await CognitiveCoreBridge400.reset();
     setState(() {
       _brain = PlasticLanguageBrain04();
       _world = MgdWorld06();
       _researchMemory = ResearchMemory11();
       _messages.clear();
       _language20 = MgdLanguage20();
-      _status = 'Nuova memoria MGD 0.35.2 creata';
+      _status = 'Nuova memoria MGD 0.40.0 creata';
     });
     await _save();
   }
@@ -2538,6 +2543,14 @@ class _MindPage07 extends StatelessWidget {
                     onPressed: busy ? null : onLanguage20,
                     icon: const Icon(Icons.school_outlined),
                     label: const Text('Impara / esplora lingua'),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('cognitive-open400'),
+                    onPressed: busy ? null : () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CognitiveCorePage400())),
+                    icon: const Icon(Icons.psychology_alt_outlined),
+                    label: const Text('Cognitive Core 0.40'),
                   ),
                 ],
               );
