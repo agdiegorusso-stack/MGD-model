@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:mgd_neuro_mobile/mgd_language_v020.dart';
+import 'package:mgd_neuro_mobile/generative_language_v0420.dart';
 import 'package:mgd_neuro_mobile/cognitive_core_v0400.dart';
 import 'package:mgd_neuro_mobile/social_cognition_v0410.dart';
 import 'package:mgd_neuro_mobile/dialogue_engine_v0410.dart';
@@ -20,9 +21,9 @@ void main() {
             'Luca apre la finestra con attenzione. '
             'Marta osserva la finestra con attenzione.');
       }
-      final out=l.generateOpen420(
+      final out=GenerativeLanguage420(l).realize(
         'Chi apre la finestra?',
-        semanticHint:'Marta apre la finestra con attenzione.',
+        'Marta apre la finestra con attenzione.',
         maxWords:16,
       );
       expect(out,isNotNull);
