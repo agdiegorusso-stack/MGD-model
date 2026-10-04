@@ -13,6 +13,10 @@ String canon410(String x) => norm400(x)
     .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
 
+String entity410(String x) => canon410(x)
+    .replaceFirst(RegExp(r'^(?:il|lo|la|i|gli|le|un|uno|una)\s+'), '')
+    .trim();
+
 class MentalBelief410 {
   final String holder, subject, predicate, object, location, source;
   final bool negative;
@@ -237,7 +241,7 @@ class TheoryOfMind410 {
     var m=RegExp(r'^dove\s+(?:pensa|crede|ritiene)\s+(.+?)\s+che\s+(?:sia|si trovi|è|e)\s+(.+)$').firstMatch(q);
     if(m!=null) {
       final holder=m[1]!,target=m[2]!;
-      final b=await store.beliefSlot(holder,target,'luogo');
+      final b=await store.beliefSlot(holder,entity410(target),'luogo');
       if(b==null)return '${_cap(holder)} non ha ancora una credenza rappresentata sulla posizione di ${_cap(target)}.';
       return 'Dal punto di vista di ${_cap(holder)}, ${_cap(target)} si trova ${b.location}. '
           'Questa è una credenza attribuita a ${_cap(holder)}, non necessariamente lo stato reale.';
