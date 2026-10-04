@@ -9,6 +9,7 @@ import 'cognitive_core_v0400.dart';
 import 'social_cognition_v0410.dart';
 import 'mgd_language_v020.dart';
 import 'generative_language_v0420.dart';
+import 'recursive_tom_v0420.dart';
 
 class DialogueState410 {
   String focus='';
@@ -359,6 +360,7 @@ class DialogueEngine410 {
 
 class DialogueBridge410 {
   static DialogueEngine410? _engine;
+  static RecursiveTheoryOfMind420? _recursive420;
   static MgdLanguage20? _surfaceLanguage420;
   static int _surfaceLoadedTurn420 = -100;
 
@@ -369,9 +371,19 @@ class DialogueBridge410 {
     return _engine=DialogueEngine410(core,TheoryOfMind410(social),social);
   }
 
+  static Future<RecursiveTheoryOfMind420> get recursive420 async {
+    final existing=_recursive420;if(existing!=null)return existing;
+    return _recursive420=RecursiveTheoryOfMind420(await RecursiveToMStore420.open());
+  }
+
   static Future<String?> processChat(String text) async {
+    final nested=await (await recursive420).answer(text);
+    if(nested==null) {
+      await (await recursive420).observe(text);
+    }
     final e=await engine;
-    final reply=await e.process(text);
+    final reply=nested==null ? await e.process(text) : DialogueReply410(
+      nested,intent:'recursive-theory-of-mind',confidence:.88,inferred:true);
     if(reply==null)return null;
     final semantic=reply.text;
     if(semantic.split(RegExp(r'\s+')).length<6)return semantic;
@@ -395,21 +407,27 @@ class DialogueBridge410 {
 
   static Future<Map<String,dynamic>> stats() async {
     final e=await engine;
-    return {...await e.core.store.stats(),...await e.social.stats(),'focus':e.state.focus,'turns':e.state.turns};
+    final recursive=await recursive420;
+    return {...await e.core.store.stats(),...await e.social.stats(),
+      'secondOrderBeliefs':await recursive.store.count(),
+      'focus':e.state.focus,'turns':e.state.turns};
   }
 
   static Future<void> reset() async {
     final e=await engine;
     e.state=DialogueState410();
     await e.social.clear();
+    await (await recursive420).store.clear();
     await e.core.store.clear();
     e.core.workingMemory.clear();
   }
 
   static Future<void> close() async {
     final e=_engine;_engine=null;
+    final r=_recursive420;_recursive420=null;
     _surfaceLanguage420=null;
     _surfaceLoadedTurn420=-100;
     if(e!=null)await e.social.close();
+    if(r!=null)await r.store.close();
   }
 }
