@@ -156,6 +156,15 @@ class SocialStore410 {
       'object':frame.object,'location':frame.location,'at':now});
   }
 
+  Future<void> setMeta(String key,String value) async {
+    await db.insert('social_meta',{'k':key,'v':value},conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  Future<String?> getMeta(String key) async {
+    final rows=await db.query('social_meta',columns:['v'],where:'k=?',whereArgs:[key],limit:1);
+    return rows.isEmpty?null:'${rows.single['v']}';
+  }
+
   Future<Map<String,dynamic>> stats() async {
     Future<int> n(String table) async => Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM $table'))??0;
     return {'agents':await n('agents'),'beliefs':await n('beliefs'),'goals':await n('goals'),'observations':await n('observations')};
