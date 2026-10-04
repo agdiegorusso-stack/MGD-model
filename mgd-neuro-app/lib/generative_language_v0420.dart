@@ -82,6 +82,7 @@ class GenerativeLanguage420 {
     }
     if(wantedOrdered.isEmpty)return null;
     final wanted=wantedOrdered.toSet();
+    final mustKeep=<String>{if(wantedOrdered.isNotEmpty) wantedOrdered.first};
     final contextual=MgdLanguage20.toks(context)
         .where(_content).where(tokenCount.containsKey).take(8).toSet();
 
@@ -112,6 +113,7 @@ class GenerativeLanguage420 {
           if(wanted.contains(tok))covered.add(tok);
           var score=b.score+e.value;
           if(wanted.contains(tok))score+=1.10;
+          if(mustKeep.contains(tok))score+=1.35;
           if(contextual.contains(tok))score+=.22;
           score-=.52*rep;
           if(MgdLanguage20.punct(tok)&&b.xs.length<3)score-=1.2;
@@ -149,6 +151,7 @@ class GenerativeLanguage420 {
     final lexical=best.xs.where(_content).toSet();
     final anchorCoverage=wanted.intersection(lexical).length/max(1,wanted.length);
     if(anchorCoverage<required)return null;
+    if(!mustKeep.every(lexical.contains))return null;
     var out=_surface(best.xs);
     if(out.split(' ').length<3)return null;
     if(!RegExp(r'[.!?]$').hasMatch(out))out+='.';
