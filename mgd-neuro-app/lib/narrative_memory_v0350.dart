@@ -621,6 +621,7 @@ class NarrativeEntityProfile350 {
 class GlobalStoryModel350 {
   final Map<String, NarrativeEntityProfile350> entities = {};
   final List<Event350> events;
+  bool _hasNarrativeMentions = false;
 
   static const _nonEntityOpeners = {
     'non','sì','si','no','ma','e','ed','o','oppure','però','pero','dunque',
@@ -648,6 +649,7 @@ class GlobalStoryModel350 {
       final first = narrative['first'];
       final last = narrative['last'];
       if (mentions is Map) {
+        _hasNarrativeMentions = mentions.isNotEmpty;
         for (final e in mentions.entries) p('${e.key}').mentions += (e.value as num).toInt();
       }
       if (first is Map) for (final e in first.entries) p('${e.key}').first = (e.value as num).toInt();
@@ -678,11 +680,12 @@ class GlobalStoryModel350 {
 
   List<NarrativeEntityProfile350> ranked({int limit = 8}) {
     final out = entities.values.where((e) {
-      if (!_plausibleNamedEntity(e.id) || e.mentions <= 0) return false;
-      // A protagonist must be grounded in the structured story. Repetition of a
-      // capitalized token alone is insufficient. Two or more named mentions can
-      // supplement, but not replace, at least one event-role observation.
-      return e.eventRoles > 0 && (e.mentions >= 1 || e.subjects >= 2);
+      if (!_plausibleNamedEntity(e.id) || e.eventRoles <= 0) return false;
+      // New memories require explicit named-entity mention evidence. For old
+      // 0.35.0 memories that predate mention counters, keep a conservative
+      // fallback: the same subject must participate in at least two events.
+      if (_hasNarrativeMentions) return e.mentions > 0;
+      return e.subjects >= 2;
     }).toList();
     out.sort((a,b) => b.score.compareTo(a.score));
     return out.take(limit).toList();
