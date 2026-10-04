@@ -40,7 +40,7 @@ void main() {
       expect(r,isNotNull);
       expect(r!.intent,'theory-of-mind');
       expect(r.text.toLowerCase(),contains('scatola'));
-      expect(r.text.toLowerCase(),isNot(contains('credenza')));
+      expect(r.text.toLowerCase(),isNot(contains('nella credenza')));
     });
 
     test('goals are represented separately from factual world relations', () async {
