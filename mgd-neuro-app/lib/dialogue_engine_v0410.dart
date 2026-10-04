@@ -350,7 +350,10 @@ class DialogueBridge410 {
     return _engine=DialogueEngine410(core,TheoryOfMind410(social),social);
   }
 
-  static Future<String?> processChat(String text) async => (await engine).process(text);
+  static Future<String?> processChat(String text) async {
+    final reply=await (await engine).process(text);
+    return reply?.text;
+  }
 
   static Future<Map<String,dynamic>> stats() async {
     final e=await engine;
