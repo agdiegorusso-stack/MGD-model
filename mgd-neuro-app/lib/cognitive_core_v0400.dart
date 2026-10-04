@@ -17,7 +17,7 @@ String norm400(String x) => x
     .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
 
-List<String> tokens400(String x) => RegExp(r"[a-zàèéìòù]+(?:'[a-zàèéìòù]+)?|[0-9]+")
+List<String> tokens400(String x) => RegExp(r"[a-zàèéìòù][a-zàèéìòù0-9]*(?:'[a-zàèéìòù0-9]+)?|[0-9]+")
     .allMatches(norm400(x))
     .map((m) => m[0]!)
     .toList(growable: false);
@@ -29,7 +29,8 @@ const functionWords400 = <String>{
   'con','per','tra','fra','e','ed','o','oppure','ma','però','pero','che','cui','non','si',
   'mi','ti','ci','vi','ne','li','lui','lei','esso','essa','essi','esse',
   'io','tu','noi','voi','loro','questo','questa','questi','queste','quello','quella',
-  'quelli','quelle','come','quando','dove','perché','perche','se','mentre','poi','ora',
+  'quelli','quelle','chi','cosa','quale','quali','quanto','quanta','quanti','quante',
+  'come','quando','dove','perché','perche','se','mentre','poi','ora',
 };
 
 const auxiliary400 = <String>{
