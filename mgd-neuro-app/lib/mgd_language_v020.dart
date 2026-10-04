@@ -1175,7 +1175,7 @@ class _LMetric20 extends StatelessWidget {
     String? semanticHint,
     PlasticLanguageBrain04? brain,
     int maxWords = 42,
-    bool freeForm420 = false,
+    bool freeForm420 = true,
   }) {
     _ensureIndexes21();
     lastVisitedEdges21 = 0;
