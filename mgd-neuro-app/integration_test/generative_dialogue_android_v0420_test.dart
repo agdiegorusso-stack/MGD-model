@@ -9,6 +9,7 @@ import 'package:mgd_neuro_mobile/generative_language_v0420.dart';
 import 'package:mgd_neuro_mobile/cognitive_core_v0400.dart';
 import 'package:mgd_neuro_mobile/social_cognition_v0410.dart';
 import 'package:mgd_neuro_mobile/dialogue_engine_v0410.dart';
+import 'package:mgd_neuro_mobile/recursive_tom_v0420.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -17,16 +18,19 @@ void main() {
     final dir=await getTemporaryDirectory();
     final cp='${dir.path}/cognitive-0420-android.db';
     final sp='${dir.path}/social-0420-android.db';
-    for(final p in [cp,sp]) { try { await File(p).delete(); } catch(_) {} }
+    final rp='${dir.path}/recursive-0420-android.db';
+    for(final p in [cp,sp,rp]) { try { await File(p).delete(); } catch(_) {} }
 
     final cstore=await CognitiveStore400.openAt(cp);
     final sstore=await SocialStore410.openAt(sp);
     final core=CognitiveCore400(cstore);
     final dialogue=DialogueEngine410(core,TheoryOfMind410(sstore),sstore);
+    final rstore=await RecursiveToMStore420.openAt(rp);
+    final recursive=RecursiveTheoryOfMind420(rstore);
 
-    await dialogue.process('Anna pensa che Luca crede che la palla è nella scatola.');
-    final nested=await dialogue.process('Dove pensa Anna che Luca creda che sia la palla?');
-    expect(nested?.text.toLowerCase(),contains('scatola'));
+    expect(await recursive.observe('Anna pensa che Luca crede che la palla è nella scatola.'),isTrue);
+    final nested=await recursive.answer('Dove pensa Anna che Luca creda che sia la palla?');
+    expect(nested?.toLowerCase(),contains('scatola'));
 
     final lang=MgdLanguage20();
     for(var i=0;i<12;i++) {
@@ -41,6 +45,7 @@ void main() {
     expect(generated?.toLowerCase(),contains('marta'));
     expect(generated?.toLowerCase(),contains('finestra'));
 
+    await rstore.close();
     await sstore.close();
     await cstore.close();
   });
