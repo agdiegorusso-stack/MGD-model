@@ -55,7 +55,7 @@ class DialogueEngine410 {
   }
 
   static bool _question(String x)=>x.trim().endsWith('?')||
-      RegExp(r'^\s*(chi|cosa|che cosa|come|dove|quando|perché|perche|qual|quale|quali|cos|parlami|spieg|dimmi|secondo te|cosa pensi|che ne pensi|cosa crede|che cosa crede|cosa sa|che cosa sa)\b',caseSensitive:false).hasMatch(x);
+      RegExp(r'^\s*(chi|cosa|che cosa|come|dove|quando|perché|perche|qual|quale|quali|cos|parlami|spieg\w*|approfondisci|continua|in che senso|e quindi|dimmi|secondo te|cosa pensi|che ne pensi|cosa crede|che cosa crede|cosa sa|che cosa sa)\b',caseSensitive:false).hasMatch(x);
 
   List<String> _content(String text)=>tokens400(text).where(isContent400).toList(growable:false);
 
