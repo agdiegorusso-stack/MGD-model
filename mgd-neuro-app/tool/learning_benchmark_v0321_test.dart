@@ -56,8 +56,14 @@ void main() {
     final repeated = await CorpusSemanticBridge22.learn(text: corpus, sourceName: 'Stesso corpus rinominato',
         brain: b, world: w, memory: m);
     latencies.sort();
+    final appVersion = RegExp(r'^version:\s*(\S+)', multiLine: true)
+        .firstMatch(File('pubspec.yaml').readAsStringSync())?.group(1);
+    if (appVersion == null) throw StateError('App version missing from pubspec');
+    final buildCommit = File('BUILD-COMMIT.txt');
     final report = <String,dynamic>{
-      'version': '0.32.3', 'seed': 3212026, 'platform': Platform.operatingSystem,
+      'version': appVersion, 'benchmarkProtocol': '0.32.3',
+      'sourceCommit': buildCommit.existsSync() ? buildCommit.readAsStringSync().trim() : null,
+      'seed': 3212026, 'platform': Platform.operatingSystem,
       'scope': 'Structured source-attributed questions and explicit class transitivity; synthetic Italian templates.',
       'trainingSentenceExposures': sentences.length, 'trainingPasses': 1,
       'trainingMs': training.elapsedMicroseconds / 1000,

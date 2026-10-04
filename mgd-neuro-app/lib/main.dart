@@ -1,10 +1,20 @@
+import 'closed_book_service_v0350.dart';
+import 'closed_book_page_v0350.dart';
+import 'cognitive_core_v0400.dart';
+import 'cognitive_core_page_v0400.dart';
+import 'dialogue_engine_v0410.dart';
+// BOOK_CHAT_WIRING_0342
+// BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
+import 'book_import_v0341.dart';
+import 'book_lab_service_v0342.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' show FrameTiming;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/scheduler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -35,6 +45,13 @@ import 'relational_memory_page_v0324.dart';
 import 'learned_reader_v0324.dart';
 import 'knowledge_inspector_v0315.dart';
 import 'curiosity_actions_v0316.dart';
+import 'experience_page_v0330.dart';
+import 'cls_page_v0340.dart';
+import 'cls_store_v0340.dart';
+import 'cls_bridge_v0340.dart';
+import 'knowledge_deletion_v0330.dart';
+import 'consolidation_provenance_v0331.dart';
+import 'consolidation_settings_v0331.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +69,7 @@ class MgdNeuro04App extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MGD Neuro 0.32.4',
+      title: 'MGD Neuro $mgdAppVersion319',
       theme: ThemeData(
         colorScheme: scheme,
         useMaterial3: true,
@@ -154,6 +171,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    ClosedBookBridge350.enabled = true;
     WidgetsBinding.instance.addObserver(this);
     SchedulerBinding.instance.addTimingsCallback(_onFrameTimings18);
     _boot();
@@ -161,6 +179,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    BookLab342.closeChat();
+    ClosedBookBridge350.close();
+    unawaited(DialogueBridge410.close());
+    unawaited(CognitiveCoreBridge400.close());
     SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings18);
     WidgetsBinding.instance.removeObserver(this);
     _chat.dispose();
@@ -214,6 +236,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
       _language20 = language ?? MgdLanguage20();
       _language20.bootstrapFromBrain(_brain);
+      ClsBridge340.active = await ClsStore340.shared;
 
       // v0.19: never block first usable frame behind repair passes or rewrites.
       // Legacy maintenance is deferred and only runs for an actual migration.
@@ -262,7 +285,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     }
   }
 
+  bool _bookImportBusy341 = false;
+
   Future<void> _checkpoint319() async {
+    if (_bookImportBusy341) return;
     if (!_ready || _bootError318 != null) return;
     try {
       await _checkpointWriter319.save(
@@ -283,6 +309,26 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     _mindTimer?.cancel();
     _mindTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!mounted || !_ready || _bootError318 != null || _mindBusy320) return;
+      if (_lifecycle319 == AppLifecycleState.resumed &&
+          !_busy &&
+          !_researchBusy &&
+          _uiIdle18 &&
+          _chat.text.isEmpty &&
+          ClsBridge340.active != null) {
+        try {
+          if (await ClsBridge340.active!.readSetting('auto') != 'false') {
+            await ClsBridge340.active!.consolidate(budget: 8);
+          }
+        } catch (e) {
+          if (mounted)
+            setState(() => _status = 'Consolidamento CLS sospeso: $e');
+        }
+      }
+      if (_world.eventDriven33) {
+        _world.runtime319['state'] =
+            'MGD su evento; consolidamento CLS secondo le impostazioni';
+        return;
+      }
       if (_lifecycle319 != AppLifecycleState.resumed ||
           _busy ||
           _researchBusy ||
@@ -408,7 +454,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       return;
     if (_chat.text.isNotEmpty ||
         !ResearchSemantics317.needsMaintenance(_researchMemory)) return;
-    _maintenance317 = true;
+    setState(() => _maintenance317 = true);
     try {
       if (ResearchSemantics317.needsRecovery318(_researchMemory)) {
         final store = MgdStateStore26.instance;
@@ -465,7 +511,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       if (mounted)
         setState(() => _status = 'Riesame sospeso, dati conservati: $e');
     } finally {
-      _maintenance317 = false;
+      if (mounted) setState(() => _maintenance317 = false);
     }
   }
 
@@ -666,6 +712,13 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _openLanguage20() async {
+    // BOOK_RECOVERY_GUARD_341
+    if (_bootError318 != null || _bookImportBusy341) {
+      if (mounted)
+        setState(() => _status =
+            'Memoria protetta: riapri l’app per completare il recupero prima di importare. Non cancellare i dati.');
+      return;
+    }
     if (_busy || _researchBusy || _maintenance317) return;
     setState(() => _busy = true);
     try {
@@ -676,12 +729,21 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                   world: _world,
                   research: _researchMemory,
                   language: _language20),
-              child: MgdLanguageLab20(
-                  language: _language20,
-                  brain: _brain,
-                  world: _world,
-                  research: _researchMemory,
-                  onSave: _saveAllSilent22))));
+              child: ClosedBookPage350(
+                  legacyMemory: _researchMemory,
+                  legacyBuilder: () => MgdLanguageLab20(
+                      language: _language20,
+                      brain: _brain,
+                      world: _world,
+                      research: _researchMemory,
+                      onImportBusy341: (active) => _bookImportBusy341 = active,
+                      onModels341: (models) {
+                        _brain = models.brain;
+                        _world = models.world;
+                        _researchMemory = models.research;
+                        _language20 = models.language;
+                      },
+                      onSave: _saveAllSilent22)))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -713,25 +775,54 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      final closedReply350 = await ClosedBookBridge350.chat(text);
+      final bookReply342 =
+          closedReply350 ?? await BookLab342.chat(_researchMemory, text);
+      if (bookReply342 != null) {
+        final guarded = _brain.guardResponse331(text, bookReply342);
+        if (!mounted) return;
+        setState(() {
+          _messages
+              .add(ChatMessage04(user: false, text: guarded, prompt: text));
+          _status = closedReply350 == null
+              ? 'Risposta dall’archivio precedente, con evidenze.'
+              : 'Risposta a libro chiuso dalla memoria degli eventi.';
+        });
+        _scrollDown();
+        await _save(
+            'Domanda al libro completata; nessuna risposta appresa come nuova conoscenza');
+        return;
+      }
+      final cognitiveReply400 = await DialogueBridge410.processChat(text);
+      await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||
-          RegExp(r'^\s*correggi\s*:',caseSensitive:false).hasMatch(text)) {
+          RegExp(r'^\s*correggi\s*:', caseSensitive: false).hasMatch(text)) {
         String? reply324;
         if (LearnedReader324.isQuestion(text)) {
-          reply324 = RelationalMemory324.answerIfKnown(_researchMemory,text);
+          reply324 = RelationalMemory324.answerIfKnown(_researchMemory, text);
         } else {
-          SourceMemory323.retain(_researchMemory,WebDocument11(
-            provider:'Chat utente',family:'locale:utente',title:'Testo insegnato in chat',
-            url:'local://chat/'+ResearchSemantics317.digest(text),text:text,trust:.75));
-          final learned324=await RelationalMemory324.learnAsync(_researchMemory,text,
-            source:'Chat utente');
-          if(learned324.handled) reply324=learned324.message;
+          SourceMemory323.retain(
+              _researchMemory,
+              WebDocument11(
+                  provider: 'Chat utente',
+                  family: 'locale:utente',
+                  title: 'Testo insegnato in chat',
+                  url: 'local://chat/' + ResearchSemantics317.digest(text),
+                  text: text,
+                  trust: .75));
+          final learned324 = await RelationalMemory324.learnAsync(
+              _researchMemory, text,
+              source: 'Chat utente');
+          if (learned324.handled) reply324 = learned324.message;
         }
-        if(reply324!=null) {
-          if(!mounted) return;
+        if (reply324 != null) {
+          reply324 = _brain.guardResponse331(text, reply324);
+          if (!mounted) return;
           setState(() {
-            _messages.add(ChatMessage04(user:false,text:reply324!,prompt:text));
-            _status='Lettura e memoria relazionale • salvataggio…';
+            _messages
+                .add(ChatMessage04(user: false, text: reply324!, prompt: text));
+            _status = 'Lettura e memoria relazionale • salvataggio…';
           });
           _scrollDown();
           await _save('Relazioni insegnate e cronologia salvate');
@@ -743,8 +834,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         try {
           if (!mounted) return;
           setState(() {
-            _messages.add(ChatMessage04(user: false, text: questionAnswer316));
-            _status = questionAnswer316;
+            final guarded = _brain.guardResponse331(text, questionAnswer316);
+            _messages
+                .add(ChatMessage04(user: false, text: guarded, prompt: text));
+            _status = guarded;
           });
           _scrollDown();
           await _save('Domanda gestita e memoria salvata');
@@ -767,12 +860,17 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final grounded = (curiosityAnswer == null && sensoryGrounding == null)
           ? _world.groundedAnswer07(_brain, text)
           : null;
-      final sourced317 = RelationalMemory324.answerIfKnown(_researchMemory,text) ??
-          Reasoning321.answer(text, _researchMemory) ??
-          ResearchSemantics317.answer(text, _researchMemory,
-              realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
-          SourceMemory323.answer(text, _researchMemory);
-      final semanticAnswer = sourced317 ?? grounded ?? languageAnswer;
+      final sourced317 =
+          RelationalMemory324.answerIfKnown(_researchMemory, text) ??
+              Reasoning321.answer(text, _researchMemory) ??
+              ResearchSemantics317.answer(text, _researchMemory,
+                  realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
+              SourceMemory323.answer(text, _researchMemory);
+      final episodic340 = sourced317 == null && grounded == null
+          ? await ClsBridge340.quote(text)
+          : null;
+      final semanticAnswer =
+          sourced317 ?? cognitiveReply400 ?? episodic340 ?? grounded ?? languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||
               curiosityAnswer != null)
@@ -785,12 +883,14 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
               brain: _brain,
             )
           : null;
-      final answer = sensoryGrounding != null
+      final proposed = sensoryGrounding != null
           ? 'Ho collegato questa percezione a $sensoryGrounding.'
           : (sourced317 ??
+              episodic340 ??
               fluent ??
               semanticAnswer ??
               'Ho incorporato questa esperienza.');
+      final answer = _brain.guardResponse331(text, proposed);
       // A generated answer is not a new linguistic observation.
       _world.integrateLanguageExperience09(
         _brain,
@@ -854,9 +954,14 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     try {
       await Future<void>.delayed(Duration.zero);
       _brain.reinforcePair(m.prompt!, m.text, positive);
+      ConsolidationEvidence331.sync(_brain, _world);
+      if (!positive) {
+        _world.integrateLanguageExperience09(_brain, '${m.prompt} ${m.text}',
+            reward: -.65);
+      }
       await _save(positive
           ? 'Circuito consolidato'
-          : 'Risposta penalizzata senza cancellare il resto');
+          : 'Risposta revocata nei suggerimenti e nel ripasso');
       if (!mounted) return;
       setState(() => _busy = false);
     } catch (e) {
@@ -879,12 +984,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           'Correzione: rinforzo l’attrattore che ha prodotto la risposta…';
     });
     try {
-      final query324=LearnedReader324.parse(m.prompt!);
-      if(query324!=null && LearnedReader324.handles(m.prompt!)) {
-        final candidates=RelationalMemory324.find(_researchMemory,query324);
-        if(candidates.length==1) {
-          final correction=RelationalMemory324.correct(_researchMemory,
-            candidates.single['id'].toString(),answer);
+      final query324 = LearnedReader324.parse(m.prompt!);
+      if (query324 != null && LearnedReader324.handles(m.prompt!)) {
+        final candidates = RelationalMemory324.find(_researchMemory, query324);
+        if (candidates.length == 1) {
+          final correction = RelationalMemory324.correct(
+              _researchMemory, candidates.single['id'].toString(), answer);
           await _save(correction.message);
           return;
         }
@@ -1100,8 +1205,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     });
     try {
       final n = await LearningService321.learnText(
-          _brain, _world, _language20, raw, passes: passes, memory: _researchMemory,
-          progress: (done, total) {
+          _brain, _world, _language20, raw,
+          passes: passes, memory: _researchMemory, progress: (done, total) {
         if (mounted)
           setState(() {
             _progress = done / total;
@@ -1111,6 +1216,24 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       await _save('$n frasi elaborate nelle memorie relazionale e linguistica');
     } catch (e) {
       if (mounted) setState(() => _status = 'Apprendimento interrotto: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _setConsolidation331(bool enabled) async {
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
+    setState(() {
+      _busy = true;
+      _world.setConsolidationEnabled331(enabled);
+      ConsolidationEvidence331.sync(_brain, _world);
+    });
+    try {
+      await _save(enabled
+          ? 'Consolidamento attivo per connessioni con provenienza acquisita'
+          : 'Consolidamento disattivato');
+    } catch (e) {
+      if (mounted) setState(() => _status = 'Impostazione non salvata: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1151,9 +1274,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Azzerare MGD-Neuro 0.17?'),
+        title: const Text('Azzerare MGD-Neuro?'),
         content: const Text(
-            'Verranno cancellati episodi, relazioni, concetti e connessioni plastiche.'),
+            'Verranno cancellati episodi, relazioni, concetti, letture, competenze apprese e verifiche. I file originali non vengono eliminati.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -1169,12 +1292,15 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     await _worldPersistence.clear();
     await _researchPersistence.clear();
     await _languagePersistence20.clear();
+    await ClsBridge340.clear();
+    await DialogueBridge410.reset();
     setState(() {
       _brain = PlasticLanguageBrain04();
       _world = MgdWorld06();
       _researchMemory = ResearchMemory11();
       _messages.clear();
-      _status = 'Nuovo cervello 0.18 creato';
+      _language20 = MgdLanguage20();
+      _status = 'Nuova memoria MGD 0.42.0 creata';
     });
     await _save();
   }
@@ -1259,18 +1385,30 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   Future<void> _bindSense06() async {
+    if (_busy || _researchBusy || _maintenance317) return;
     if (_lastSense == null) return;
     final label = _senseLabel.text.trim();
     if (label.isEmpty) return;
-    final canonical = _world.bindLastNatural071(_brain, label);
-    _world.think(_brain, cycles: 24, seedText: canonical);
-    _senseLabel.clear();
-    if (mounted) {
-      setState(() => _status =
-          'Percezione collegata all’entità “$canonical” nel world model');
+    setState(() => _busy = true);
+    try {
+      final canonical = _world.bindLastNatural071(_brain, label);
+      final features = _world.lastFeatures33;
+      if (features != null) {
+        await (await ClsStore340.shared).learn(
+          {'${_lastSense!.observation.modality}:v1': features},
+          label: canonical,
+          text: 'Percezione confermata in chat',
+          source: 'Sensore MGD: descrittori senza allegato originale',
+        );
+      }
+      _world.step++;
+      _senseLabel.clear();
+      await _save('Esperienza confermata e salvata: $canonical');
+    } catch (e) {
+      if (mounted) setState(() => _status = 'Conferma non completata: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-    await _save('Binding multimodale consolidato');
-    _maybeAskCuriosity09();
   }
 
   Future<void> _saveTeacherImport271(
@@ -1521,6 +1659,43 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
+  Future<void> _openExperience33() async {
+    if (_busy || _researchBusy || _maintenance317) return;
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => ClsPage340(world: _world, onSave: _checkpoint319)));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openMap33() async {
+    if (_busy || _researchBusy || _maintenance317) return;
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => SemanticMapPage14(
+              brain: _brain,
+              research: _researchMemory,
+              language: _language20,
+              world: _world,
+              onDelete33: (mode, node) async {
+                await KnowledgeDeletion33.delete(
+                    brain: _brain,
+                    world: _world,
+                    research: _researchMemory,
+                    language: _language20,
+                    mode: mode,
+                    node: node);
+                _lastSense = null;
+                await _checkpoint319();
+              })));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _think06() async {
     if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     setState(() {
@@ -1562,7 +1737,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     if (_bootError318 != null) {
       return Scaffold(
-          appBar: AppBar(title: const Text('MGD Neuro 0.32.4')),
+          appBar: AppBar(title: const Text('MGD Neuro $mgdAppVersion319')),
           body: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -1613,6 +1788,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         busy: _busy || _maintenance317 || _researchBusy,
         onImportTeacher: _importTeacherPack08,
         onEdit: _openEditor12,
+        onExperience33: _openExperience33,
+        onMap33: _openMap33,
+        onConsolidation331: _setConsolidation331,
       ),
       _MindPage07(
         brain: _brain,
@@ -1641,7 +1819,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro 0.32.4'),
+        title: const Text('MGD Neuro $mgdAppVersion319'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -1987,6 +2165,8 @@ class _WorldPage07 extends StatelessWidget {
   final bool busy;
   final Future<void> Function() onImportTeacher;
   final Future<void> Function() onEdit;
+  final Future<void> Function() onExperience33, onMap33;
+  final ValueChanged<bool> onConsolidation331;
 
   const _WorldPage07({
     required this.language,
@@ -1997,6 +2177,9 @@ class _WorldPage07 extends StatelessWidget {
     required this.busy,
     required this.onImportTeacher,
     required this.onEdit,
+    required this.onExperience33,
+    required this.onMap33,
+    required this.onConsolidation331,
   });
 
   @override
@@ -2020,6 +2203,14 @@ class _WorldPage07 extends StatelessWidget {
           label: const Text('Modifica Mondo / conoscenza'),
         ),
         const SizedBox(height: 12),
+        FilledButton.icon(
+            onPressed: busy ? null : onExperience33,
+            icon: const Icon(Icons.auto_stories_outlined),
+            label: const Text('Impara dall’esperienza')),
+        Text(
+            'Archivio precedente: ${world.experience33.episodes.length} episodi. Apri Esperienze per i totali CLS e l’atlante.'),
+        ConsolidationSettings331(
+            world: world, busy: busy, onChanged: onConsolidation331),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -2120,12 +2311,7 @@ class _WorldPage07 extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 FilledButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => SemanticMapPage14(
-                          brain: brain, research: research, language: language),
-                    ),
-                  ),
+                  onPressed: busy ? null : onMap33,
                   icon: const Icon(Icons.open_in_full),
                   label: const Text('Visualizza mappa'),
                 ),
@@ -2285,23 +2471,27 @@ class _MindPage07 extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Memorie MGD 0.32.4',
+                          Text('Memorie MGD $mgdAppVersion319',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 6),
                           Text(
                               'Lingua: ${language20.stats().sentences} frasi · Episodica web: ${research.narrativeEpisodes.length} episodi (${research.narrativeSentencesSeen} frasi osservate) · Concettuale: ${research.emergentConcepts.length} cluster · Web: ${research.claims.values.where((c) => c.status == 'documentata').length} documentate + ${research.claims.values.where((c) => c.status == 'accettata').length} corroborate + ${research.claims.values.where((c) => c.status == 'ipotesi_mgd').length} ipotesi MGD.'),
                         ])))),
         const SizedBox(height: 12),
-        Card(child:ListTile(
-          leading:const Icon(Icons.account_tree_outlined),
-          title:Text('${RelationalMemory324.stats(research)['current']} relazioni apprese'),
-          subtitle:const Text('Agente, azione, oggetto · fonti e correzioni'),
-          trailing:const Icon(Icons.chevron_right),
-          onTap:()=>Navigator.of(context).push(MaterialPageRoute(
-            builder:(_)=>RelationalMemoryPage324(memory:research,onSave:()=>onSave()))),
+        Card(
+            child: ListTile(
+          leading: const Icon(Icons.account_tree_outlined),
+          title: Text(
+              '${RelationalMemory324.stats(research)['current']} relazioni apprese'),
+          subtitle: const Text('Agente, azione, oggetto · fonti e correzioni'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RelationalMemoryPage324(
+                  memory: research, onSave: () => onSave()))),
         )),
-        const SizedBox(height:12),
-        Card(child: ListTile(
+        const SizedBox(height: 12),
+        Card(
+            child: ListTile(
           leading: const Icon(Icons.find_in_page_outlined),
           title: Text(SourceMemory323.stats(research)['passages'].toString() +
               ' passaggi consultabili'),
@@ -2309,7 +2499,7 @@ class _MindPage07 extends StatelessWidget {
               ' fonti conservate · apri e cerca nel testo'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => SourceMemoryPage323(memory: research))),
+              builder: (_) => SourceMemoryPage323(memory: research))),
         )),
         const SizedBox(height: 12),
         FilledButton.tonalIcon(
@@ -2351,9 +2541,18 @@ class _MindPage07 extends StatelessWidget {
                   ]),
                   const SizedBox(height: 10),
                   FilledButton.tonalIcon(
+                    key: const ValueKey('closed-open350'),
                     onPressed: busy ? null : onLanguage20,
                     icon: const Icon(Icons.school_outlined),
                     label: const Text('Impara / esplora lingua'),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('cognitive-open400'),
+                    onPressed: busy ? null : () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CognitiveCorePage400())),
+                    icon: const Icon(Icons.psychology_alt_outlined),
+                    label: const Text('Cognitive Core 0.42 · generativo + ToM²'),
                   ),
                 ],
               );

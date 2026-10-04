@@ -64,9 +64,8 @@ class MgdMath09 {
     final c = (1.0 - p.rho) * chi;
     if (a <= 1e-12) return chi;
     final root = sqrt(b * b + 4.0 * a * c);
-    final equilibrium = b >= 0
-        ? (c == 0 ? 0.0 : 2.0 * c / (b + root))
-        : (root - b) / (2.0 * a);
+    final equilibrium =
+        b >= 0 ? (c == 0 ? 0.0 : 2.0 * c / (b + root)) : (root - b) / (2.0 * a);
     return equilibrium.clamp(0.0, 1.0).toDouble();
   }
 
@@ -93,7 +92,8 @@ class MgdMath09 {
       final negative = max(0.0, -reward).clamp(0.0, 1.0).toDouble();
 
       // MGD 0.2.4 memory recursion: m(t+1) = alpha*m(t) + beta*a(t).
-      final nextMemory = p.alpha * m + p.beta * a;
+      // A correction is not a fresh positive exposure.
+      final nextMemory = p.alpha * m + p.beta * a * (negative > 0 ? 0 : 1);
 
       // Generalised graph-coherence trigger: an admitted edge contributes to
       // local coherence when it is geometrically active (w <= epsilon).
@@ -110,14 +110,16 @@ class MgdMath09 {
 
       // MGD 0.5 full-weight drift, adapted from directional lattice arcs to
       // an arbitrary learned relation edge. Reward modulates forcing strength;
-      // negative feedback adds a repulsive term instead of deleting memory.
+      // Explicit negative feedback takes precedence over familiarity. Otherwise
+      // saturated memory could cancel punishment and keep an incorrect edge at
+      // the floor. This changes geometry, never factual evidence or provenance.
       final effectiveActivation = a * (0.65 + 0.35 * positive);
-      final deltaW =
-          p.nu -
-          p.lambda * effectiveActivation -
-          p.eta * nextMemory +
-          p.etaPlus * (nextMaterial - mStar) +
-          p.punishment * negative * a;
+      final deltaW = negative > 0
+          ? p.nu + p.punishment * negative
+          : p.nu -
+              p.lambda * effectiveActivation -
+              p.eta * nextMemory +
+              p.etaPlus * (nextMaterial - mStar);
 
       final nextWeight = max(p.c0, w + deltaW).clamp(p.c0, 3.6).toDouble();
       flux += (nextMaterial - M).abs();
@@ -210,9 +212,8 @@ class MgdMath09 {
         if (best == null) break;
         if (best == target) return bestD;
         visited.add(best);
-        for (final e
-            in activeAdjacency[best]?.entries ??
-                const <MapEntry<String, double>>[]) {
+        for (final e in activeAdjacency[best]?.entries ??
+            const <MapEntry<String, double>>[]) {
           if (visited.contains(e.key)) continue;
           final nd = bestD + e.value;
           if (nd < (dist[e.key] ?? double.infinity)) dist[e.key] = nd;
