@@ -2552,7 +2552,7 @@ class _MindPage07 extends StatelessWidget {
                     onPressed: busy ? null : () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const CognitiveCorePage400())),
                     icon: const Icon(Icons.psychology_alt_outlined),
-                    label: const Text('Cognitive Core 0.41 · dialogo + ToM'),
+                    label: const Text('Cognitive Core 0.42 · generativo + ToM²'),
                   ),
                 ],
               );
