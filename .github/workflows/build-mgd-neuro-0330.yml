@@ -26,8 +26,6 @@ jobs:
           cache: true
       - name: Validate and materialize reviewed closed-book source
         run: python3 mgd-neuro/v0350/materialize.py mgd-neuro-app
-      - name: Materialize MGD Cognitive Core 0.40
-        run: python3 mgd-neuro/v0400/materialize.py mgd-neuro-app
       - name: Restore Gradle dependencies
         id: gradle-cache
         uses: actions/cache/restore@v4
