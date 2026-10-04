@@ -7,6 +7,8 @@ import 'dart:math';
 
 import 'cognitive_core_v0400.dart';
 import 'social_cognition_v0410.dart';
+import 'mgd_language_v020.dart';
+import 'generative_language_v0420.dart';
 
 class DialogueState410 {
   String focus='';
@@ -357,6 +359,9 @@ class DialogueEngine410 {
 
 class DialogueBridge410 {
   static DialogueEngine410? _engine;
+  static MgdLanguage20? _surfaceLanguage420;
+  static int _surfaceLoadedTurn420 = -100;
+
   static Future<DialogueEngine410> get engine async {
     final existing=_engine;if(existing!=null)return existing;
     final core=await CognitiveCoreBridge400.core;
@@ -365,8 +370,27 @@ class DialogueBridge410 {
   }
 
   static Future<String?> processChat(String text) async {
-    final reply=await (await engine).process(text);
-    return reply?.text;
+    final e=await engine;
+    final reply=await e.process(text);
+    if(reply==null)return null;
+    final semantic=reply.text;
+    if(semantic.split(RegExp(r'\s+')).length<6)return semantic;
+    try {
+      if(_surfaceLanguage420==null ||
+          e.state.turns-_surfaceLoadedTurn420>=4) {
+        _surfaceLanguage420=await MgdLanguagePersistence20().load();
+        _surfaceLoadedTurn420=e.state.turns;
+      }
+      final lang=_surfaceLanguage420;
+      if(lang!=null && lang.stats().sentences>=12) {
+        final generated=GenerativeLanguage420(lang).realize(text,semantic,maxWords:72);
+        if(generated!=null&&generated.trim().isNotEmpty)return generated;
+      }
+    } catch(_) {
+      // Surface generation is optional: never lose a grounded semantic answer
+      // because the language decoder or its snapshot is unavailable.
+    }
+    return semantic;
   }
 
   static Future<Map<String,dynamic>> stats() async {
@@ -384,6 +408,8 @@ class DialogueBridge410 {
 
   static Future<void> close() async {
     final e=_engine;_engine=null;
+    _surfaceLanguage420=null;
+    _surfaceLoadedTurn420=-100;
     if(e!=null)await e.social.close();
   }
 }
