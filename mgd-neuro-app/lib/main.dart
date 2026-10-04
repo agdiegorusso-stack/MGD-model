@@ -1300,7 +1300,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _researchMemory = ResearchMemory11();
       _messages.clear();
       _language20 = MgdLanguage20();
-      _status = 'Nuova memoria MGD 0.41.0 creata';
+      _status = 'Nuova memoria MGD 0.42.0 creata';
     });
     await _save();
   }
