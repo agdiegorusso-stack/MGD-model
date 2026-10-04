@@ -1,4 +1,4 @@
-name: MGD Neuro 0.40.0 - Cognitive Core
+name: MGD Neuro 0.41.0 - Social cognition and dialogue
 on:
   pull_request:
     branches: [mgd-neuro-mobile]
@@ -8,7 +8,7 @@ permissions:
   contents: write
   actions: read
 concurrency:
-  group: mgd-cognitive-0400-${{ github.ref }}
+  group: mgd-social-dialogue-0410-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build:
@@ -68,34 +68,34 @@ jobs:
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          MGD_CLS_BENCHMARK_OUT=benchmark-cls-0.40.0.json flutter test --reporter expanded 2>&1 | tee tests-0.40.0.log
+          MGD_CLS_BENCHMARK_OUT=benchmark-cls-0.41.0.json flutter test --reporter expanded 2>&1 | tee tests-0.41.0.log
       - name: Existing one-pass learning benchmark
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          MGD_BENCHMARK_OUT=benchmark-existing-0.40.0.json flutter test tool/learning_benchmark_v0321_test.dart --reporter expanded 2>&1 | tee benchmark-existing-0.40.0.log
+          MGD_BENCHMARK_OUT=benchmark-existing-0.41.0.json flutter test tool/learning_benchmark_v0321_test.dart --reporter expanded 2>&1 | tee benchmark-existing-0.41.0.log
       - name: Previous archive-reader development evaluation
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          MGD_BOOK_EVAL_OUT=benchmark-book-0.40.0.json flutter test tool/book_eval_v0342_test.dart --reporter expanded 2>&1 | tee benchmark-book-0.40.0.log
+          MGD_BOOK_EVAL_OUT=benchmark-book-0.41.0.json flutter test tool/book_eval_v0342_test.dart --reporter expanded 2>&1 | tee benchmark-book-0.41.0.log
       - name: Closed-book and novel-Italian development evaluation including failures
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          MGD_CLOSED_EVAL_OUT=benchmark-closed-0.40.0.json flutter test tool/closed_book_eval_v0350_test.dart --reporter expanded 2>&1 | tee benchmark-closed-0.40.0.log
+          MGD_CLOSED_EVAL_OUT=benchmark-closed-0.41.0.json flutter test tool/closed_book_eval_v0350_test.dart --reporter expanded 2>&1 | tee benchmark-closed-0.41.0.log
       - name: Static analysis
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.40.0.log
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze-0.41.0.log
       - name: Publish evaluation diagnostics before Android
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.40.0-evaluation
+          name: MGD-Neuro-0.41.0-evaluation
           path: |
-            mgd-neuro-app/*-0.40.0.log
-            mgd-neuro-app/*-0.40.0.json
+            mgd-neuro-app/*-0.41.0.log
+            mgd-neuro-app/*-0.41.0.json
             mgd-neuro-app/BUILD-COMMIT.txt
           retention-days: 30
       - name: Enable Android KVM
@@ -114,16 +114,16 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
           script: |
-            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/closed_book_android_v0350_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-closed-0.40.0.log'
-            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_understanding_android_v0342_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-understanding-0.40.0.log'
-            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-baseline-0.40.0.log'
-            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/cls_android_v0340_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-cls-0.40.0.log'
-            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_android_v0341_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-book-0.40.0.log'\n            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/cognitive_core_android_v0400_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-cognitive-0.40.0.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/closed_book_android_v0350_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-closed-0.41.0.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_understanding_android_v0342_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-understanding-0.41.0.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/runtime_android_v0319_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-baseline-0.41.0.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/cls_android_v0340_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-cls-0.41.0.log'
+            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/book_android_v0341_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-book-0.41.0.log'\n            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/cognitive_core_android_v0400_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-cognitive-0.41.0.log'\n            cd mgd-neuro-app && bash -o pipefail -c 'flutter test integration_test/social_dialogue_android_v0410_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee android-social-dialogue-0.41.0.log'
       - name: Build signed release APK
         working-directory: mgd-neuro-app
         run: |
           set -o pipefail
-          flutter build apk --release --build-name 0.40.0 --build-number 80 2>&1 | tee build-0.40.0.log
+          flutter build apk --release --build-name 0.41.0 --build-number 81 2>&1 | tee build-0.41.0.log
       - name: Verify identity and stable certificate
         run: |
           set -euo pipefail
@@ -133,15 +133,15 @@ jobs:
           "$AAPT" dump badging "$APK" > /tmp/badging.txt
           head -1 /tmp/badging.txt > mgd-neuro-app/APK-VERSION.txt
           grep -F "name='it.diegorusso.mgdneurostable'" mgd-neuro-app/APK-VERSION.txt
-          grep -F "versionName='0.40.0'" mgd-neuro-app/APK-VERSION.txt
-          grep -F "versionCode='80'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionName='0.41.0'" mgd-neuro-app/APK-VERSION.txt
+          grep -F "versionCode='81'" mgd-neuro-app/APK-VERSION.txt
           "$SIGN" verify --verbose --print-certs "$APK" > mgd-neuro-app/APK-SIGNATURE.txt
           grep -Fi 'bfd6e2660a3c3a6e3b37d1736e1619777b933e976c312c5b1c6cd38e908f1589' mgd-neuro-app/APK-SIGNATURE.txt
           sha256sum "$APK" > mgd-neuro-app/APK-SHA256.txt
       - name: Upload verified APK
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.40.0-Android
+          name: MGD-Neuro-0.41.0-Android
           path: mgd-neuro-app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
       - name: Save downloaded Gradle dependencies
@@ -156,7 +156,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.40.0-source
+          name: MGD-Neuro-0.41.0-source
           path: |
             mgd-neuro-app/lib
             mgd-neuro-app/test
@@ -175,10 +175,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neuro-0.40.0-reports
+          name: MGD-Neuro-0.41.0-reports
           path: |
-            mgd-neuro-app/*-0.40.0.log
-            mgd-neuro-app/*-0.40.0.json
+            mgd-neuro-app/*-0.41.0.log
+            mgd-neuro-app/*-0.41.0.json
             mgd-neuro-app/APK-*.txt
             mgd-neuro-app/BUILD-COMMIT.txt
           retention-days: 30
