@@ -247,9 +247,21 @@ class NarrativeCompiler350 {
     final seen = <String>{};
     for (final m in _properName.allMatches(original)) {
       final raw = m[0]!.trim();
-      if (_nameStop.contains(raw)) continue;
+      final rawTokens = tokens350(raw);
+      if (_nameStop.contains(raw) ||
+          rawTokens.isEmpty ||
+          rawTokens.every(CompetenceLanguage350.functionWords.contains)) {
+        continue;
+      }
       final key = entity350(raw);
-      if (key.length < 2 || tokens350(key).length > 3) continue;
+      final keyTokens = tokens350(key);
+      // Capitalization at sentence start is not evidence of a named entity:
+      // reject grammatical/function words (e.g. “Non”) generically.
+      if (key.length < 2 ||
+          keyTokens.length > 3 ||
+          keyTokens.every(CompetenceLanguage350.functionWords.contains)) {
+        continue;
+      }
       // Keep each entity at most once per sentence to prevent a single sentence
       // from dominating the story model through repetition.
       if (!seen.add(key)) continue;
@@ -589,8 +601,11 @@ class NarrativeEntityProfile350 {
   final Set<String> predicates = {};
   NarrativeEntityProfile350(this.id);
   int get spread => last < first ? 0 : last - first;
-  double get score => mentions * 2.0 + subjects * 3.0 + objects * .7 + targets * 1.2 +
-      predicates.length * .9 + min(12, spread) * .18;
+  int get eventRoles => subjects + objects + targets;
+  // Mention frequency is deliberately sub-linear: a repeated discourse token
+  // must never beat a character that actually participates in the story.
+  double get score => log(mentions + 1) * 4.0 + subjects * 3.6 + objects * 1.0 +
+      targets * 1.4 + predicates.length * 1.1 + min(20, spread) * .12;
   Map<String, dynamic> toJson() => {
         'id': id,
         'mentions': mentions,
@@ -606,6 +621,25 @@ class NarrativeEntityProfile350 {
 class GlobalStoryModel350 {
   final Map<String, NarrativeEntityProfile350> entities = {};
   final List<Event350> events;
+
+  static const _nonEntityOpeners = {
+    'non','sì','si','no','ma','e','ed','o','oppure','però','pero','dunque',
+    'allora','ora','poi','dopo','prima','quando','mentre','come','perché',
+    'perche','se','questo','questa','questi','queste','quello','quella',
+    'quelli','quelle','così','cosi','forse','infatti','inoltre','intanto',
+    'infine','finalmente','possibile','certo','bene','ebbene','anche'
+  };
+
+  static bool _plausibleNamedEntity(String id) {
+    final ts = tokens350(id);
+    if (ts.isEmpty || ts.length > 3) return false;
+    if (ts.every(CompetenceLanguage350.functionWords.contains)) return false;
+    if (_nonEntityOpeners.contains(ts.first)) return false;
+    // A candidate made only of common grammatical material is not a character.
+    final lexical = ts.where((t) => !CompetenceLanguage350.functionWords.contains(t)).toList();
+    return lexical.isNotEmpty;
+  }
+
   GlobalStoryModel350(this.events, Map<String, dynamic> meta) {
     NarrativeEntityProfile350 p(String id) => entities.putIfAbsent(id, () => NarrativeEntityProfile350(id));
     final narrative = meta['narrative'];
@@ -643,7 +677,13 @@ class GlobalStoryModel350 {
   }
 
   List<NarrativeEntityProfile350> ranked({int limit = 8}) {
-    final out = entities.values.where((e) => e.subjects > 0 || e.mentions >= 2).toList();
+    final out = entities.values.where((e) {
+      if (!_plausibleNamedEntity(e.id) || e.mentions <= 0) return false;
+      // A protagonist must be grounded in the structured story. Repetition of a
+      // capitalized token alone is insufficient. Two or more named mentions can
+      // supplement, but not replace, at least one event-role observation.
+      return e.eventRoles > 0 && (e.mentions >= 1 || e.subjects >= 2);
+    }).toList();
     out.sort((a,b) => b.score.compareTo(a.score));
     return out.take(limit).toList();
   }
@@ -653,7 +693,8 @@ class GlobalStoryModel350 {
     if (r.isEmpty) return null;
     final top=r.first, second=r.length>1?r[1]:null;
     final margin = second==null ? 1.0 : (top.score-second.score)/max(1.0, top.score);
-    return {'entity':top.id,'confidence':(0.45 + min(.5, margin + min(.2, top.subjects/40))).clamp(0.0, .95),
+    if (top.eventRoles == 0) return null;
+    return {'entity':top.id,'confidence':(0.40 + min(.45, margin + min(.25, top.eventRoles/30))).clamp(0.0, .92),
       'profile':top.toJson(),'alternatives':r.skip(1).map((x)=>x.toJson()).toList()};
   }
 
