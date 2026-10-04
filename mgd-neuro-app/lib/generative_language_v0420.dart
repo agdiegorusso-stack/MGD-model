@@ -74,7 +74,7 @@ class GenerativeLanguage420 {
   static bool _content(String x)=>!MgdLanguage20.punct(x)&&!stop.contains(x)&&x.length>1;
 
   String? _clause(String clause,String context,{int maxWords=32}) {
-    if(outgoing.length<50||tokenCount.length<30)return null;
+    if(outgoing.length<8||tokenCount.length<6)return null;
     final wantedOrdered=<String>[];
     for(final t in MgdLanguage20.toks(clause).where(_content)) {
       if(tokenCount.containsKey(t)&&!wantedOrdered.contains(t))wantedOrdered.add(t);
