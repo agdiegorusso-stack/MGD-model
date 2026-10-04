@@ -229,6 +229,10 @@ class DialogueEngine410 {
     parts.add('Su “$topic” ho ${c['exposures']} osservazioni.');
     if(rel.isNotEmpty)parts.add('Le relazioni più concrete sono: ${rel.take(4).map(_renderRelation).join('; ')}.');
     if(assoc.isNotEmpty)parts.add('Le associazioni contestuali più forti sono ${assoc.take(5).map((x)=>x['term']).join(', ')}.');
+    final neighbours=await core.store.semanticNeighbors420(topic,limit:5);
+    if(neighbours.isNotEmpty) {
+      parts.add('Nello spazio semantico appreso è vicino a ${neighbours.map((x)=>x['term']).join(', ')}');
+    }
     final ignorance=await core.ignorance(topic);
     parts.add(ignorance);
     return parts.join(' ');
@@ -281,9 +285,19 @@ class DialogueEngine410 {
   }
 
   Future<String> _generic(String prompt,List<String> cues) async {
-    final path=await _pathBetweenCues(cues);
-    final evidence=await _relationEvidence(cues,limit:6);
-    final recall=await core.store.recall(cues,limit:6);
+    final expanded=<String>[...cues];
+    for(final c in cues.take(3)) {
+      final neighbours=await core.store.semanticNeighbors420(c,limit:3);
+      for(final n in neighbours) {
+        if((n['score'] as num).toDouble()>=.18) {
+          final term='${n['term']}';
+          if(!expanded.contains(term))expanded.add(term);
+        }
+      }
+    }
+    final path=await _pathBetweenCues(expanded);
+    final evidence=await _relationEvidence(expanded,limit:6);
+    final recall=await core.store.recall(expanded,limit:6);
     if(path!=null)return 'Riesco a collegare i concetti così: $path. '
       '${evidence.isEmpty?'': 'Le relazioni che sostengono il collegamento sono: ${evidence.take(3).join('; ')}.'}';
     if(evidence.isNotEmpty)return 'Quello che posso sostenere dalla memoria è questo: ${evidence.take(4).join('; ')}. '
