@@ -5,6 +5,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:mgd_neuro_mobile/mgd_language_v020.dart';
+import 'package:mgd_neuro_mobile/generative_language_v0420.dart';
 import 'package:mgd_neuro_mobile/cognitive_core_v0400.dart';
 import 'package:mgd_neuro_mobile/social_cognition_v0410.dart';
 import 'package:mgd_neuro_mobile/dialogue_engine_v0410.dart';
@@ -32,9 +33,9 @@ void main() {
       lang.ingestText('Marta apre la porta con attenzione. '
           'Luca apre la finestra con attenzione.');
     }
-    final generated=lang.generateOpen420(
+    final generated=GenerativeLanguage420(lang).realize(
       'Chi apre la finestra?',
-      semanticHint:'Marta apre la finestra con attenzione.',
+      'Marta apre la finestra con attenzione.',
       maxWords:16,
     );
     expect(generated?.toLowerCase(),contains('marta'));
