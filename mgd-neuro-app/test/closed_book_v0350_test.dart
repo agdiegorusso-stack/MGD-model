@@ -23,6 +23,58 @@ void main() {
       expect(e.summary(), contains('Non ci sono'));
     });
 
+    test('sentence-initial Non can never become a narrative entity', () {
+      final compiler = NarrativeCompiler350();
+      compiler.compile(
+          'Non apre la porta. Non entra nella stanza. Non parla con Giorgio. '
+          'Eleonora apre la porta. Giorgio vede Eleonora. '
+          'Eleonora torna a casa. Giorgio saluta Eleonora.',
+          unitOrdinal: 0);
+      final state = compiler.state();
+      final mentions = Map<String, dynamic>.from(state['entityMentions'] as Map);
+      expect(mentions, isNot(contains('non')));
+    });
+
+    test('legacy polluted mention counts cannot make Non the protagonist', () {
+      final events = [
+        Event350(
+            id: 'e1',
+            unit: 'u',
+            ordinal: 1,
+            subject: 'eleonora',
+            predicate: 'aprire',
+            object: 'porta',
+            surface: 'apre'),
+        Event350(
+            id: 'e2',
+            unit: 'u',
+            ordinal: 2,
+            subject: 'giorgio',
+            predicate: 'vedere',
+            object: 'eleonora',
+            surface: 'vede'),
+        Event350(
+            id: 'e3',
+            unit: 'u',
+            ordinal: 3,
+            subject: 'eleonora',
+            predicate: 'tornare',
+            location: 'a casa',
+            surface: 'torna'),
+      ];
+      final engine = ClosedBookEngine350(events, {
+        'narrative': {
+          'mentions': {'non': 500, 'eleonora': 18, 'giorgio': 7},
+          'first': {'non': 0, 'eleonora': 1, 'giorgio': 2},
+          'last': {'non': 999, 'eleonora': 900, 'giorgio': 600},
+        }
+      });
+      final r = engine.answer('Chi è il protagonista?');
+      expect(r['status'], 'deduction');
+      expect(r['answer'], 'Eleonora');
+      expect(r['answer'], isNot('Non'));
+    });
+
     test('global story model infers a protagonist without an explicit protagonist fact', () {
       final compiler = NarrativeCompiler350();
       final text = 'Eleonora Bandi entra nella stanza. Giorgio osserva Eleonora. '
