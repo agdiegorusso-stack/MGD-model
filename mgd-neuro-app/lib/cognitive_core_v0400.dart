@@ -337,6 +337,56 @@ class CognitiveStore400 {
     return rows.map((r) => {'term': '${r['dst']}', 'count': r['n'] as int}).toList();
   }
 
+  /// Sparse distributional semantic neighbourhood learned only from observed
+  /// local contexts. This is not a pretrained embedding: dimensions are the
+  /// other concepts MGD has actually encountered around the term.
+  Future<List<Map<String, dynamic>>> semanticNeighbors420(String term,
+      {int limit = 8}) async {
+    final q = norm400(term);
+    final baseRows = await db.rawQuery(
+        'SELECT dst,SUM(count) AS n FROM contexts WHERE src=? '
+        'GROUP BY dst ORDER BY n DESC LIMIT 48', [q]);
+    if (baseRows.length < 2) return const [];
+    final base = <String,double>{};
+    for (final r in baseRows) {
+      final n=(r['n'] as num).toDouble();
+      base['${r['dst']}']=log(1+n);
+    }
+    final dims=base.keys.toList();
+    final placeholders=List.filled(dims.length,'?').join(',');
+    final rows=await db.rawQuery(
+      'SELECT src,dst,SUM(count) AS n FROM contexts '
+      'WHERE dst IN ($placeholders) AND src<>? '
+      'GROUP BY src,dst LIMIT 3000',
+      [...dims,q],
+    );
+    final vectors=<String,Map<String,double>>{};
+    for(final r in rows) {
+      final src='${r['src']}', dst='${r['dst']}';
+      vectors.putIfAbsent(src,()=>{})[dst]=log(1+(r['n'] as num).toDouble());
+    }
+    final baseNorm=sqrt(base.values.fold<double>(0,(a,v)=>a+v*v));
+    final scored=<Map<String,dynamic>>[];
+    for(final e in vectors.entries) {
+      if(functionWords400.contains(e.key)||e.key.length<2) continue;
+      var dot=0.0,norm=0.0,shared=0;
+      for(final v in e.value.entries) {
+        final b=base[v.key];
+        if(b==null) continue;
+        dot+=b*v.value;
+        norm+=v.value*v.value;
+        shared++;
+      }
+      if(dot<=0||norm<=0||shared<2) continue;
+      final coverage=shared/max(1,base.length);
+      final cosine=dot/max(1e-9,baseNorm*sqrt(norm));
+      final score=(cosine*sqrt(coverage)).clamp(0.0,1.0);
+      if(score>=.12) scored.add({'term':e.key,'score':score,'shared':shared});
+    }
+    scored.sort((a,b)=>(b['score'] as double).compareTo(a['score'] as double));
+    return scored.take(limit).toList();
+  }
+
   Future<List<Map<String, dynamic>>> relations(String term, {int limit = 12}) async {
     final q = norm400(term);
     final rows = await db.rawQuery('SELECT subject,predicate,object,location,negative,count FROM relations WHERE subject LIKE ? OR object LIKE ? ORDER BY count DESC,last_seen DESC LIMIT ?', ['%$q%', '%$q%', limit]);
