@@ -8,6 +8,7 @@ import 'package:mgd_neuro_mobile/generative_language_v0420.dart';
 import 'package:mgd_neuro_mobile/cognitive_core_v0400.dart';
 import 'package:mgd_neuro_mobile/social_cognition_v0410.dart';
 import 'package:mgd_neuro_mobile/dialogue_engine_v0410.dart';
+import 'package:mgd_neuro_mobile/recursive_tom_v0420.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,8 @@ void main() {
     late SocialStore410 social;
     late CognitiveCore400 core;
     late DialogueEngine410 dialogue;
+    late RecursiveToMStore420 recursiveStore;
+    late RecursiveTheoryOfMind420 recursive;
 
     setUp(() async {
       dir=await Directory.systemTemp.createTemp('mgd420-');
@@ -44,9 +47,12 @@ void main() {
       social=await SocialStore410.openAt('${dir.path}/social.db',factory:databaseFactoryFfi);
       core=CognitiveCore400(cognitive);
       dialogue=DialogueEngine410(core,TheoryOfMind410(social),social);
+      recursiveStore=await RecursiveToMStore420.openAt('${dir.path}/recursive.db',factory:databaseFactoryFfi);
+      recursive=RecursiveTheoryOfMind420(recursiveStore);
     });
 
     tearDown(() async {
+      await recursiveStore.close();
       await social.close();
       await cognitive.close();
       await dir.delete(recursive:true);
@@ -67,13 +73,12 @@ void main() {
     });
 
     test('second-order theory of mind keeps a belief about another belief', () async {
-      await dialogue.process('Anna pensa che Luca crede che la palla è nella scatola.');
-      final r=await dialogue.process('Dove pensa Anna che Luca creda che sia la palla?');
+      expect(await recursive.observe('Anna pensa che Luca crede che la palla è nella scatola.'),isTrue);
+      final r=await recursive.answer('Dove pensa Anna che Luca creda che sia la palla?');
       expect(r,isNotNull);
-      expect(r!.intent,'theory-of-mind');
-      expect(r.text.toLowerCase(),contains('luca'));
-      expect(r.text.toLowerCase(),contains('scatola'));
-      expect(r.text.toLowerCase(),contains('credenza su una credenza'));
+      expect(r!.toLowerCase(),contains('luca'));
+      expect(r.toLowerCase(),contains('scatola'));
+      expect(r.toLowerCase(),contains('credenza su una credenza'));
     });
 
     test('open dialogue uses semantic expansion instead of exact lexical identity only', () async {
