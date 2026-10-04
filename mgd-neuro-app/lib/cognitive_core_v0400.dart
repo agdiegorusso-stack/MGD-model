@@ -27,7 +27,7 @@ const functionWords400 = <String>{
   'a','al','alla','allo','ai','agli','alle','da','dal','dalla','dallo','dai','dagli','dalle',
   'in','nel','nella','nello','nei','nelle','su','sul','sulla','sullo','sui','sugli','sulle',
   'con','per','tra','fra','e','ed','o','oppure','ma','però','pero','che','cui','non','si',
-  'mi','ti','ci','vi','ne','lo','la','li','le','lui','lei','esso','essa','essi','esse',
+  'mi','ti','ci','vi','ne','li','lui','lei','esso','essa','essi','esse',
   'io','tu','noi','voi','loro','questo','questa','questi','queste','quello','quella',
   'quelli','quelle','come','quando','dove','perché','perche','se','mentre','poi','ora',
 };
