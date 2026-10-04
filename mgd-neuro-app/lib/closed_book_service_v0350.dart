@@ -49,7 +49,7 @@ class ClosedBookExam350 {
       progress?.call(results.length, cases.length);
     }
     return {
-      'version': '0.35.1',
+      'version': '0.35.2',
       'mode': 'closed_book',
       'at': DateTime.now().toIso8601String(),
       'book': metadata['id'],
