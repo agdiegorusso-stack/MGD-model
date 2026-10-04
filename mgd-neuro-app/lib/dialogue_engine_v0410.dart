@@ -109,7 +109,7 @@ class DialogueEngine410 {
           ? 'Ho integrato questa esperienza nel modello del mondo e nella memoria semantica. '
             'Il focus attuale è “${state.focus}”.'
           : 'Ho acquisito le regolarità linguistiche del messaggio, ma non ho ancora estratto un evento abbastanza stabile da trattare come fatto.',
-        intent:'learn',confidence:turn.frame.valid?.86:.58,inferred:true);
+        intent:'learn',confidence:turn.frame.valid ? .86 : .58,inferred:true);
     }
 
     final tom=await mind.answer(text);
