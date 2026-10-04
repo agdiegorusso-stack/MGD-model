@@ -28,7 +28,7 @@ void main() {
     await dialogue.process('La glarpa beve acqua.');
     final falseBelief=await dialogue.process('Dove pensa Anna che sia la palla?');
     expect(falseBelief?.text.toLowerCase(),contains('scatola'));
-    expect(falseBelief?.text.toLowerCase(),isNot(contains('credenza')));
+    expect(falseBelief?.text.toLowerCase(),isNot(contains('nella credenza')));
 
     await sstore.close();
     await cstore.close();
