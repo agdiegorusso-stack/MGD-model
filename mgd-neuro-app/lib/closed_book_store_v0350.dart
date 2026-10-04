@@ -377,6 +377,19 @@ class ClosedBookStore350 {
       offset += page.length;
       await Future<void>.delayed(Duration.zero);
     }
+    final rawState = meta['state'];
+    if (rawState is String && rawState.isNotEmpty) {
+      try {
+        final state = Map<String, dynamic>.from(jsonDecode(rawState) as Map);
+        meta['narrative'] = {
+          'mentions': Map<String, dynamic>.from(state['entityMentions'] as Map? ?? {}),
+          'first': Map<String, dynamic>.from(state['entityFirst'] as Map? ?? {}),
+          'last': Map<String, dynamic>.from(state['entityLast'] as Map? ?? {}),
+        };
+      } catch (_) {
+        meta['narrative'] = const {'mentions': {}, 'first': {}, 'last': {}};
+      }
+    }
     meta.remove('state');
     return {'metadata': meta, 'events': data, 'rawPassagesRead': 0};
   }

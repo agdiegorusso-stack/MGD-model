@@ -111,6 +111,9 @@ class NarrativeCompiler350 {
   String lastSubjectSurface = '';
   int nextOrdinal = 0;
   final Map<String, int> _recentSubjects = {};
+  final Map<String, int> _entityMentions = {};
+  final Map<String, int> _entityFirst = {};
+  final Map<String, int> _entityLast = {};
   bool ambiguousPerson = false;
   NarrativeCompiler350([Map<String, dynamic>? state]) {
     if (state != null) {
@@ -124,6 +127,15 @@ class NarrativeCompiler350 {
       for (final e in (state['recentSubjects'] as Map? ?? {}).entries) {
         _recentSubjects['${e.key}'] = (e.value as num).toInt();
       }
+      for (final e in (state['entityMentions'] as Map? ?? {}).entries) {
+        _entityMentions['${e.key}'] = (e.value as num).toInt();
+      }
+      for (final e in (state['entityFirst'] as Map? ?? {}).entries) {
+        _entityFirst['${e.key}'] = (e.value as num).toInt();
+      }
+      for (final e in (state['entityLast'] as Map? ?? {}).entries) {
+        _entityLast['${e.key}'] = (e.value as num).toInt();
+      }
     }
   }
   Map<String, dynamic> state() => {
@@ -134,6 +146,9 @@ class NarrativeCompiler350 {
         'lastObjectGender': lastObjectGender,
         'nextOrdinal': nextOrdinal,
         'recentSubjects': _recentSubjects,
+        'entityMentions': _entityMentions,
+        'entityFirst': _entityFirst,
+        'entityLast': _entityLast,
         'ambiguousPerson': ambiguousPerson
       };
   static const _verbGroups = <String, List<String>>{
@@ -220,6 +235,30 @@ class NarrativeCompiler350 {
     return '';
   }
 
+  static final _properName = RegExp(
+      r"\b(?:[A-ZÀÈÉÌÒÙ][a-zàèéìòù]+(?:['’][A-ZÀÈÉÌÒÙ]?[a-zàèéìòù]+)?)(?:\s+[A-ZÀÈÉÌÒÙ][a-zàèéìòù]+(?:['’][A-ZÀÈÉÌÒÙ]?[a-zàèéìòù]+)?){0,2}\b");
+  static const _nameStop = {
+    'Questo', 'Questa', 'Questi', 'Queste', 'Quando', 'Dopo', 'Prima', 'Ora',
+    'Poi', 'Ma', 'E', 'Ed', 'Se', 'Perché', 'Perche', 'Come', 'Dunque', 'Allora',
+    'Intanto', 'Infine', 'Finalmente', 'Capitolo', 'Parte'
+  };
+
+  void _observeEntities(String original, int position) {
+    final seen = <String>{};
+    for (final m in _properName.allMatches(original)) {
+      final raw = m[0]!.trim();
+      if (_nameStop.contains(raw)) continue;
+      final key = entity350(raw);
+      if (key.length < 2 || tokens350(key).length > 3) continue;
+      // Keep each entity at most once per sentence to prevent a single sentence
+      // from dominating the story model through repetition.
+      if (!seen.add(key)) continue;
+      _entityMentions[key] = (_entityMentions[key] ?? 0) + 1;
+      _entityFirst.putIfAbsent(key, () => position);
+      _entityLast[key] = position;
+    }
+  }
+
   void clearDiscourse() {
     lastSubject = '';
     lastSubjectSurface = '';
@@ -240,7 +279,9 @@ class NarrativeCompiler350 {
         .split(RegExp(r'(?<=[.!?])\s+|\n+'))
         .where((s) => s.trim().isNotEmpty)
         .toList();
+    var sentencePosition = nextOrdinal;
     for (final original in units) {
+      _observeEntities(original, sentencePosition++);
       var s = original.trim();
       if (RegExp(r'^(?:capitolo|chapter|parte)\s+[0-9ivxlc]+\b',
                   caseSensitive: false)
@@ -541,6 +582,84 @@ class NarrativeCompiler350 {
   }
 }
 
+
+class NarrativeEntityProfile350 {
+  final String id;
+  int mentions = 0, subjects = 0, objects = 0, targets = 0, first = 1 << 30, last = -1;
+  final Set<String> predicates = {};
+  NarrativeEntityProfile350(this.id);
+  int get spread => last < first ? 0 : last - first;
+  double get score => mentions * 2.0 + subjects * 3.0 + objects * .7 + targets * 1.2 +
+      predicates.length * .9 + min(12, spread) * .18;
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'mentions': mentions,
+        'subjects': subjects,
+        'objects': objects,
+        'targets': targets,
+        'distinctPredicates': predicates.length,
+        'spread': spread,
+        'score': score
+      };
+}
+
+class GlobalStoryModel350 {
+  final Map<String, NarrativeEntityProfile350> entities = {};
+  final List<Event350> events;
+  GlobalStoryModel350(this.events, Map<String, dynamic> meta) {
+    NarrativeEntityProfile350 p(String id) => entities.putIfAbsent(id, () => NarrativeEntityProfile350(id));
+    final narrative = meta['narrative'];
+    if (narrative is Map) {
+      final mentions = narrative['mentions'];
+      final first = narrative['first'];
+      final last = narrative['last'];
+      if (mentions is Map) {
+        for (final e in mentions.entries) p('${e.key}').mentions += (e.value as num).toInt();
+      }
+      if (first is Map) for (final e in first.entries) p('${e.key}').first = (e.value as num).toInt();
+      if (last is Map) for (final e in last.entries) p('${e.key}').last = (e.value as num).toInt();
+    }
+    for (final e in events) {
+      if (e.kind == 'cause') continue;
+      final s = p(e.subject); s.subjects++; s.predicates.add(e.predicate); s.first = min(s.first, e.ordinal); s.last = max(s.last, e.ordinal);
+      if (e.object.isNotEmpty) { final o=p(e.object); o.objects++; o.first=min(o.first,e.ordinal); o.last=max(o.last,e.ordinal); }
+      if (e.target.isNotEmpty) { final t=p(e.target); t.targets++; t.first=min(t.first,e.ordinal); t.last=max(t.last,e.ordinal); }
+    }
+    _mergeAliases();
+  }
+
+  void _mergeAliases() {
+    // Merge a one-token name into an unambiguous multi-token proper name.
+    final ids = entities.keys.toList();
+    for (final id in ids) {
+      if (!entities.containsKey(id) || tokens350(id).length != 1) continue;
+      final matches = entities.keys.where((x) => x != id && tokens350(x).contains(id)).toList();
+      if (matches.length != 1) continue;
+      final a=entities[id]!, b=entities[matches.single]!;
+      b.mentions += a.mentions; b.subjects += a.subjects; b.objects += a.objects; b.targets += a.targets;
+      b.predicates.addAll(a.predicates); b.first=min(b.first,a.first); b.last=max(b.last,a.last);
+      entities.remove(id);
+    }
+  }
+
+  List<NarrativeEntityProfile350> ranked({int limit = 8}) {
+    final out = entities.values.where((e) => e.subjects > 0 || e.mentions >= 2).toList();
+    out.sort((a,b) => b.score.compareTo(a.score));
+    return out.take(limit).toList();
+  }
+
+  Map<String,dynamic>? protagonist() {
+    final r=ranked(limit:3);
+    if (r.isEmpty) return null;
+    final top=r.first, second=r.length>1?r[1]:null;
+    final margin = second==null ? 1.0 : (top.score-second.score)/max(1.0, top.score);
+    return {'entity':top.id,'confidence':(0.45 + min(.5, margin + min(.2, top.subjects/40))).clamp(0.0, .95),
+      'profile':top.toJson(),'alternatives':r.skip(1).map((x)=>x.toJson()).toList()};
+  }
+
+  List<Event350> evidenceFor(String id,{int limit=8}) => events.where((e)=>e.kind!='cause' && (e.subject==id||e.object==id||e.target==id)).take(limit).toList();
+}
+
 class ClosedBookEngine350 {
   final List<Event350> events;
   final Map<String, dynamic> metadata;
@@ -551,6 +670,7 @@ class ClosedBookEngine350 {
   final Map<String, Event350> byId = {};
   final Map<String, String> surfaces = {};
   final Map<String, Event350> lastLocation = {};
+  late final GlobalStoryModel350 story;
   ClosedBookEngine350(List<Event350> input, [Map<String, dynamic>? meta])
       : events = List.unmodifiable(List<Event350>.of(input)
           ..sort((a, b) => a.ordinal.compareTo(b.ordinal))),
@@ -624,6 +744,7 @@ class ClosedBookEngine350 {
     }
     // Do not keep mutually obsolete last-location facts in the timeless inference engine.
     facts = BookEngine342.fromKnowledge(fs, provenance);
+    story = GlobalStoryModel350(events, metadata);
   }
   Map<String, dynamic> answer(String question, {String assumptions = ''}) {
     final watch = Stopwatch()..start();
@@ -646,6 +767,23 @@ class ClosedBookEngine350 {
       };
     final q = norm350(question).replaceAll(RegExp(r'[?!.]+$'), '').trim();
     if (q.isEmpty) return result('unknown', 'Scrivi una domanda.', [], '');
+    final protagonistQ = RegExp(
+        r'^(?:chi è|chi e|qual è|qual e) (?:il |la )?(?:protagonista|personaggio principale|personaggio centrale)(?: della storia| del libro| della novella| del racconto)?$');
+    if (protagonistQ.hasMatch(q) || q == 'chi è il protagonista') {
+      final p = story.protagonist();
+      if (p == null) return result('unknown', 'Non ho abbastanza struttura narrativa per individuare il protagonista.', [], 'Serve una presenza persistente del personaggio nella memoria consolidata.');
+      final id='${p['entity']}', support=story.evidenceFor(id);
+      final conf=((p['confidence'] as num)*100).round();
+      return result('deduction', pretty350(id), support,
+          'Inferenza globale di salienza narrativa ($conf%): persistenza nella storia, eventi come soggetto, relazioni e distribuzione delle menzioni. Non deriva da una frase che dice “è il protagonista”.');
+    }
+    if (RegExp(r'^(?:chi sono|quali sono) (?:i )?personaggi (?:principali|centrali)$').hasMatch(q)) {
+      final r=story.ranked(limit:5);
+      if (r.isEmpty) return result('unknown','Non ho abbastanza personaggi consolidati.',[], 'La memoria non contiene una struttura narrativa sufficiente.');
+      final support=<Event350>[]; for (final x in r) support.addAll(story.evidenceFor(x.id,limit:2));
+      return result('deduction', r.map((x)=>pretty350(x.id)).join('; '), support,
+          'Classifica di salienza narrativa ricavata dall’intera memoria strutturata.');
+    }
     if (RegExp(
             r'^(?:riassumi|riassunto|cosa è successo|che cosa è successo|racconta)')
         .hasMatch(q)) {

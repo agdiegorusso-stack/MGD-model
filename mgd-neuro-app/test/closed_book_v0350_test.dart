@@ -22,6 +22,36 @@ void main() {
       expect(e.answer('Chi ha la chiave?')['status'], 'unknown');
       expect(e.summary(), contains('Non ci sono'));
     });
+
+    test('global story model infers a protagonist without an explicit protagonist fact', () {
+      final compiler = NarrativeCompiler350();
+      final text = 'Eleonora Bandi entra nella stanza. Giorgio osserva Eleonora. '
+          'Eleonora parla con Carlo. Eleonora torna a casa. Carlo vede Eleonora. '
+          'Giorgio parte. Eleonora apre la porta. Eleonora guarda Giorgio. '
+          'Carlo parte. Eleonora resta nella casa.';
+      final unit = compiler.compile(text, unitOrdinal: 0);
+      final meta = {
+        'narrative': {
+          'mentions': compiler.state()['entityMentions'],
+          'first': compiler.state()['entityFirst'],
+          'last': compiler.state()['entityLast'],
+        }
+      };
+      final e = ClosedBookEngine350(unit.events, meta);
+      final r = e.answer('Chi è il protagonista?');
+      expect(r['status'], 'deduction');
+      expect('${r['answer']}'.toLowerCase(), contains('eleonora'));
+      expect(r['rawPassagesRead'], 0);
+      expect('${r['reason']}', contains('salienza narrativa'));
+    });
+
+    test('protagonist fallback works for memories created before narrative mention counters', () {
+      final e = engine350('Marta apre la porta. Marta vede Luca. Marta prende la chiave. '
+          'Luca parte. Marta nasconde la chiave sotto il vaso.');
+      final r = e.answer('Qual è il personaggio principale della storia?');
+      expect(r['status'], 'deduction');
+      expect(r['answer'], 'Marta');
+    });
     test('the memory stores roles not a hidden source document', () {
       final u = NarrativeCompiler350().compile(story350, unitOrdinal: 0);
       final copy =
