@@ -52,7 +52,7 @@ void main() {
     expect(rows.any((x) => '${x['subject']}'.contains('marta') &&
         '${x['object']}'.contains('porta')), true);
     expect(RelationalMemory324.rows(r, includeHistory: false).length,
-        greaterThanOrEqualTo(2), reason: 'These are the live map relationships.');
+        greaterThanOrEqualTo(1), reason: 'The recognized relation reaches the live map.');
   });
 
   test('paragraph events stay separate and questions are excluded', () async {

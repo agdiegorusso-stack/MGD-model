@@ -365,6 +365,18 @@ void main() {
   testWidgets(
       'CLS page teaches through real SQLite and exposes all four workspaces',
       (tester) async {
+    Future<void> waitForDatabase() async {
+      for (var i = 0; i < 60; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.byType(LinearProgressIndicator).evaluate().isEmpty) {
+          await tester.pumpAndSettle();
+          return;
+        }
+      }
+      fail('CLS database operation did not complete within six real seconds.');
+    }
     late ClsStore340 store;
     await tester.runAsync(() async {
       store = await ClsStore340.open(
@@ -373,9 +385,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(
         home: ClsPage340(
             world: MgdWorld06(), onSave: () async {}, store: store)));
-    await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 500)));
-    await tester.pumpAndSettle();
+    await waitForDatabase();
     expect(find.text('Atlante'), findsOneWidget);
     expect(find.text('Italiano'), findsOneWidget);
     expect(find.text('Studio'), findsOneWidget);
@@ -393,9 +403,7 @@ void main() {
             .first);
 
     await tester.tap(find.byKey(const ValueKey('cls-teach')));
-    await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 600)));
-    await tester.pumpAndSettle();
+    await waitForDatabase();
     await tester.runAsync(() async {
       expect((await store.stats())['episodes'], 1);
     });

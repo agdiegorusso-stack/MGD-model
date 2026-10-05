@@ -79,7 +79,14 @@ void main() {
       RelationalMemory324.learn(m,text);
     }
     expect(RelationalMemory324.rows(m),isEmpty);
-    expect(RelationalMemory324.answer(m,'Cosa contiene la cassa'),contains('Non interpreto'));
+    expect(RelationalMemory324.answer(m,'Cosa contiene la cassa'),
+        contains('Non ho una relazione insegnata'));
+    RelationalMemory324.learn(m, 'La cassa contiene cristalli.');
+    expect(RelationalMemory324.answer(m, 'Cosa contiene la cassa?'),
+        contains('cristalli'));
+    expect(RelationalMemory324.answer(m, 'Che cosa contiene la cassa?'),
+        contains('cristalli'));
+    expect(RelationalMemory324.rows(m).length, 1);
   });
   test('legacy fallback stays available except for current or corrected assertions',() {
     final m=ResearchMemory11();

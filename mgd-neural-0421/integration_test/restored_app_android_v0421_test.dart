@@ -56,6 +56,7 @@ void main() {
     final png = await binding.takeScreenshot('restored-map421');
     final temp = await getTemporaryDirectory();
     await File('${temp.path}/restored-map421.png').writeAsBytes(png);
+    await binding.revertFlutterImage();
     await tester.tap(find.text('Vivi'));
     await settle421(tester);
     await tester.enterText(find.byKey(const ValueKey('chat421')),

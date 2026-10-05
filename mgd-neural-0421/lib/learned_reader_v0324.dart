@@ -81,6 +81,29 @@ class LearnedReader324 {
   }
   static Frame324? parse(String text,{String? antecedent}) {
     final ts=tokens(text);
+    // Explicit object questions share the stored predicate/subject roles.
+    // A wildcard question can never be admitted as an assertion.
+    final offset = ts.isNotEmpty && ts.first == 'cosa' ? 1
+        : ts.length >= 2 && ts[0] == 'che' && ts[1] == 'cosa' ? 2 : -1;
+    if (offset >= 0) {
+      var at = offset;
+      final negative = at < ts.length && ts[at] == 'non';
+      if (negative) at++;
+      if (at >= ts.length || !predicates.containsKey(ts[at]) ||
+          RegExp(r'[,;:"“”]').hasMatch(text)) return null;
+      final relation = predicates[ts[at]]!;
+      final subject = ts.skip(at + 1).toList();
+      const articles = {'il','lo','la','i','gli','le','un','uno','una'};
+      if (subject.isNotEmpty && articles.contains(subject.first)) {
+        subject.removeAt(0);
+      }
+      if (subject.isEmpty || subject.length > 5 ||
+          subject.any(blocked.contains) ||
+          subject.any(predicates.containsKey) || subject.contains('chi') ||
+          subject.contains('non')) return null;
+      return Frame324(subject.join(' '), relation, '*', text,
+          negative: negative, question: true, margin: 1);
+    }
     if(ts.length<3||ts.length>24||ts.any(blocked.contains)) return null;
     // These question forms are recognized as questions but are outside this
     // first reader's trained query vocabulary. Never turn them into assertions.
