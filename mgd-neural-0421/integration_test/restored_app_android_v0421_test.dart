@@ -16,6 +16,28 @@ Future<void> settle421(WidgetTester tester) async {
       EnginePhase.sendSemanticsUpdate, const Duration(seconds: 45));
 }
 
+Future<void> ready421(WidgetTester tester, Finder button) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 45));
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    final matches = button.evaluate();
+    if (matches.length == 1) {
+      final widget = matches.single.widget;
+      if ((widget is ButtonStyleButton && widget.onPressed != null) ||
+          (widget is IconButton && widget.onPressed != null)) {
+        await settle421(tester);
+        return;
+      }
+    }
+  }
+  throw TestFailure('The operation did not finish: $button');
+}
+
+Finder button421(String text) => find.ancestor(
+    of: find.text(text),
+    matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton))
+    .first;
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('teach, map, answer, engine controls and persisted restart',
@@ -32,14 +54,16 @@ void main() {
     expect(find.byType(NavigationDestination), findsNWidgets(5));
     await tester.tap(find.text('Impara'));
     await settle421(tester);
-    expect(find.byKey(const ValueKey('import-text421')), findsOneWidget);
+    expect(find.byKey(const ValueKey('teaching-text421')), findsOneWidget);
     await tester.enterText(find.byKey(const ValueKey('teaching-text421')),
         'Il zorvello contiene cristalli. Marta apre la porta.');
     FocusManager.instance.primaryFocus?.unfocus();
     await settle421(tester);
     await tester.scrollUntilVisible(find.byKey(const ValueKey('learn-text421')),
         180, scrollable: find.byType(Scrollable).first);
+    expect(find.byKey(const ValueKey('import-text421')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('learn-text421')));
+    await ready421(tester, find.byKey(const ValueKey('learn-text421')));
     await settle421(tester);
     final cognitive = await CognitiveCoreBridge400.stats();
     expect(cognitive['relations'], greaterThanOrEqualTo(2));
@@ -63,6 +87,7 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await settle421(tester);
     await tester.tap(find.byKey(const ValueKey('send421')));
+    await ready421(tester, find.byKey(const ValueKey('send421')));
     await settle421(tester);
     expect(find.textContaining('cristalli'), findsWidgets);
     expect((await CognitiveCoreBridge400.stats())['relations'],
@@ -72,6 +97,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Pensa 96 cicli'), 300,
         scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('Pensa 96 cicli'));
+    await ready421(tester, button421('Pensa 96 cicli'));
     await settle421(tester);
     expect(find.text('Dormi / consolida'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -85,6 +111,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Vivi e impara'), 180,
         scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('Vivi e impara'));
+    await ready421(tester, button421('Vivi e impara'));
     await settle421(tester);
     expect(find.textContaining('Frame:'), findsOneWidget);
     expect(find.textContaining('Salienza'), findsOneWidget);
