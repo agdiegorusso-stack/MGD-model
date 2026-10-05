@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'cognitive_core_v0400.dart';
 
 class CognitiveCorePage400 extends StatefulWidget {
-  final Future<void> Function(String text)? onLearn;
+  final Future<CognitiveTurn400?> Function(String text)? onLearn;
   const CognitiveCorePage400({super.key, this.onLearn});
   @override
   State<CognitiveCorePage400> createState()=>_CognitiveCorePage400State();
@@ -33,8 +33,7 @@ class _CognitiveCorePage400State extends State<CognitiveCorePage400> {
       final c=await CognitiveCoreBridge400.core;
       final r = widget.onLearn == null
           ? await c.experience(text,source:'laboratorio')
-          : null;
-      if (widget.onLearn != null) await widget.onLearn!(text);
+          : await widget.onLearn!(text);
       if(mounted) setState((){last=r; experience.clear();});
       await _refresh();
     } finally { if(mounted)setState(()=>busy=false); }

@@ -173,6 +173,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   double _progress = 0;
   bool _cancelLearning421 = false;
   Map<String, dynamic> _engineStats421 = {};
+  CognitiveTurn400? _lastExternalTurn421;
   String _status = 'Avvio del cervello relazionale…';
 
   @override
@@ -247,7 +248,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _language20.bootstrapFromBrain(_brain);
       ClsBridge340.active = await ClsStore340.shared;
       LearningBridge421.observe = (text, source) async {
-        await (await DialogueBridge410.engine)
+        _lastExternalTurn421 = await (await DialogueBridge410.engine)
             .observeExternal(text, source: source);
       };
       _engineStats421 = await DialogueBridge410.stats();
@@ -1247,6 +1248,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
+  Future<CognitiveTurn400?> _externalCoreText421(String text, String source) async {
+    _lastExternalTurn421 = null;
+    await _externalText421(text, source);
+    return _lastExternalTurn421;
+  }
+
   Future<void> _importText421() async {
     if (_busy || !_ready || _researchBusy || _maintenance317) return;
     File? staged;
@@ -1902,7 +1909,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         worstFrameMs: _worstFrameMs18,
         language20: _language20,
         onLanguage20: _openLanguage20,
-        onExternalText421: _externalText421,
+        onExternalText421: _externalCoreText421,
       ),
     ];
 
@@ -2496,7 +2503,7 @@ class _MindPage07 extends StatelessWidget {
   final double worstFrameMs;
   final MgdLanguage20 language20;
   final Future<void> Function() onLanguage20;
-  final Future<void> Function(String text, String source) onExternalText421;
+  final Future<CognitiveTurn400?> Function(String text, String source) onExternalText421;
 
   const _MindPage07({
     required this.brain,

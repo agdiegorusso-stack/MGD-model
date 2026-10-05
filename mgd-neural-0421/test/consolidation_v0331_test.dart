@@ -90,14 +90,21 @@ void main() {
     const prompt = 'Che cosa possiede Mario?';
     final answer = RelationalMemory324.answerIfKnown(memory, prompt);
     expect(answer, isNotNull);
-    final before = jsonEncode(memory.toJson());
+    Map<String, dynamic> evidenceSnapshot() {
+      final copy = jsonDecode(jsonEncode(memory.toJson())) as Map<String, dynamic>;
+      // Query latency is diagnostic telemetry, not learned evidence.
+      (copy['state317']['relationalMemory324']['lastQuery'] as Map)
+          .remove('micros');
+      return copy;
+    }
+    final before = evidenceSnapshot();
     b.reinforcePair(prompt, answer!, false);
     b = PlasticLanguageBrain04.fromJson(jsonDecode(jsonEncode(b.toJson())));
     expect(
         b.guardResponse331(
             prompt, RelationalMemory324.answerIfKnown(memory, prompt)!),
         isNot(answer));
-    expect(jsonEncode(memory.toJson()), before);
+    expect(evidenceSnapshot(), before);
     b.reinforcePair(prompt, answer, true);
     expect(b.guardResponse331(prompt, answer), answer);
   });

@@ -75,6 +75,23 @@ void main() {
     await settle421(tester);
     expect(find.text('Dormi / consolida'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('cognitive-open400')),
+        -300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byKey(const ValueKey('cognitive-open400')));
+    await settle421(tester);
+    await tester.enterText(find.byType(TextField).first, 'Luca chiude la finestra.');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await settle421(tester);
+    await tester.scrollUntilVisible(find.text('Vivi e impara'), 180,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Vivi e impara'));
+    await settle421(tester);
+    expect(find.textContaining('Frame:'), findsOneWidget);
+    expect(find.textContaining('Salienza'), findsOneWidget);
+    final afterLab = await CognitiveCoreBridge400.stats();
+    expect(afterLab['relations'], greaterThan(cognitive['relations'] as num));
+    await tester.pageBack();
+    await settle421(tester);
     await tester.pumpWidget(const SizedBox());
     await settle421(tester);
     await tester.pumpWidget(const MgdNeuro04App());
@@ -89,7 +106,7 @@ void main() {
     await settle421(tester);
     expect(find.textContaining('Focus: zorvello'), findsOneWidget);
     expect((await CognitiveCoreBridge400.stats())['relations'],
-        cognitive['relations']);
+        afterLab['relations']);
     expect(tester.takeException(), isNull);
   });
 }
