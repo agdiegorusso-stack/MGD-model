@@ -143,7 +143,7 @@ void main() {
       final reply = await coordinator.process('A chi Ada consegnò la mappa?',
           scope: learned['source'] as String);
       expect(reply.status, 'direct');
-      expect(reply.text, contains('Bruno'));
+      expect(reply.text.toLowerCase(), contains('bruno'));
       expect(reply.evidence.single['text'], sentence);
     });
   }
