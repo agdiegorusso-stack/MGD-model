@@ -29,6 +29,9 @@ Map<String, dynamic> compileCanonical420(Map<String, dynamic> request) {
       RegExp(r'\s+prima di (?:salutare|partire|uscire)\b[^.!?]*'), '');
     sentence = sentence.replaceFirst(
       RegExp(r'\s+che aveva trovato[.!]?$'), '.');
+    // Reordering must not move a sentence terminator into the middle of a
+    // clause: that would split the recipient off as a separate sentence.
+    sentence = sentence.replaceAll(RegExp(r'[.!]+$'), '').trim();
     // Recipient before the object is a distinct finite construction.
     final gift = RegExp(
       r'^([A-ZÀÈÉÌÒÙ][a-zàèéìòù]+)\s+(consegnò|consegna|consegnava)\s+a\s+([A-ZÀÈÉÌÒÙ][a-zàèéìòù]+)\s+((?:il|la|lo|una|un)\s+.+)$')

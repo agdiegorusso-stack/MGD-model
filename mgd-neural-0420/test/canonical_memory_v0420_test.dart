@@ -134,6 +134,19 @@ void main() {
     final where = await coordinator.process('Dove si trova la mappa?', scope: learned['source'] as String);
     expect(where.text.toLowerCase(), contains('zaino'));
   });
+  for (final sentence in [
+    'Ada consegnò a Bruno la mappa.',
+    'Ada consegnò a Bruno la mappa che aveva trovato.',
+  ]) {
+    test('recipient survives clause reordering: $sentence', () async {
+      final learned = await memory.ingestText(sentence);
+      final reply = await coordinator.process('A chi Ada consegnò la mappa?',
+          scope: learned['source'] as String);
+      expect(reply.status, 'direct');
+      expect(reply.text, contains('Bruno'));
+      expect(reply.evidence.single['text'], sentence);
+    });
+  }
   test('explicit arithmetic and color facts are source-backed', () async {
     await memory.ingestText('Il deposito ospitava sette casse, ma due furono trasferite al molo. Ada osservò la lanterna rossa accanto alla finestra.');
     expect((await coordinator.process('Quante casse rimasero nel deposito?')).text, '5');
