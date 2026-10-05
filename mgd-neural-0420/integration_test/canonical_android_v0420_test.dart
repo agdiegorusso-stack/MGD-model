@@ -21,7 +21,7 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Apprendi testo'), 160,
-          scrollable: find.byType(Scrollable));
+          scrollable: find.byType(Scrollable).first);
       await tester.tap(find.text('Apprendi testo'));
       await tester.pumpAndSettle();
       final initial = await memory.stats();
