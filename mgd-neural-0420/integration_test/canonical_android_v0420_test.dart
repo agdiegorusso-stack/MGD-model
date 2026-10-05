@@ -18,7 +18,10 @@ void main() {
       await tester.tap(find.text('Impara'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const ValueKey('teach420')), 'La glarpa produce latte.');
-      await tester.ensureVisible(find.text('Apprendi testo'));
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Apprendi testo'), 160,
+          scrollable: find.byType(Scrollable));
       await tester.tap(find.text('Apprendi testo'));
       await tester.pumpAndSettle();
       final initial = await memory.stats();
@@ -26,6 +29,8 @@ void main() {
       await tester.tap(find.text('Chat'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const ValueKey('chat420')), 'Che cosa produce la glarpa?');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('send420')));
       await tester.pumpAndSettle();
       expect(find.text('latte'), findsOneWidget);
@@ -35,6 +40,8 @@ void main() {
       await tester.tap(find.text('Correggi questa relazione'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const ValueKey('correction420')), 'La glarpa produce miele.');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Salva'));
       await tester.pumpAndSettle();
       expect((await memory.stats())['revoked'], 1);
