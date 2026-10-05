@@ -1,0 +1,105 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+function train324() {
+  const labels=['X','A','O','P:insegue','P:aiuta','P:contiene','P:possiede'];
+  const verbs=[
+    ['insegue','insegue','inseguito','inseguita'],
+    ['insegue','rincorre','rincorso','rincorsa'],
+    ['aiuta','aiuta','aiutato','aiutata'],
+    ['aiuta','supporta','supportato','supportata'],
+    ['contiene','contiene','contenuto','contenuta'],
+    ['contiene','include','incluso','inclusa'],
+    ['possiede','possiede','posseduto','posseduta'],
+  ];
+  const examples=[];
+  const entA=[['aldo'],['il','cane'],['la','volpe'],['il','robot','rosso'],['la','macchina','blu']];
+  const entO=[['bruno'],['il','topo'],['la','lepre'],['il','robot','verde'],['la','scatola','grigia']];
+  function entity(tokens,role){return tokens.map(t=>[t,['il','la'].includes(t)?'X':role]);}
+  function x(...tokens){return tokens.map(t=>[t,'X']);}
+  for (const [r,v,pm,pf] of verbs) for(let e=0;e<5;e++) {
+    const a=entity(entA[e],'A'),o=entity(entO[e],'O');
+    const p=[ [v,'P:'+r] ], pp=[[e===2||e===4?pf:pm,'P:'+r]];
+    const forms=[
+      [...a,...p,...o], [...a,...x('non'),...p,...o],
+      [...a,...x('oggi'),...p,...o], [...x('oggi'),...a,...p,...o],
+      [...o,...x('è'),...pp,...x('da'),...a],
+      [...o,...x('viene'),...pp,...x('da'),...a],
+      [...o,...x('non','è'),...pp,...x('da'),...a],
+      [['chi','A'],...p,...o], [...a,...p,['chi','O']],
+      [['chi','O'],...x('è'),...pp,...x('da'),...a],
+      [...x('da'),['chi','A'],...x('è'),...pp,...o],
+      [...x('da'),['chi','A'],...o,...x('viene'),...pp],
+      [...a,['lo','O'],...p], [...a,['la','O'],...p],
+      [['lui','A'],...p,...o], [['lei','A'],...p,...o],
+      [...a,...x('non'),['lo','O'],...p],
+      [...o,...x('è'),...pp,...x('dal'),...entity(['custode'],'A')],
+      [...o,...x('è'),...pp,...x('dalla'),...entity(['custode'],'A')],
+      [...x('chi'),...x('mai')], // no relation/abstention example
+    ];
+    for(const pairs of forms) examples.push({tokens:pairs.map(p=>p[0]),tags:pairs.map(p=>p[1])});
+  }
+  const lex=new Set();
+  const predicateTokens={};
+  for(const e of examples) e.tokens.forEach((w,i)=>{
+    if(e.tags[i]==='X'||e.tags[i].startsWith('P:')||['chi','lo','la','lui','lei'].includes(w))lex.add(w);
+    if(e.tags[i].startsWith('P:'))predicateTokens[w]=e.tags[i].slice(2);
+  });
+  function features(ts,i) {
+    const a=ts.map(t=>lex.has(t)?t:'@');
+    const f=['bias'];
+    for(let d=-3;d<=3;d++)f.push('w'+d+'='+(a[i+d]??'#'));
+    f.push('pair='+ (a[i-1]??'#')+'|'+a[i]+'|'+(a[i+1]??'#'));
+    f.push('start='+Math.min(i,3),'end='+Math.min(ts.length-1-i,3));
+    const ps=ts.map((t,j)=>predicateTokens[t]?j:-1).filter(j=>j>=0);
+    if(ps.length) {
+      const d=i-ps[0];
+      f.push('predSide='+Math.sign(d),'predDistance='+Math.max(-4,Math.min(4,d)));
+      const before=ts.slice(0,ps[0]).filter(t=>lex.has(t)).join('|');
+      f.push('beforePred='+before+'|side='+Math.sign(d));
+    }
+    for(const t of new Set(a.filter(t=>t!=='@')))f.push('global='+t+'|side='+Math.sign(i-(ps[0]??i)));
+    return f;
+  }
+  const weights={}, totals={},last={};
+  let step=0, seed=324;
+  function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
+  function score(fs,W=weights){const s=labels.map(()=>0);for(const f of fs){const w=W[f];if(w)w.forEach((v,i)=>s[i]+=v);}return s;}
+  function update(f,c,d) {
+    if(!weights[f]){weights[f]=labels.map(()=>0);totals[f]=labels.map(()=>0);last[f]=labels.map(()=>0);}
+    totals[f][c]+=(step-last[f][c])*weights[f][c];last[f][c]=step;weights[f][c]+=d;
+  }
+  for(let epoch=0;epoch<22;epoch++) {
+    const order=examples.map((_,i)=>i);
+    for(let i=order.length-1;i>0;i--){let j=Math.floor(rand()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+    for(const n of order){const e=examples[n];for(let i=0;i<e.tokens.length;i++){
+      step++; const fs=features(e.tokens,i), s=score(fs);
+      const pred=s.indexOf(Math.max(...s)),gold=labels.indexOf(e.tags[i]);
+      if(pred!==gold)for(const f of fs){update(f,gold,1);update(f,pred,-1);}
+    }}
+  }
+  const avg={};
+  for(const [f,w]of Object.entries(weights)) {
+    const row=w.map((v,c)=>Number(((totals[f][c]+(step-last[f][c])*v)/step).toFixed(6)));
+    if(row.some(v=>Math.abs(v)>.00001))avg[f]=row;
+  }
+  function predict(text) {
+    const ts=text.toLowerCase().match(/[a-zàèéìòù0-9]+/g)||[];
+    return ts.map((t,i)=>{let s=score(features(ts,i),avg);return [t,labels[s.indexOf(Math.max(...s))]];});
+  }
+  let exact=0;
+  for(const e of examples){const p=predict(e.tokens.join(' '));if(p.every((x,i)=>x[1]===e.tags[i]))exact++;}
+  return {model:{version:324,labels,lexicon:[...lex].sort(),predicateTokens,weights:avg,
+    training:{algorithm:'averaged_perceptron',seed:324,epochs:22,examples:examples.length,trainingExact:exact}},
+    examples,predict};
+}
+
+const result=train324();
+const root=process.cwd();
+const modelPath=path.join(root,'lib/learned_reader_model_v0324.dart');
+const generated="// Generated by tool/train_reader_v0324.mjs; no external pretrained weights.\nconst learnedReaderModel324 = r'''"+JSON.stringify(result.model)+"''';\n";
+if(process.argv.includes('--check')) {
+  if(fs.readFileSync(modelPath,'utf8')!==generated) throw new Error('Model does not match reproducible training');
+} else fs.writeFileSync(modelPath,generated);
+fs.writeFileSync(path.join(root,'tool/reader-training-0324.json'),JSON.stringify({metadata:result.model.training,examples:result.examples},null,2));
+console.log(JSON.stringify(result.model.training));

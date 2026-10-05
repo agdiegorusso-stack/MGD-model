@@ -1,0 +1,273 @@
+{
+  "schema": 1,
+  "name": "MGD source selection development evaluation",
+  "frozenBeforeRun": true,
+  "created": "2026-09-25",
+  "scope": "Choose the source passage that directly answers the question; 0 if absent. 24 authored cases, not a public benchmark or blind held-out test. Includes paraphrases and anaphora not implemented by the lexical reader.",
+  "cases": [
+    {
+      "id": 1,
+      "category": "definition_it",
+      "documents": [
+        "Il norvante è un contenitore isolante, costruito per il trasporto se la temperatura è bassa.",
+        "Il talmero è un sensore ottico.",
+        "Il zelante contiene acqua."
+      ],
+      "question": "Che cosa è il norvante?",
+      "expected": 1
+    },
+    {
+      "id": 2,
+      "category": "definition_it",
+      "documents": [
+        "Il norvante è un contenitore isolante, costruito per il trasporto se la temperatura è bassa.",
+        "Il talmero è un sensore ottico.",
+        "Il zelante contiene acqua."
+      ],
+      "question": "Che cosa è il talmero?",
+      "expected": 2
+    },
+    {
+      "id": 3,
+      "category": "definition_it",
+      "documents": [
+        "Il norvante è un contenitore isolante, costruito per il trasporto se la temperatura è bassa.",
+        "Il talmero è un sensore ottico.",
+        "Il zelante contiene acqua."
+      ],
+      "question": "Che cosa è il fenorio?",
+      "expected": 0
+    },
+    {
+      "id": 4,
+      "category": "conditional_it",
+      "documents": [
+        "Il talverio funziona solo se il circuito è chiuso.",
+        "Il lorvante funziona anche se il circuito è aperto.",
+        "Il mervante viene spento quando il circuito si apre."
+      ],
+      "question": "Quando funziona il talverio?",
+      "expected": 1
+    },
+    {
+      "id": 5,
+      "category": "conditional_it",
+      "documents": [
+        "Il talverio funziona solo se il circuito è chiuso.",
+        "Il lorvante funziona anche se il circuito è aperto.",
+        "Il mervante viene spento quando il circuito si apre."
+      ],
+      "question": "Quale dispositivo funziona con il circuito aperto?",
+      "expected": 2
+    },
+    {
+      "id": 6,
+      "category": "conditional_it",
+      "documents": [
+        "Il talverio funziona solo se il circuito è chiuso.",
+        "Il lorvante funziona anche se il circuito è aperto.",
+        "Il mervante viene spento quando il circuito si apre."
+      ],
+      "question": "A quale temperatura funziona il talverio?",
+      "expected": 0
+    },
+    {
+      "id": 7,
+      "category": "negation_it",
+      "documents": [
+        "Il zermante non contiene rame, ma contiene zinco.",
+        "Il balverio contiene rame.",
+        "Il daverno non contiene né rame né zinco."
+      ],
+      "question": "Il zermante contiene rame?",
+      "expected": 1
+    },
+    {
+      "id": 8,
+      "category": "negation_it",
+      "documents": [
+        "Il zermante non contiene rame, ma contiene zinco.",
+        "Il balverio contiene rame.",
+        "Il daverno non contiene né rame né zinco."
+      ],
+      "question": "Quale materiale contiene il balverio?",
+      "expected": 2
+    },
+    {
+      "id": 9,
+      "category": "negation_it",
+      "documents": [
+        "Il zermante non contiene rame, ma contiene zinco.",
+        "Il balverio contiene rame.",
+        "Il daverno non contiene né rame né zinco."
+      ],
+      "question": "Il daverno contiene argento?",
+      "expected": 0
+    },
+    {
+      "id": 10,
+      "category": "roles_it",
+      "documents": [
+        "Il navero produce il talsio.",
+        "Il talsio produce il vernio.",
+        "Il vernio protegge il navero."
+      ],
+      "question": "Cosa produce il navero?",
+      "expected": 1
+    },
+    {
+      "id": 11,
+      "category": "roles_it",
+      "documents": [
+        "Il navero produce il talsio.",
+        "Il talsio produce il vernio.",
+        "Il vernio protegge il navero."
+      ],
+      "question": "Chi produce il vernio?",
+      "expected": 2
+    },
+    {
+      "id": 12,
+      "category": "roles_it",
+      "documents": [
+        "Il navero produce il talsio.",
+        "Il talsio produce il vernio.",
+        "Il vernio protegge il navero."
+      ],
+      "question": "Il navero protegge il vernio?",
+      "expected": 0
+    },
+    {
+      "id": 13,
+      "category": "paraphrase_it",
+      "documents": [
+        "Il larvente dimora nelle grotte.",
+        "Il dorvente si alimenta di alghe.",
+        "Il palvente emette luce durante la notte."
+      ],
+      "question": "Dove vive il larvente?",
+      "expected": 1
+    },
+    {
+      "id": 14,
+      "category": "paraphrase_it",
+      "documents": [
+        "Il larvente dimora nelle grotte.",
+        "Il dorvente si alimenta di alghe.",
+        "Il palvente emette luce durante la notte."
+      ],
+      "question": "Cosa mangia il dorvente?",
+      "expected": 2
+    },
+    {
+      "id": 15,
+      "category": "paraphrase_it",
+      "documents": [
+        "Il larvente dimora nelle grotte.",
+        "Il dorvente si alimenta di alghe.",
+        "Il palvente emette luce durante la notte."
+      ],
+      "question": "Quale organismo si illumina al buio?",
+      "expected": 3
+    },
+    {
+      "id": 16,
+      "category": "definition_en",
+      "documents": [
+        "A nexalon is an insulating container.",
+        "A voralin is a measuring instrument.",
+        "A ziralon is a fictional mineral."
+      ],
+      "question": "What is a nexalon?",
+      "expected": 1
+    },
+    {
+      "id": 17,
+      "category": "definition_en",
+      "documents": [
+        "A nexalon is an insulating container.",
+        "A voralin is a measuring instrument.",
+        "A ziralon is a fictional mineral."
+      ],
+      "question": "Define voralin.",
+      "expected": 2
+    },
+    {
+      "id": 18,
+      "category": "definition_en",
+      "documents": [
+        "A nexalon is an insulating container.",
+        "A voralin is a measuring instrument.",
+        "A ziralon is a fictional mineral."
+      ],
+      "question": "What is a kelaron?",
+      "expected": 0
+    },
+    {
+      "id": 19,
+      "category": "conditions_en",
+      "documents": [
+        "The torvian activates only when the switch is closed.",
+        "The malvian does not contain copper.",
+        "The sorvian contains copper and zinc."
+      ],
+      "question": "When does the torvian activate?",
+      "expected": 1
+    },
+    {
+      "id": 20,
+      "category": "conditions_en",
+      "documents": [
+        "The torvian activates only when the switch is closed.",
+        "The malvian does not contain copper.",
+        "The sorvian contains copper and zinc."
+      ],
+      "question": "Does the malvian contain copper?",
+      "expected": 2
+    },
+    {
+      "id": 21,
+      "category": "conditions_en",
+      "documents": [
+        "The torvian activates only when the switch is closed.",
+        "The malvian does not contain copper.",
+        "The sorvian contains copper and zinc."
+      ],
+      "question": "Does the sorvian contain silver?",
+      "expected": 0
+    },
+    {
+      "id": 22,
+      "category": "anaphora_it",
+      "documents": [
+        "Il dervante utilizza un filtro. Questo componente trattiene la polvere.",
+        "Il pervante utilizza una lente. Questo componente concentra la luce.",
+        "Il torvento è stato ritirato ieri. Prima del ritiro funzionava regolarmente."
+      ],
+      "question": "Quale componente del dervante trattiene la polvere?",
+      "expected": 1
+    },
+    {
+      "id": 23,
+      "category": "anaphora_it",
+      "documents": [
+        "Il dervante utilizza un filtro. Questo componente trattiene la polvere.",
+        "Il pervante utilizza una lente. Questo componente concentra la luce.",
+        "Il torvento è stato ritirato ieri. Prima del ritiro funzionava regolarmente."
+      ],
+      "question": "Quale componente del pervante concentra la luce?",
+      "expected": 2
+    },
+    {
+      "id": 24,
+      "category": "anaphora_it",
+      "documents": [
+        "Il dervante utilizza un filtro. Questo componente trattiene la polvere.",
+        "Il pervante utilizza una lente. Questo componente concentra la luce.",
+        "Il torvento è stato ritirato ieri. Prima del ritiro funzionava regolarmente."
+      ],
+      "question": "Il torvento è ancora in servizio?",
+      "expected": 3
+    }
+  ]
+}
