@@ -71,7 +71,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           working-directory: mgd-neural-0421
           script: |
-            bash -o pipefail -c 'flutter test integration_test/restored_app_android_v0421_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-test.log'
+            bash -o pipefail -c 'flutter test integration_test/restored_app_android_v0421_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-test.log; mgd_test_status=${PIPESTATUS[0]}; adb shell screencap -p > tool/reports/android-last-screen.png; adb exec-out run-as it.diegorusso.mgdneurostable cat cache/restored-map421.png > tool/reports/restored-map421.png; exit "$mgd_test_status"'
             adb exec-out run-as it.diegorusso.mgdneurostable cat cache/restored-map421.png > tool/reports/restored-map421.png
             adb install -r build/app/outputs/flutter-apk/app-release.apk
             adb logcat -c

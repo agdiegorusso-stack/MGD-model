@@ -70,16 +70,21 @@ void main() {
     await tester.tap(find.text('Mappa'));
     await settle421(tester);
     await tester.enterText(find.byType(TextField), 'zorvello');
-    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.tap(find.byTooltip('Cerca'));
     await settle421(tester);
-    expect(find.textContaining('Focus: zorvello'), findsOneWidget);
-    expect(find.byKey(const ValueKey('knowledge-map-nodes')), findsOneWidget);
-    expect(find.byTooltip('Salva PNG'), findsOneWidget);
     await binding.convertFlutterSurfaceToImage();
     await tester.pump();
     final png = await binding.takeScreenshot('restored-map421');
     final temp = await getTemporaryDirectory();
     await File('${temp.path}/restored-map421.png').writeAsBytes(png);
+    final focus = find.textContaining(
+        RegExp(r'Focus:\s*zorvello\b', caseSensitive: false));
+    if (focus.evaluate().isEmpty) {
+      debugPrint('MAP421: ${find.byType(Text).evaluate().map((e) => (e.widget as Text).data).toList()}');
+    }
+    expect(focus, findsOneWidget);
+    expect(find.byKey(const ValueKey('knowledge-map-nodes')), findsOneWidget);
+    expect(find.byTooltip('Salva PNG'), findsOneWidget);
     await tester.tap(find.text('Vivi'));
     await settle421(tester);
     await tester.enterText(find.byKey(const ValueKey('chat421')),
@@ -129,9 +134,9 @@ void main() {
     await tester.tap(find.text('Mappa'));
     await settle421(tester);
     await tester.enterText(find.byType(TextField), 'zorvello');
-    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.tap(find.byTooltip('Cerca'));
     await settle421(tester);
-    expect(find.textContaining('Focus: zorvello'), findsOneWidget);
+    expect(find.textContaining(RegExp(r'Focus:\s*zorvello\b', caseSensitive: false)), findsOneWidget);
     expect((await CognitiveCoreBridge400.stats())['relations'],
         afterLab['relations']);
     expect(tester.takeException(), isNull);
