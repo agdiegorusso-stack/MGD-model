@@ -672,7 +672,10 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
         final d = level[node] ?? _depth;
         levels.putIfAbsent(d, () => <String>[]).add(node);
       }
-      final maxRadius = min(canvasSize.width, canvasSize.height) * 0.43;
+      final maxRadius = n <= 12
+          ? min(min(canvasSize.width, canvasSize.height) * 0.43,
+              80.0 + sqrt(n) * 25.0)
+          : min(canvasSize.width, canvasSize.height) * 0.43;
       for (final entry in levels.entries) {
         final ring = entry.key;
         final nodes = entry.value

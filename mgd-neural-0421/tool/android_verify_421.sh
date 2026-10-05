@@ -11,9 +11,13 @@ for mgd_attempt in 1 2; do
   cp "tool/reports/android-test-attempt-${mgd_attempt}.log" tool/reports/android-test.log
   adb shell screencap -p > tool/reports/android-last-screen.png
   if (( mgd_test_status == 0 )); then break; fi
-  if (( mgd_attempt == 1 )) && \
-      rg -q 'Connecting to the VM Service timed out' tool/reports/android-test.log && \
-      ! rg -q 'teach, map, answer, engine controls and persisted restart' tool/reports/android-test.log; then
+  if (( mgd_attempt == 1 )) && python3 - <<'PY'
+from pathlib import Path
+s = Path('tool/reports/android-test.log').read_text()
+raise SystemExit(0 if 'Connecting to the VM Service timed out' in s and
+    'teach, map, answer, engine controls and persisted restart' not in s else 1)
+PY
+  then
     # Retry only a debugger connection failure before any UI test has run.
     adb shell am force-stop it.diegorusso.mgdneurostable
     continue

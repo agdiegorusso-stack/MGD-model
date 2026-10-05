@@ -38,6 +38,19 @@ Finder button421(String text) => find.ancestor(
     matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton))
     .first;
 
+Future<void> keyboardClosed421(WidgetTester tester) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  final deadline = DateTime.now().add(const Duration(seconds: 15));
+  do {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (tester.view.viewInsets.bottom == 0) {
+      await settle421(tester);
+      return;
+    }
+  } while (DateTime.now().isBefore(deadline));
+  throw TestFailure('The Android keyboard did not close.');
+}
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('teach, map, answer, engine controls and persisted restart',
@@ -57,8 +70,7 @@ void main() {
     expect(find.byKey(const ValueKey('teaching-text421')), findsOneWidget);
     await tester.enterText(find.byKey(const ValueKey('teaching-text421')),
         'Il zorvello contiene cristalli. Marta apre la porta.');
-    FocusManager.instance.primaryFocus?.unfocus();
-    await settle421(tester);
+    await keyboardClosed421(tester);
     await tester.scrollUntilVisible(find.byKey(const ValueKey('learn-text421')),
         180, scrollable: find.byType(Scrollable).first);
     expect(find.byKey(const ValueKey('import-text421')), findsOneWidget);
@@ -71,7 +83,7 @@ void main() {
     await settle421(tester);
     await tester.enterText(find.byType(TextField), 'zorvello');
     await tester.tap(find.byTooltip('Cerca'));
-    await settle421(tester);
+    await keyboardClosed421(tester);
     await binding.convertFlutterSurfaceToImage();
     await tester.pump();
     final png = await binding.takeScreenshot('restored-map421');
@@ -89,8 +101,7 @@ void main() {
     await settle421(tester);
     await tester.enterText(find.byKey(const ValueKey('chat421')),
         'Cosa contiene il zorvello?');
-    FocusManager.instance.primaryFocus?.unfocus();
-    await settle421(tester);
+    await keyboardClosed421(tester);
     await tester.tap(find.byKey(const ValueKey('send421')));
     await ready421(tester, find.byKey(const ValueKey('send421')));
     await settle421(tester);
@@ -111,13 +122,16 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('cognitive-open400')));
     await settle421(tester);
     await tester.enterText(find.byType(TextField).first, 'Luca chiude la finestra.');
-    FocusManager.instance.primaryFocus?.unfocus();
-    await settle421(tester);
-    await tester.scrollUntilVisible(find.text('Vivi e impara'), 180,
+    await keyboardClosed421(tester);
+    await tester.scrollUntilVisible(button421('Vivi e impara').hitTestable(), 120,
         scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.text('Vivi e impara'));
+    await tester.ensureVisible(button421('Vivi e impara'));
+    await settle421(tester);
+    await tester.tap(button421('Vivi e impara').hitTestable());
     await ready421(tester, button421('Vivi e impara'));
     await settle421(tester);
+    await tester.scrollUntilVisible(find.textContaining('Frame:'), 120,
+        scrollable: find.byType(Scrollable).first);
     expect(find.textContaining('Frame:'), findsOneWidget);
     expect(find.textContaining('Salienza'), findsOneWidget);
     final afterLab = await CognitiveCoreBridge400.stats();
@@ -135,7 +149,7 @@ void main() {
     await settle421(tester);
     await tester.enterText(find.byType(TextField), 'zorvello');
     await tester.tap(find.byTooltip('Cerca'));
-    await settle421(tester);
+    await keyboardClosed421(tester);
     expect(find.textContaining(RegExp(r'Focus:\s*zorvello\b', caseSensitive: false)), findsOneWidget);
     expect((await CognitiveCoreBridge400.stats())['relations'],
         afterLab['relations']);
