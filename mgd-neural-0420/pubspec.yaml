@@ -1,0 +1,31 @@
+name: mgd_neuro_mobile
+description: MGD Neural - source-backed canonical memory and adaptive retrieval for Android.
+publish_to: 'none'
+version: 0.42.0+82
+
+environment:
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: '>=3.44.0'
+
+dependencies:
+  crypto: ^3.0.6
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.5
+  image_picker: ^1.2.3
+  image: ^4.5.4
+  record: ^7.1.1
+  file_picker: ^10.3.3
+  sqflite: ^2.4.2
+
+dev_dependencies:
+  sqflite_common_ffi: 2.3.7
+  sqlite3: ^2.9.4
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,82 @@
+name: MGD Neural 0.42.0 installable APK
+
+on:
+  push:
+    branches: ['codex/mgd-neural-0420-apk']
+    paths: ['mgd-neural-0420/**', '.github/workflows/mgd-neural-0420.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mgd-neural-0420
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Build and run unit tests
+        run: bash tool/build_android.sh
+      - name: Verify APK identity and signature
+        run: |
+          set -euo pipefail
+          mgd_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          "$mgd_tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk | tee tool/reports/signature.txt
+          "$mgd_tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > tool/reports/apk-identity.txt
+          grep -F "name='it.diegorusso.mgdneurostable' versionCode='82' versionName='0.42.0'" tool/reports/apk-identity.txt
+          printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android installation and lifecycle test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          working-directory: mgd-neural-0420
+          script: bash -o pipefail -c 'flutter test integration_test/canonical_android_v0420_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-test.log'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neural-0.42.0-APK
+          path: mgd-neural-0420/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-Neural-0.42.0-verification
+          path: mgd-neural-0420/tool/reports
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-Neural-0.42.0-tested-source
+          path: |
+            mgd-neural-0420/lib
+            mgd-neural-0420/test
+            mgd-neural-0420/integration_test
+            mgd-neural-0420/pubspec.yaml
+            mgd-neural-0420/pubspec.lock
+            mgd-neural-0420/android
+            mgd-neural-0420/tool
+            mgd-neural-0420/README.md
+            mgd-neural-0420/docs
+            mgd-neural-0420/analysis_options.yaml
+          retention-days: 30
