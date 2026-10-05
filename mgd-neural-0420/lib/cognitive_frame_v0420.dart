@@ -1,4 +1,5 @@
-String norm420(String x) => x.toLowerCase().replaceAll('’', "'").replaceAll(RegExp(r'\s+'), ' ').trim();
+String norm420(String x) =>
+    x.toLowerCase().replaceAll('’', "'").replaceAll(RegExp(r'\s+'), ' ').trim();
 
 class CognitiveFrame420 {
   final String subject, predicate, object, location;
@@ -13,14 +14,14 @@ class CognitiveFrame420 {
     required this.concepts,
   });
   bool get valid => subject.isNotEmpty && predicate.isNotEmpty;
-  String get signature => '$subject|$predicate|$object|$location|${negative ? 1 : 0}';
+  String get signature =>
+      '$subject|$predicate|$object|$location|${negative ? 1 : 0}';
   Map<String, dynamic> toJson() => {
-        'subject': subject,
-        'predicate': predicate,
-        'object': object,
-        'location': location,
-        'negative': negative,
-        'concepts': concepts,
-      };
+    'subject': subject,
+    'predicate': predicate,
+    'object': object,
+    'location': location,
+    'negative': negative,
+    'concepts': concepts,
+  };
 }
-

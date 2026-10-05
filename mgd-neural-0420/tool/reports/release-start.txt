@@ -1,0 +1,7 @@
+Starting: Intent { cmp=it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity
+TotalTime: 1468
+WaitTime: 1476
+Complete

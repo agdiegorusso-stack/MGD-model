@@ -6,11 +6,9 @@ import 'cls_core_v0340.dart';
 
 String norm350(String x) =>
     x.toLowerCase().replaceAll('’', "'").replaceAll(RegExp(r'\s+'), ' ').trim();
-List<String> tokens350(String x) =>
-    RegExp(r"[a-zàèéìòù]+(?:'[a-zàèéìòù]+)?|[0-9]+")
-        .allMatches(norm350(x))
-        .map((m) => m[0]!)
-        .toList();
+List<String> tokens350(String x) => RegExp(
+  r"[a-zàèéìòù]+(?:'[a-zàèéìòù]+)?|[0-9]+",
+).allMatches(norm350(x)).map((m) => m[0]!).toList();
 
 class UsageDelta350 {
   final Map<String, Map<String, int>> counts = {};
@@ -25,8 +23,9 @@ class UsageDelta350 {
     final out = UsageDelta350();
     for (final e in data.entries) {
       if (e.value is Map) {
-        out.counts['${e.key}'] =
-            (e.value as Map).map((k, v) => MapEntry('$k', (v as num).toInt()));
+        out.counts['${e.key}'] = (e.value as Map).map(
+          (k, v) => MapEntry('$k', (v as num).toInt()),
+        );
       }
     }
     return out;
@@ -38,7 +37,7 @@ class UsageDelta350 {
 class CompetenceLanguage350 {
   final Map<String, Map<String, int>> counts;
   CompetenceLanguage350([Map<String, Map<String, int>>? data])
-      : counts = data ?? {};
+    : counts = data ?? {};
   static const functionWords = {
     'il',
     'lo',
@@ -90,8 +89,10 @@ class CompetenceLanguage350 {
   };
   static String head(String phrase) {
     final words = tokens350(phrase);
-    return words.firstWhere((w) => !functionWords.contains(w),
-        orElse: () => '');
+    return words.firstWhere(
+      (w) => !functionWords.contains(w),
+      orElse: () => '',
+    );
   }
 
   static List<String> headFeatures(String phrase) {
@@ -100,12 +101,14 @@ class CompetenceLanguage350 {
     return [
       'word:$h',
       if (ts.isNotEmpty && functionWords.contains(ts.first)) 'det:${ts.first}',
-      if (h.length > 2) 'suffix:${h.substring(h.length - 1)}'
+      if (h.length > 2) 'suffix:${h.substring(h.length - 1)}',
     ];
   }
 
-  static UsageDelta350 observe(String sentence,
-      {List<Map<String, dynamic>> events = const []}) {
+  static UsageDelta350 observe(
+    String sentence, {
+    List<Map<String, dynamic>> events = const [],
+  }) {
     final d = UsageDelta350(), ts = tokens350(sentence);
     if (ts.length > 256)
       return d; // A working-unit budget, explicitly counted upstream.
@@ -128,12 +131,14 @@ class CompetenceLanguage350 {
     for (final e in events) {
       if (e['epistemic'] != 'asserted' ||
           e['kind'] == 'cause' ||
-          '${e['resolution']}'.contains('passive_roles')) continue;
+          '${e['resolution']}'.contains('passive_roles'))
+        continue;
       final verb = '${e['surface'] ?? e['predicate'] ?? ''}';
       final subject = '${e['subjectSurface'] ?? e['subject'] ?? ''}';
       if (verb.isEmpty || subject.isEmpty) continue;
       d.add('predicates', verb);
-      final structure = '${e['negative'] == true ? 'S-N-V' : 'S-V'}'
+      final structure =
+          '${e['negative'] == true ? 'S-N-V' : 'S-V'}'
           '${'${e['object'] ?? ''}'.isEmpty ? '' : '-O'}'
           '${'${e['target'] ?? ''}'.isEmpty ? '' : '-T'}'
           '${'${e['location'] ?? ''}'.isEmpty ? '' : '-L'}';
@@ -147,8 +152,10 @@ class CompetenceLanguage350 {
       for (final f in headFeatures(subject)) {
         d.add('agreement:$f', verb);
         final last = tokens350(verb).last;
-        d.add('endingAgreement:$f',
-            last.length < 2 ? last : last.substring(last.length - 2));
+        d.add(
+          'endingAgreement:$f',
+          last.length < 2 ? last : last.substring(last.length - 2),
+        );
       }
       d.add('predicateObjects:$verb', head('${e['object'] ?? ''}'));
       final sh = head(subject), oh = head('${e['object'] ?? ''}');
@@ -222,7 +229,7 @@ class CompetenceLanguage350 {
       if (r.key.startsWith('gap:') && r.value.containsKey(normalized)) {
         result.add({
           'frame': r.key.substring(4).replaceFirst('|', ' ___ '),
-          'count': r.value[normalized]
+          'count': r.value[normalized],
         });
       }
     }
@@ -260,21 +267,24 @@ class CompetenceLanguage350 {
           final weight = f.startsWith('word:')
               ? 2.0
               : f.startsWith('det:')
-                  ? 1.5
-                  : .5;
+              ? 1.5
+              : .5;
           score += weight * log((n + .2) / (total + .2 * (row.length + 1)));
           if (n > 0) reasons.add('$f → $verb: $n osservazioni');
-          final ending =
-              verb.length < 2 ? verb : verb.substring(verb.length - 2);
+          final ending = verb.length < 2
+              ? verb
+              : verb.substring(verb.length - 2);
           final endings = counts['endingAgreement:$f'] ?? {};
           if (endings.isNotEmpty) {
             final observed = endings[ending] ?? 0,
                 totalEnd = endings.values.fold<int>(0, (a, b) => a + b);
-            score += weight *
+            score +=
+                weight *
                 log((observed + .2) / (totalEnd + .2 * (endings.length + 1)));
             if (observed > 0)
               reasons.add(
-                  '$f → finale -$ending: $observed osservazioni trasversali');
+                '$f → finale -$ending: $observed osservazioni trasversali',
+              );
           }
         }
       }
@@ -282,14 +292,17 @@ class CompetenceLanguage350 {
         'sentence': sentence,
         'score': score / max(1, ts.length),
         'support': observations,
-        'reasons': reasons
+        'reasons': reasons,
       });
     }
-    results
-        .sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
+    results.sort(
+      (a, b) => (b['score'] as double).compareTo(a['score'] as double),
+    );
     final has = results.any(
-        (r) => (r['support'] as int) > 0 || (r['reasons'] as List).isNotEmpty);
-    final clear = has &&
+      (r) => (r['support'] as int) > 0 || (r['reasons'] as List).isNotEmpty,
+    );
+    final clear =
+        has &&
         results.isNotEmpty &&
         (results.length == 1 ||
             ((results[0]['score'] as double) - (results[1]['score'] as double))
@@ -300,7 +313,7 @@ class CompetenceLanguage350 {
       'best': clear ? results.first['sentence'] : null,
       'ranking': results,
       'note':
-          'Preferenza statistica appresa; non certifica tutta la grammatica.'
+          'Preferenza statistica appresa; non certifica tutta la grammatica.',
     };
   }
 
@@ -310,23 +323,24 @@ class CompetenceLanguage350 {
     final candidates = <Pattern340>[];
     for (final e in available.entries) {
       if (e.key != 'S-V-O') continue;
-      candidates.add(Pattern340(
-          candidates.length + 1,
-          e.key,
-          'grammar',
-          {
-            'text:v1': {'S': 1, 'V': 1, 'O': 1}
-          },
-          source: '${e.value} osservazioni'));
+      candidates.add(
+        Pattern340(candidates.length + 1, e.key, 'grammar', {
+          'text:v1': {'S': 1, 'V': 1, 'O': 1},
+        }, source: '${e.value} osservazioni'),
+      );
     }
-    final recalled = Hopfield340.recall({
-      'text:v1': {'S': 1, 'V': 1, 'O': 1}
-    }, candidates, context: 'grammar');
+    final recalled = Hopfield340.recall(
+      {
+        'text:v1': {'S': 1, 'V': 1, 'O': 1},
+      },
+      candidates,
+      context: 'grammar',
+    );
     if (candidates.isEmpty || recalled.best == null) {
       return {
         'status': 'unknown',
         'sentence':
-            'Non ho acquisito una costruzione transitiva per questa forma verbale.'
+            'Non ho acquisito una costruzione transitiva per questa forma verbale.',
       };
     }
     final s = norm350(subject), o = norm350(object);
@@ -336,7 +350,7 @@ class CompetenceLanguage350 {
         tokens350(o).length > 12) {
       return {
         'status': 'unknown',
-        'sentence': 'Servono soggetto e oggetto espliciti e brevi.'
+        'sentence': 'Servono soggetto e oggetto espliciti e brevi.',
       };
     }
     // A new combination is a linguistic exercise, NEVER a fact about the book.
@@ -346,7 +360,7 @@ class CompetenceLanguage350 {
       'frame': recalled.best,
       'observations': available['S-V-O'],
       'note':
-          'Combinazione di ruoli in una costruzione osservata. Non è un fatto appreso e non ne certifica la plausibilità.'
+          'Combinazione di ruoli in una costruzione osservata. Non è un fatto appreso e non ne certifica la plausibilità.',
     };
   }
 
@@ -370,11 +384,11 @@ class CompetenceLanguage350 {
   }
 
   Map<String, dynamic> stats() => {
-        'vocabulary': counts['lexicon']?.length ?? 0,
-        'observations':
-            counts['lexicon']?.values.fold<int>(0, (a, b) => a + b) ?? 0,
-        'constructions': counts['constructions'] ?? {},
-        'features': counts.values.fold<int>(0, (a, b) => a + b.length),
-        'bytes': utf8.encode(jsonEncode(counts)).length
-      };
+    'vocabulary': counts['lexicon']?.length ?? 0,
+    'observations':
+        counts['lexicon']?.values.fold<int>(0, (a, b) => a + b) ?? 0,
+    'constructions': counts['constructions'] ?? {},
+    'features': counts.values.fold<int>(0, (a, b) => a + b.length),
+    'bytes': utf8.encode(jsonEncode(counts)).length,
+  };
 }

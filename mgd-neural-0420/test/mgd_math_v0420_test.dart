@@ -15,10 +15,17 @@ void main() {
     final rng = Random(420);
     var w = .95, m = 0.0, material = 0.0, chi = 0.0;
     for (var i = 0; i < 5000; i++) {
-      final step = MgdMath09.evolve(weight: w, memory: m, material: material,
-        coherenceAverage: chi, activation: rng.nextDouble(),
-        reward: (rng.nextInt(3) - 1).toDouble());
-      w = step.weight; m = step.memory; material = step.material;
+      final step = MgdMath09.evolve(
+        weight: w,
+        memory: m,
+        material: material,
+        coherenceAverage: chi,
+        activation: rng.nextDouble(),
+        reward: (rng.nextInt(3) - 1).toDouble(),
+      );
+      w = step.weight;
+      m = step.memory;
+      material = step.material;
       chi = step.coherenceAverage;
       expect(w, inInclusiveRange(.05, 3.6));
       expect(m, inInclusiveRange(0, 1.5));
@@ -28,8 +35,14 @@ void main() {
     }
   });
   test('negative feedback moves even a familiar edge away from the floor', () {
-    final step = MgdMath09.evolve(weight: .05, memory: 1.0, material: 1.0,
-      coherenceAverage: 1.0, activation: .2, reward: -1);
+    final step = MgdMath09.evolve(
+      weight: .05,
+      memory: 1.0,
+      material: 1.0,
+      coherenceAverage: 1.0,
+      activation: .2,
+      reward: -1,
+    );
     expect(step.weight, greaterThan(.05));
   });
 }

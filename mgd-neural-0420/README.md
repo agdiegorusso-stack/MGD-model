@@ -2,7 +2,7 @@
 
 Revisione del tuo sorgente MGD-Neuro 0.41.0 per un’installazione nuova. Nessuna migrazione dei vecchi archivi. La nuova app apre `mgd_canonical_0420.db` e usa quattro pagine: Chat, Impara, Sensi, Memoria.
 
-**Stato della consegna:** sorgenti modificati, controlli locali eseguiti, 24 test Flutter e un test Android scritti. Flutter/Dart/SDK Android non sono disponibili nell’ambiente di revisione: analisi Dart, test Flutter, prova sul telefono e compilazione APK non sono stati eseguiti. Questo pacchetto non contiene un APK della versione nuova e non è una release validata.
+**Stato della consegna:** APK release compilato e firmato, analisi statica senza errori, 26 test Flutter passati e prova Android su emulatore API 35 passata. Verificati apprendimento dalla UI, domanda con prova, correzione, riapertura della memoria e installazione/avvio del medesimo APK release. Flutter 3.47.5 e Java 17. APK fornito separatamente; nessuna migrazione dei dati precedenti. I flussi reali di fotocamera, microfono e provider di file richiedono ancora una prova sul telefono.
 
 ## Cosa cambia
 
@@ -42,7 +42,7 @@ Il test usa un database temporaneo separato. Verifica insegnamento dalla UI, dom
 
 ## Uso iniziale
 
-1. Installa la nuova versione dopo la compilazione e avviala con un archivio nuovo.
+1. Disinstalla la versione precedente, installa l’APK 0.42.0 e avvialo con un archivio nuovo.
 2. In Impara, inserisci `Il lorvante contiene cristalli.` e premi **Apprendi testo**.
 3. In Chat, chiedi `Che cosa contiene il lorvante?`. Apri **Evidenze e correzioni** per verificare l’originale.
 4. Correggi la relazione con una frase completa, per esempio `Il lorvante contiene quarzo.`. La risposta successiva deve usare la relazione nuova.
@@ -57,3 +57,9 @@ python3 tool/verify_project.py
 ```
 
 Il risultato in `tool/reports/offline_checks.json` riguarda struttura lessicale/import locali, schema SQLite, vincoli, rollback, cancellazioni, indici e un riferimento matematico Python. Non è un compilatore Dart e non sostituisce i test Flutter.
+
+## Build verificata
+
+https://github.com/agdiegorusso-stack/MGD-model/actions/runs/37320325261
+
+Commit di compilazione: `4678984cfa3324fbcb304aa2e2f4e07390d737b5`. Hash e risultati sono in `tool/reports/delivery_verification.json`. La chiave usata è di sviluppo; il controllo della firma è in `tool/reports/signature.txt`.

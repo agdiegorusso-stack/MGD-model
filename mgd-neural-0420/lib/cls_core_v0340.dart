@@ -13,8 +13,14 @@ class Pattern340 {
   final int id;
   final String label, context, text, source;
   final Cue340 cue;
-  const Pattern340(this.id, this.label, this.context, this.cue,
-      {this.text = '', this.source = ''});
+  const Pattern340(
+    this.id,
+    this.label,
+    this.context,
+    this.cue, {
+    this.text = '',
+    this.source = '',
+  });
 }
 
 class Recall340 {
@@ -24,13 +30,21 @@ class Recall340 {
   final double similarity;
   final bool accepted, conflict;
   final int micros;
-  const Recall340(this.evidence, this.weights, this.energy, this.labels,
-      this.similarity, this.accepted, this.conflict, this.micros);
+  const Recall340(
+    this.evidence,
+    this.weights,
+    this.energy,
+    this.labels,
+    this.similarity,
+    this.accepted,
+    this.conflict,
+    this.micros,
+  );
   String? get best => labels.isEmpty
       ? null
       : (labels.entries.toList()..sort((a, b) => b.value.compareTo(a.value)))
-          .first
-          .key;
+            .first
+            .key;
 }
 
 class Hopfield340 {
@@ -50,14 +64,15 @@ class Hopfield340 {
         if (e.key.isEmpty ||
             e.key.length > 160 ||
             !e.value.isFinite ||
-            e.value.abs() > 1e6) throw ArgumentError('Coordinata non valida.');
+            e.value.abs() > 1e6)
+          throw ArgumentError('Coordinata non valida.');
         n += e.value * e.value;
       }
       if (n <= 1e-20) throw ArgumentError('Stimolo senza segnale.');
       final scale = sqrt(n);
       out[channel.key] = Map.unmodifiable({
         for (final e in channel.value.entries)
-          if (e.value != 0) e.key: e.value / scale
+          if (e.value != 0) e.key: e.value / scale,
       });
     }
     return Map.unmodifiable(out);
@@ -68,7 +83,7 @@ class Hopfield340 {
     final scale = sqrt(keys.length);
     return {
       for (final c in keys)
-        for (final e in cue[c]!.entries) '$c\u0000${e.key}': e.value / scale
+        for (final e in cue[c]!.entries) '$c\u0000${e.key}': e.value / scale,
     };
   }
 
@@ -94,15 +109,23 @@ class Hopfield340 {
   /// E(q)=||q||²/2-logsumexp(beta X'q)/beta, up to constants.
   /// Keys remain fixed within retrieval; the updated state is NOT renormalized.
   static double energyOf(
-      Map<String, double> q, List<Map<String, double>> keys, double beta) {
+    Map<String, double> q,
+    List<Map<String, double>> keys,
+    double beta,
+  ) {
     final logits = keys.map((k) => beta * dot(k, q)).toList();
     final peak = logits.reduce(max);
     final lse = peak + log(logits.fold(0.0, (a, b) => a + exp(b - peak)));
     return .5 * dot(q, q) - lse / beta;
   }
 
-  static Recall340 recall(Cue340 input, Iterable<Pattern340> records,
-      {String context = 'generale', double beta = 12, int iterations = 3}) {
+  static Recall340 recall(
+    Cue340 input,
+    Iterable<Pattern340> records, {
+    String context = 'generale',
+    double beta = 12,
+    int iterations = 3,
+  }) {
     if (!beta.isFinite || beta <= 0 || iterations < 1 || iterations > 32) {
       throw ArgumentError('Parametri Hopfield non validi.');
     }
@@ -110,11 +133,20 @@ class Hopfield340 {
     final cue = normalize(input), c = norm340(context);
     final pool = records
         .where(
-            (e) => norm340(e.context) == c && cue.keys.every(e.cue.containsKey))
+          (e) => norm340(e.context) == c && cue.keys.every(e.cue.containsKey),
+        )
         .toList();
     if (pool.isEmpty)
       return Recall340(
-          [], [], [], {}, 0, false, false, watch.elapsedMicroseconds);
+        [],
+        [],
+        [],
+        {},
+        0,
+        false,
+        false,
+        watch.elapsedMicroseconds,
+      );
     final q0 = flatten(cue, cue.keys);
     final keys = pool.map((e) => flatten(normalize(e.cue), cue.keys)).toList();
     var q = Map<String, double>.of(q0);
@@ -160,7 +192,8 @@ class Hopfield340 {
     final rank = labels.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final conflict = exact.length > 1;
-    final accepted = !conflict &&
+    final accepted =
+        !conflict &&
         (exact.length == 1 ||
             (nearest >= .82 &&
                 rank.first.value >= .72 &&
@@ -173,27 +206,30 @@ class Hopfield340 {
     final order = List.generate(pool.length, (i) => i)
       ..sort((a, b) => original[b].compareTo(original[a]));
     return Recall340(
-        order.map((i) => pool[i]).toList(),
-        order.map((i) => mass[i]).toList(),
-        energies,
-        labels,
-        nearest,
-        accepted,
-        conflict,
-        watch.elapsedMicroseconds);
+      order.map((i) => pool[i]).toList(),
+      order.map((i) => mass[i]).toList(),
+      energies,
+      labels,
+      nearest,
+      accepted,
+      conflict,
+      watch.elapsedMicroseconds,
+    );
   }
 }
 
 class Italian340 {
-  static final _tokens =
-      RegExp(r"[a-zà-öø-ÿ]+(?:'[a-zà-öø-ÿ]+)?|[0-9]+|[.,!?;:]");
+  static final _tokens = RegExp(
+    r"[a-zà-öø-ÿ]+(?:'[a-zà-öø-ÿ]+)?|[0-9]+|[.,!?;:]",
+  );
   static List<String> tokens(String text) =>
       _tokens.allMatches(norm340(text)).map((m) => m.group(0)!).toList();
 
   /// Lexical, not semantic, features. Labels are never inserted into the cue.
   static Map<String, double> features(String text) {
-    final words =
-        tokens(text).where((w) => !RegExp(r'^[.,!?;:]$').hasMatch(w)).toList();
+    final words = tokens(
+      text,
+    ).where((w) => !RegExp(r'^[.,!?;:]$').hasMatch(w)).toList();
     final out = <String, double>{};
     for (var i = 0; i < words.length; i++) {
       final w = 'w:${words[i]}';
@@ -262,11 +298,12 @@ class StudyPriority340 {
       final age = max(0, now - ((item['at'] as num?)?.toInt() ?? 0)) / 3600000;
       final cost = max(0, (item['cost'] as num?)?.toDouble() ?? 0);
       final value = score(
-          novelty: max(0, gain) / (1 + max(0, gain)),
-          uncertainty: 1 / (1 + max(0, visits)),
-          contradiction: 0,
-          userInterest: 1 + min(age, 24) / 24,
-          estimatedCost: cost / 60);
+        novelty: max(0, gain) / (1 + max(0, gain)),
+        uncertainty: 1 / (1 + max(0, visits)),
+        contradiction: 0,
+        userInterest: 1 + min(age, 24) / 24,
+        estimatedCost: cost / 60,
+      );
       if (value > best) {
         best = value;
         selected = topic;
@@ -276,18 +313,19 @@ class StudyPriority340 {
   }
 
   /// A transparent scheduling score, not consciousness or a personal desire.
-  static double score(
-      {required double novelty,
-      required double uncertainty,
-      required double contradiction,
-      required double userInterest,
-      required double estimatedCost}) {
+  static double score({
+    required double novelty,
+    required double uncertainty,
+    required double contradiction,
+    required double userInterest,
+    required double estimatedCost,
+  }) {
     final xs = [
       novelty,
       uncertainty,
       contradiction,
       userInterest,
-      estimatedCost
+      estimatedCost,
     ];
     if (xs.any((x) => !x.isFinite || x < 0))
       throw ArgumentError('Priorità non valida.');

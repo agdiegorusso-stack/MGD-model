@@ -1,7 +1,7 @@
 {
   "version": "0.42.0",
-  "at": "2026-10-05T12:59:17Z",
-  "stage": "prerequisites",
-  "exit_code": 127,
-  "apk_built": false
+  "at": "2026-10-05T13:59:00Z",
+  "stage": "complete",
+  "exit_code": 0,
+  "apk_built": true
 }

@@ -4,7 +4,7 @@
 
 Il sorgente è stato riorganizzato per risolvere la separazione tra apprendimento dei libri, chat, memoria e geometria. La revisione conserva i nuclei utili della grammatica e della matematica, sostituisce l’orchestrazione e rimuove i percorsi concorrenti. Segue la richiesta di un’installazione da zero: nessuna conversione dei database precedenti.
 
-Il controllo locale ha avuto esito positivo per quattro gruppi di verifiche. La build tentata si è fermata ai prerequisiti, con codice 127, perché Flutter/Dart non sono installati. **La compilabilità dei nuovi sorgenti e il comportamento Android restano da verificare.** Non sono stati riutilizzati un APK precedente o i suoi risultati per presentare la nuova versione come collaudata.
+Il controllo locale ha avuto esito positivo per quattro gruppi di verifiche. La build remota della nuova versione è riuscita: analisi Dart senza errori, 26 test Flutter passati, test Android UI/apprendimento/correzione/riapertura passato su emulatore API 35. Lo stesso APK release è stato verificato con apksigner, installato e avviato sull’emulatore. I flussi di fotocamera, microfono e provider di file non sono stati provati manualmente su un telefono fisico. I risultati sono quelli della nuova versione; non sono stati riutilizzati risultati di APK precedenti.
 
 ## Problemi affrontati nel sorgente precedente
 
@@ -21,7 +21,7 @@ Il controllo locale ha avuto esito positivo per quattro gruppi di verifiche. La 
 | Domande precise saturate da parole frequenti | Recupero dei ruoli espliciti, indici e limiti dichiarati | Test con oltre 200 fatti estranei/personaggio ricorrente |
 | Percentuali di fiducia non calibrate | Rimozione di quelle percentuali; salienza narrativa etichettata come euristica | Ispezione dei sorgenti e della risposta |
 
-I test Flutter elencati sono stati scritti; la colonna non certifica che siano passati.
+I casi di regressione elencati sono inclusi nei test Flutter passati. I limiti della grammatica e delle capacità restano quelli descritti di seguito.
 
 ## Capacità effettivamente codificate
 
@@ -53,7 +53,7 @@ Nel nuovo archivio ogni relazione ha un arco con peso, memoria, materiale, media
 
 Questa applicazione su relazioni linguistiche è una **scelta progettuale**, non una conseguenza dimostrata del modello su reticolo del PDF. Il trigger basato sull’attività dell’arco, i parametri adattivi e la modulazione del feedback richiedono una valutazione sperimentale propria. Il punto fisso a forzante costante non è la media di una ricorrenza stocastica non lineare. La somma delle variazioni di M non misura energia fisica, informazione di Shannon o intelligenza.
 
-Il confronto con `useMgd:false` mantiene identica la politica di ammissione dei fatti. Il test scritto controlla questa parità, non dimostra un vantaggio cognitivo della MGD. Per misurare un vantaggio servono dati indipendenti, domande nuove, prestazioni con budget uguale e risultati ripetuti. Nessun miglioramento percentuale è dichiarato nella consegna.
+Il confronto con `useMgd:false` mantiene identica la politica di ammissione dei fatti. Il test passato controlla questa parità, non dimostra un vantaggio cognitivo della MGD. Per misurare un vantaggio servono dati indipendenti, domande nuove, prestazioni con budget uguale e risultati ripetuti. Nessun miglioramento percentuale è dichiarato nella consegna.
 
 ## File e percorso principale
 
@@ -72,12 +72,19 @@ Sono stati rimossi il vecchio main, i gestori di memoria e ricerca concorrenti, 
 | Delimitatori lessicali Dart e import locali risolvibili | Passata; non è analisi di tipo o parsing completo Dart |
 | Schema SQLite realmente eseguito, foreign key, rollback e cascata | Passata in Python/SQLite sullo schema estratto dai sorgenti |
 | Piani degli indici per i lookup verificati | Passata per le query incluse nel controllore |
-| Punto fisso e dinamica limitata | Passata su un port di riferimento Python; Dart non eseguito |
+| Punto fisso e dinamica limitata | Passata sia sul riferimento Python sia sui test Dart |
 | Sintassi Bash dello script build | Passata con `bash -n` |
-| Tentativo dello script build | Fermato ai prerequisiti, exit 127, nessun APK prodotto |
-| Analisi Dart e 24 test Flutter | Non eseguiti: SDK assente |
-| Test Android UI/apprendimento/correzione/riapertura | Scritto, non eseguito |
-| Fotocamera, microfono, provider file e installazione reale | Non verificati |
+| Script build remoto | Passato, exit 0, APK release prodotto |
+| Analisi Dart e 26 test Flutter | Passati; le segnalazioni residue dell’analizzatore sono informazioni di stile/deprecazione, non errori o warning |
+| Test Android UI/apprendimento/correzione/riapertura | Passato su emulatore Android API 35 |
+| Installazione e avvio dello stesso APK release | Passati su emulatore API 35; firma e identità verificate |
+| Fotocamera, microfono e provider file su telefono fisico | Non verificati manualmente |
 | Benchmark indipendente di comprensione e vantaggio MGD | Non eseguito |
 
 Il pacchetto include i risultati reali `offline_checks.json` e `build_status.json`, gli script e i test. Non include risultati simulati o log della versione precedente.
+
+## Provenienza del collaudo
+
+https://github.com/agdiegorusso-stack/MGD-model/actions/runs/37320325261
+
+APK: `MGD-Neural-0.42.0.apk`, SHA-256 `ffc0b414311a5c455e6c1d8b902dc05be99b4f60f0183e4ba1b097ae7e5041cd`, commit `4678984cfa3324fbcb304aa2e2f4e07390d737b5`. I log della build e dei test, i controlli della firma e il riepilogo sono inclusi in `tool/reports/`.

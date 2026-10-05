@@ -9,13 +9,16 @@ class SensoryFeatures420 {
       throw StateError('Immagine troppo grande.');
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw StateError('Immagine non decodificabile.');
-    final resized = img.copyResize(decoded,
-        width: 48, height: 48, interpolation: img.Interpolation.average);
+    final resized = img.copyResize(
+      decoded,
+      width: 48,
+      height: 48,
+      interpolation: img.Interpolation.average,
+    );
     return {'v:bias': .25, ..._visionFeatures(resized)};
   }
 
-  static Map<String, double> audio(Uint8List bytes,
-      {int sampleRate = 16000}) {
+  static Map<String, double> audio(Uint8List bytes, {int sampleRate = 16000}) {
     if (bytes.length < 800) throw StateError('Registrazione troppo breve.');
     if (sampleRate != 16000 || bytes.length.isOdd || bytes.length > 640000) {
       throw StateError('Usa audio PCM16 mono a 16 kHz, massimo 20 secondi.');
@@ -31,8 +34,10 @@ class SensoryFeatures420 {
 
   static Map<String, double> _visionFeatures(img.Image image) {
     final out = <String, double>{};
-    final gray =
-        List.generate(image.height, (_) => List<double>.filled(image.width, 0));
+    final gray = List.generate(
+      image.height,
+      (_) => List<double>.filled(image.width, 0),
+    );
     var sr = 0.0, sg = 0.0, sb = 0.0, sy = 0.0, sy2 = 0.0, ss = 0.0;
     final hue = List<double>.filled(8, 0);
     final grid = List<double>.filled(9, 0);
@@ -158,7 +163,8 @@ class SensoryFeatures420 {
     final omega = 2 * pi * frequency / sampleRate;
     final coeff = 2 * cos(omega);
     var q0 = 0.0, q1 = 0.0, q2 = 0.0;
-    const stride = 1; // Preserve the actual sampling rate in Goertzel recurrence.
+    const stride =
+        1; // Preserve the actual sampling rate in Goertzel recurrence.
     var used = 0;
     for (var i = 0; i < n; i += stride) {
       q0 = coeff * q1 - q2 + s[i];
@@ -190,5 +196,4 @@ class SensoryFeatures420 {
     if (bestLag == 0 || best / zero < 0.18) return null;
     return sampleRate / bestLag;
   }
-
 }

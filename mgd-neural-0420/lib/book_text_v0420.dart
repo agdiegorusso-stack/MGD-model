@@ -28,19 +28,23 @@ class BookText420 {
       'jpg',
       'jpeg',
       'mp3',
-      'mp4'
+      'mp4',
     }.contains(ext)) {
-      throw const FormatException('Questo importatore legge testo TXT. '
-          'PDF, EPUB e documenti Word non sono testo grezzo: esportali in TXT. '
-          'Il file non è stato interpretato come conoscenza.');
+      throw const FormatException(
+        'Questo importatore legge testo TXT. '
+        'PDF, EPUB e documenti Word non sono testo grezzo: esportali in TXT. '
+        'Il file non è stato interpretato come conoscenza.',
+      );
     }
   }
 
   static void validateHeader(List<int> bytes) {
     bool starts(List<int> magic) =>
         bytes.length >= magic.length &&
-        List.generate(magic.length, (i) => bytes[i] == magic[i])
-            .every((v) => v);
+        List.generate(
+          magic.length,
+          (i) => bytes[i] == magic[i],
+        ).every((v) => v);
     if (starts([0x25, 0x50, 0x44, 0x46]) ||
         starts([0x50, 0x4b, 3, 4]) ||
         starts([0x1f, 0x8b]) ||
@@ -51,17 +55,22 @@ class BookText420 {
     }
     final utf16 = starts([0xff, 0xfe]) || starts([0xfe, 0xff]);
     if (!utf16 && bytes.contains(0)) {
-      throw const FormatException('Testo binario o codifica non riconosciuta. '
-          'Usa TXT UTF-8 oppure UTF-16 con BOM.');
+      throw const FormatException(
+        'Testo binario o codifica non riconosciuta. '
+        'Usa TXT UTF-8 oppure UTF-16 con BOM.',
+      );
     }
   }
 
   /// Backpressure is preserved even if the provider emits one enormous block.
   /// No List<int> accumulator, readAsBytes(), or whole-book String is built.
-  static Future<int> stage(Stream<List<int>> input, File destination,
-      {required String name,
-      bool Function()? cancelled,
-      void Function(int)? progress}) async {
+  static Future<int> stage(
+    Stream<List<int>> input,
+    File destination, {
+    required String name,
+    bool Function()? cancelled,
+    void Function(int)? progress,
+  }) async {
     validateName(name);
     final out = await destination.open(mode: FileMode.write);
     final header = <int>[];
@@ -73,7 +82,8 @@ class BookText420 {
           final end = min(offset + 65536, part.length);
           if (header.length < 512) {
             header.addAll(
-                part.skip(offset).take(min(end - offset, 512 - header.length)));
+              part.skip(offset).take(min(end - offset, 512 - header.length)),
+            );
             validateHeader(header);
           }
           await out.writeFrom(part, offset, end);
@@ -114,9 +124,11 @@ class BookText420 {
           i = 1;
         }
         for (; i + 1 < bytes.length; i += 2) {
-          units.add(le
-              ? bytes[i] | (bytes[i + 1] << 8)
-              : (bytes[i] << 8) | bytes[i + 1]);
+          units.add(
+            le
+                ? bytes[i] | (bytes[i + 1] << 8)
+                : (bytes[i] << 8) | bytes[i + 1],
+          );
         }
         if (i < bytes.length) odd = bytes[i];
         if (units.isNotEmpty && units.last >= 0xd800 && units.last <= 0xdbff) {
@@ -154,8 +166,10 @@ class BookText420 {
     }
   }
 
-  static Stream<BookFragment420> fragments(Stream<String> input,
-      {int limit = blockChars}) async* {
+  static Stream<BookFragment420> fragments(
+    Stream<String> input, {
+    int limit = blockChars,
+  }) async* {
     if (limit < 32) throw ArgumentError.value(limit, 'limit');
     var carry = '', continued = false;
     await for (final incoming in input) {
@@ -174,7 +188,9 @@ class BookText420 {
             if (last >= 0xd800 && last <= 0xdbff) cut--;
           }
           yield BookFragment420(
-              carry.substring(0, cut), complete && !continued);
+            carry.substring(0, cut),
+            complete && !continued,
+          );
           carry = carry.substring(cut);
           continued = !complete;
         }
@@ -183,4 +199,3 @@ class BookText420 {
     if (carry.isNotEmpty) yield BookFragment420(carry, !continued);
   }
 }
-

@@ -64,8 +64,9 @@ class MgdMath09 {
     final c = (1.0 - p.rho) * chi;
     if (a <= 1e-12) return chi;
     final root = sqrt(b * b + 4.0 * a * c);
-    final equilibrium =
-        b >= 0 ? (c == 0 ? 0.0 : 2.0 * c / (b + root)) : (root - b) / (2.0 * a);
+    final equilibrium = b >= 0
+        ? (c == 0 ? 0.0 : 2.0 * c / (b + root))
+        : (root - b) / (2.0 * a);
     return equilibrium.clamp(0.0, 1.0).toDouble();
   }
 
@@ -117,9 +118,9 @@ class MgdMath09 {
       final deltaW = negative > 0
           ? p.nu + p.punishment * negative
           : p.nu -
-              p.lambda * effectiveActivation -
-              p.eta * nextMemory +
-              p.etaPlus * (nextMaterial - mStar);
+                p.lambda * effectiveActivation -
+                p.eta * nextMemory +
+                p.etaPlus * (nextMaterial - mStar);
 
       final nextWeight = max(p.c0, w + deltaW).clamp(p.c0, 3.6).toDouble();
       flux += (nextMaterial - M).abs();
@@ -140,5 +141,4 @@ class MgdMath09 {
       active: w <= p.epsilon,
     );
   }
-
 }

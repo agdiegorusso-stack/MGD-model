@@ -1,6 +1,6 @@
 {
   "version": "0.42.0",
-  "kind": "source_revision_without_compiled_apk",
+  "kind": "verified_android_source_snapshot",
   "origin": "MGD-Neuro-0.41.0-source.zip",
   "application_files_before": 59,
   "application_files_after": 13,
@@ -76,237 +76,331 @@
     "lib/narrative_memory_v0350.dart",
     "lib/native_mgd_engine_v09.dart"
   ],
-  "unit_tests_written": 24,
+  "unit_tests_written": 26,
   "android_integration_tests_written": 1,
-  "flutter_tests_run": false,
-  "dart_analyzer_run": false,
-  "apk_built": false,
+  "flutter_tests_run": true,
+  "dart_analyzer_run": true,
+  "apk_built": true,
   "files": [
     {
       "path": "README.md",
-      "bytes": 4952,
-      "sha256": "10631ccb2b33e445e39da5bd0073aa062434ecaf20a41e82de9be4111729a8c8"
+      "size_bytes": 5407,
+      "sha256": "038bffcc7a34503085e2d5b6f286ae7145bfcc0a21f4a0d02254bb3eef5980ea"
     },
     {
       "path": "analysis_options.yaml",
-      "bytes": 1474,
+      "size_bytes": 1474,
       "sha256": "3c1d3a31c6e127bc372b40c6c19ea4766eed3a024880ea551a55c2dd2efbd9ce"
     },
     {
       "path": "android/app/build.gradle.kts",
-      "bytes": 1481,
+      "size_bytes": 1481,
       "sha256": "ee576fe88fa985d43cd221951d5502e1643ae7ddb84c9e68d69592b765625666"
     },
     {
       "path": "android/app/src/debug/AndroidManifest.xml",
-      "bytes": 149,
+      "size_bytes": 149,
       "sha256": "678647a824ef7ab16066708585790ab265135d32fdf84bcd918a4b050f8891b9"
     },
     {
       "path": "android/app/src/main/AndroidManifest.xml",
-      "bytes": 2508,
+      "size_bytes": 2508,
       "sha256": "1ea604430c631717b553d32bd66ff738e8c5acb6899c4227bb609b8625ae1929"
     },
     {
+      "path": "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
+      "size_bytes": 2546,
+      "sha256": "4b922b9470ef297940781dd6972e5dc95e800d504adc376789e354cf4baf6e2a"
+    },
+    {
       "path": "android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/MainActivity.kt",
-      "bytes": 2745,
+      "size_bytes": 2745,
       "sha256": "50842e17f3ce040b3e9a0693e512ac3494ee98bd8ebab121beebf51d28dd4e2f"
     },
     {
       "path": "android/app/src/main/res/drawable/launch_background.xml",
-      "bytes": 434,
+      "size_bytes": 434,
       "sha256": "94433756fe10005ddd6fc55cc5c0b1e9f3c10b66a08ceac795ece6713d34e28a"
     },
     {
       "path": "android/app/src/main/res/drawable-v21/launch_background.xml",
-      "bytes": 438,
+      "size_bytes": 438,
       "sha256": "7ca6d5cec2169c5a98661a119db23a6f3399c8fef2256ff04f3a642831282478"
     },
     {
       "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
-      "bytes": 544,
+      "size_bytes": 544,
       "sha256": "6a7c8f0d703e3682108f9662f813302236240d3f8f638bb391e32bfb96055fef"
     },
     {
       "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
-      "bytes": 442,
+      "size_bytes": 442,
       "sha256": "c7c0c0189145e4e32a401c61c9bdc615754b0264e7afae24e834bb81049eaf81"
     },
     {
       "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
-      "bytes": 721,
+      "size_bytes": 721,
       "sha256": "e14aa40904929bf313fded22cf7e7ffcbf1d1aac4263b5ef1be8bfce650397aa"
     },
     {
       "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
-      "bytes": 1031,
+      "size_bytes": 1031,
       "sha256": "4d470bf22d5c17d84edc5f82516d1ba8a1c09559cd761cefb792f86d9f52b540"
     },
     {
       "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
-      "bytes": 1443,
+      "size_bytes": 1443,
       "sha256": "3c34e1f298d0c9ea3455d46db6b7759c8211a49e9ec6e44b635fc5c87dfb4180"
     },
     {
       "path": "android/app/src/main/res/values/styles.xml",
-      "bytes": 996,
+      "size_bytes": 996,
       "sha256": "937d7c82f539c72eb94fd3a3773f29b3d3fef1997213c92cb632298cedf4bda9"
     },
     {
       "path": "android/app/src/main/res/values-night/styles.xml",
-      "bytes": 995,
+      "size_bytes": 995,
       "sha256": "8c5bad5152f217e837519f9c15211d19f39bd45f5f67faf6dd81cb4b299e518f"
     },
     {
       "path": "android/build.gradle.kts",
-      "bytes": 537,
+      "size_bytes": 537,
       "sha256": "6a26dba2cb8dfba1e74f540b0d17a89d96c1301d3c3bfda14348bed257fddcba"
     },
     {
       "path": "android/gradle/wrapper/gradle-wrapper.jar",
-      "bytes": 53636,
+      "size_bytes": 53636,
       "sha256": "16caeaf66d57a0d1d2087fef6a97efa62de8da69afa5b908f40db35afc4342da"
     },
     {
       "path": "android/gradle/wrapper/gradle-wrapper.properties",
-      "bytes": 202,
+      "size_bytes": 202,
       "sha256": "b690d26223576fe4e63889fad9a00df81945cb870b9476cc5a563152a1a88a74"
     },
     {
       "path": "android/gradle.properties",
-      "bytes": 107,
-      "sha256": "d834b8388ff212ca124defda4dc9275647f8792eb6711711218a9b8023a60902"
+      "size_bytes": 289,
+      "sha256": "3ae3c5802a14eaa67b04edd7de065ec9673ee7b113a7728faff4f34d9c8431e4"
     },
     {
       "path": "android/gradlew",
-      "bytes": 4971,
+      "size_bytes": 4971,
       "sha256": "ec56c02543666d92d9ac5ae7fcc48f88ce4de0deb8b7f9b39928ca46f68c1b2b"
     },
     {
       "path": "android/gradlew.bat",
-      "bytes": 2404,
-      "sha256": "c13c6e91b9a517783976de213d46398c661ea9e17651376d7301e839eaedcc62"
+      "size_bytes": 2314,
+      "sha256": "f4f428c5626b3d90cef3bd4e7fd3ad3ea5760442db8c09d586b5bfe031dbe5e3"
     },
     {
       "path": "android/settings.gradle.kts",
-      "bytes": 770,
+      "size_bytes": 770,
       "sha256": "016759283e88ade6eba92910583feeef88b962839b957aa414296afd2952d122"
     },
     {
       "path": "docs/VERIFICA_0.42.0.md",
-      "bytes": 9124,
-      "sha256": "4a8a867c7c51ea091ecdbcbea184a3abe30221360295376a1b67e27d1c626191"
+      "size_bytes": 9922,
+      "sha256": "35fc91ff291af808e34c9acffedceca769b3a18ce45ed6b45f9141fb085fb726"
     },
     {
       "path": "integration_test/canonical_android_v0420_test.dart",
-      "bytes": 2719,
-      "sha256": "b72a3dbfaf9162cf4ebb07338ee96700d98e536e864f601239367a4f03420f15"
+      "size_bytes": 3049,
+      "sha256": "dfed32118f5c00ac029cd70d53fff2030e2992649d68610e5049374b6558842d"
     },
     {
       "path": "lib/book_text_v0420.dart",
-      "bytes": 6093,
-      "sha256": "65c35e9c36e0b2e550a339d303e553e68a6b9beeda061d5240e0d01552142970"
+      "size_bytes": 6218,
+      "sha256": "5735599151d9dcb138b5b6c1db83e97d4354464aaaf23064a0a034303b261edb"
     },
     {
       "path": "lib/book_understanding_v0342.dart",
-      "bytes": 17586,
-      "sha256": "d1f06fec535dd59cb504444a5e9a30c0199b52dc0c67c053b6e155e95fff4365"
+      "size_bytes": 17954,
+      "sha256": "fa7f9f11fcdc2fdebcd6f4434b6ef130f890c95c2392dedf1597a1345665a0ac"
     },
     {
       "path": "lib/canonical_compiler_v0420.dart",
-      "bytes": 4509,
-      "sha256": "95c12fff4043fcac9c48704fac341006ca3cb2b3edf2177a04b4677006de0f57"
+      "size_bytes": 5085,
+      "sha256": "87be61f5172a56358fd3a322e55334267490cb6c18da90abbc207914726acc92"
     },
     {
       "path": "lib/canonical_memory_v0420.dart",
-      "bytes": 30859,
-      "sha256": "13f3e7fbd0585322a56e9b17c268027031cd8bd4e0e261308ceb076e3026a3f9"
+      "size_bytes": 33627,
+      "sha256": "5178fcecb755e51c1c58297303ee6f8384b65c55a4735e554c216348c105176e"
     },
     {
       "path": "lib/cls_core_v0340.dart",
-      "bytes": 10942,
-      "sha256": "fae71d4cab04220b05f45a0c2b15e5e13a8a5da35523821186e69c2a7950b44a"
+      "size_bytes": 11112,
+      "sha256": "f9009ae8b2709a62fc17683fa6577730440ccbe6272363c28a73b973c1e91353"
     },
     {
       "path": "lib/cognitive_coordinator_v0420.dart",
-      "bytes": 20705,
-      "sha256": "51e5c33cf6fe1a70affa84ec5b677f0738c7e151181d91452b17ee342d2f70c4"
+      "size_bytes": 23828,
+      "sha256": "e603177367158646d6233c9182edef41708491933a6b24ef14cf3ae3a0c40a9a"
     },
     {
       "path": "lib/cognitive_frame_v0420.dart",
-      "bytes": 817,
-      "sha256": "bd0d71b7c81c82bb7dad99fe3ec6555fe44a9cf56d5b54823d509439d98055b9"
+      "size_bytes": 798,
+      "sha256": "7485f34a36a211086563128a9812094dfe993663abed03b3b5ebebfaeb2dbbea"
     },
     {
       "path": "lib/competence_language_v0350.dart",
-      "bytes": 13391,
-      "sha256": "ff3fb9eeb4104fba9d698019ea57024f402f4050817e5a512d078b410351603c"
+      "size_bytes": 13453,
+      "sha256": "90b9f0388da00f058619acddc662261bd3d7fe17225d14334384cbde8f157eb0"
     },
     {
       "path": "lib/main.dart",
-      "bytes": 27432,
-      "sha256": "6e6001b758ea02d5c53c63359a785e321f6bdf029f68d0eb90399c3bc99a9fa1"
+      "size_bytes": 35937,
+      "sha256": "91c397dbced87274cde002a15fd05be94bb3c15bed81f33369d5a2857ea0afa4"
     },
     {
       "path": "lib/narrative_memory_v0350.dart",
-      "bytes": 34491,
-      "sha256": "1bdf71d7fe7e210689130b90702c30c8aa8a731f24bcf7a0574f32f52eb87299"
+      "size_bytes": 35283,
+      "sha256": "85dd223975740f9b5cdfbe8f505b3c3c11a6b1e57590fc87993595b5473a2e4d"
     },
     {
       "path": "lib/native_mgd_engine_v09.dart",
-      "bytes": 4439,
-      "sha256": "6cbb366a2f776565ba63000968fe20333d0e9cd25ee9333b435dc74b8fdba579"
+      "size_bytes": 4452,
+      "sha256": "f1a589b74109bad188fe5eab9ec6f21af88093dab0d876d5de8bb274d715b429"
     },
     {
       "path": "lib/sensory_features_v0420.dart",
-      "bytes": 6851,
-      "sha256": "a7827d317ca9a3660f4d0643a99ed16d3d677e8aa6509feb3210dfb8d81cc2bf"
+      "size_bytes": 6886,
+      "sha256": "2a6636241036470f94e775994645e606ca8dcb912605f6c6d6b51ba34d1f2c3f"
     },
     {
       "path": "lib/social_memory_v0420.dart",
-      "bytes": 11542,
-      "sha256": "c865d2737d2a7b09e586b7ea804c972b3b07b7bd0755b3e9152cd1b95b62b18d"
+      "size_bytes": 13118,
+      "sha256": "f93952a28a1de587be2da7edc9efca1421e7925fed9998722bea71ca9784334b"
     },
     {
       "path": "pubspec.lock",
-      "bytes": 24837,
-      "sha256": "93fb7bcc45b1c51aa812642bfaec97ef88fb59ad1055891b23536f8c5e8b9452"
+      "size_bytes": 22842,
+      "sha256": "863a2888649fc4ef901965e784ed570ebe92f228cafcc7a38d65e04271932731"
     },
     {
       "path": "pubspec.yaml",
-      "bytes": 594,
+      "size_bytes": 594,
       "sha256": "6daff9a0a9e5cebea428b03f738b71a1b21d21da963f2384f1e6a7985829b6cf"
     },
     {
       "path": "test/canonical_memory_v0420_test.dart",
-      "bytes": 11092,
-      "sha256": "1f549f202dbfcabdbe897d81867fee3f60f50dbaa6ccf9db60574c4f6a6e47e3"
+      "size_bytes": 12495,
+      "sha256": "b55757f140251ffe9ffd69744bca9b05ebb240336bebdfd8eee1fb1eb930366f"
     },
     {
       "path": "test/mgd_math_v0420_test.dart",
-      "bytes": 1473,
-      "sha256": "91f8116030e0aaf02f274032d0dd8169ae20f80e94375bc53ccd8fa6fc6385b8"
+      "size_bytes": 1563,
+      "sha256": "bc4256db47cd01cbf79cb061c8bcad588dfecdb699b81b3149e69c0c91e4d473"
     },
     {
       "path": "tool/build_android.sh",
-      "bytes": 2107,
+      "size_bytes": 2107,
       "sha256": "b0a3f1d4f5ac69e478b1e1ae71f46ac0c70b032391a4c1c9c0ecbd87ff8a568c"
     },
     {
+      "path": "tool/reports/APK-SHA256.txt",
+      "size_bytes": 82,
+      "sha256": "b7a54e1f0e8715ece0fde1b70340a2efb4bc488c1f7595d2add82947803cc98b"
+    },
+    {
+      "path": "tool/reports/BUILD-COMMIT.txt",
+      "size_bytes": 41,
+      "sha256": "047d64719451ab71cceeb18e9dd1d7299b81ac2447135274f1445bff07fdff41"
+    },
+    {
+      "path": "tool/reports/CI-RUN.txt",
+      "size_bytes": 73,
+      "sha256": "ff96e73424b3dd1a5cba3f02e75023c70043ad298a83bb09b49622f1aa26df96"
+    },
+    {
+      "path": "tool/reports/analyze.log",
+      "size_bytes": 24471,
+      "sha256": "d465156694b128f28e391517e46af22af7a78b7fe23c54f26b5e97d4f3da1533"
+    },
+    {
+      "path": "tool/reports/android-test.log",
+      "size_bytes": 1494,
+      "sha256": "c76c3c71846e704c92c1f0192f1d6bf78db587bdf225e037c94ee2ea165e62fb"
+    },
+    {
+      "path": "tool/reports/apk-identity.txt",
+      "size_bytes": 1400,
+      "sha256": "ce62acbaa99aa5d0e87aa0ce59bcbd232ec0a28be0f1dca0ee728b51227680f2"
+    },
+    {
+      "path": "tool/reports/build.log",
+      "size_bytes": 1695,
+      "sha256": "9859dee96a0c37a9993fe4e17af350b3b80dfb5a5c66ebb776a2e6f4776691d2"
+    },
+    {
       "path": "tool/reports/build_status.json",
-      "bytes": 127,
-      "sha256": "87d17a80100628e308301acdac769d3136c9d6217f1d4fa50be5cb68abd17ec3"
+      "size_bytes": 119,
+      "sha256": "6ed3a65365e1a3d1a65f090a286a73b57b2d282467eca3be1148b4c55f97f669"
+    },
+    {
+      "path": "tool/reports/delivery_verification.json",
+      "size_bytes": 589,
+      "sha256": "bc45514ecb306f067989993edf2b6aba98047849b02d7bfcd0bb81288500eb66"
+    },
+    {
+      "path": "tool/reports/flutter_tests.jsonl",
+      "size_bytes": 12392,
+      "sha256": "ea5113628f9b42b7e5d7677b8520380af60a5a17a1ef142ad8c618cb27a7eb95"
+    },
+    {
+      "path": "tool/reports/flutter_version.json",
+      "size_bytes": 635,
+      "sha256": "f3e2d82e78be628af40a111ab22edc8a551a79b4bd0faafaf728cb23bf6c68b6"
+    },
+    {
+      "path": "tool/reports/format.log",
+      "size_bytes": 657,
+      "sha256": "777b0e8d5304ddf1f8237910e979740e6f442854b5a04e33219515cc05e34c62"
     },
     {
       "path": "tool/reports/offline_checks.json",
-      "bytes": 794,
+      "size_bytes": 794,
       "sha256": "e6321153d4351ed53e0b1adbf91f7b0b301df4929d6ab1793c9dfcc95a137db9"
     },
     {
+      "path": "tool/reports/pub_get.log",
+      "size_bytes": 1205,
+      "sha256": "e81dc589b70a981ea10faa8092b19775d3a9cb5caf2336211067f283e14831e0"
+    },
+    {
+      "path": "tool/reports/release-launch.png",
+      "size_bytes": 26187,
+      "sha256": "99f1a59f598a7c43354768b4e1aaff15fcd2fc3263662cc2732babc0f3971829"
+    },
+    {
+      "path": "tool/reports/release-pid.txt",
+      "size_bytes": 5,
+      "sha256": "98ddcd6e23a46e59f5d077fd5c25c67da7670e8abe3c5aadcf0115e4cd32540d"
+    },
+    {
+      "path": "tool/reports/release-runtime.txt",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tool/reports/release-start.txt",
+      "size_bytes": 250,
+      "sha256": "90554cf2ed0809f1b9d68d6d2c4d7632a451d0720c13b5d28b978bff8bc47a11"
+    },
+    {
+      "path": "tool/reports/signature.txt",
+      "size_bytes": 1026,
+      "sha256": "cb14e87ecee9fcf70ae79ad8bbd5e249749e0361550da76088dffb1e8166637a"
+    },
+    {
       "path": "tool/verify_project.py",
-      "bytes": 8986,
+      "size_bytes": 8986,
       "sha256": "7b48ac09a2c58eab33dbea77d38f4c5dcd6e8cfbea47e0bf1a33a4371b466817"
     }
   ],
-  "manifest_excludes_itself": true
+  "manifest_excludes_itself": true,
+  "android_integration_tests_run": true,
+  "ci_run_url": "https://github.com/agdiegorusso-stack/MGD-model/actions/runs/37320325261",
+  "ci_commit": "4678984cfa3324fbcb304aa2e2f4e07390d737b5",
+  "apk_sha256": "ffc0b414311a5c455e6c1d8b902dc05be99b4f60f0183e4ba1b097ae7e5041cd"
 }

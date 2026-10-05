@@ -1,0 +1,14 @@
+{
+  "version": "0.42.0",
+  "version_code": 82,
+  "application_id": "it.diegorusso.mgdneurostable",
+  "android_min_sdk": 24,
+  "apk": "MGD-Neural-0.42.0.apk",
+  "apk_size_bytes": 55247992,
+  "apk_sha256": "ffc0b414311a5c455e6c1d8b902dc05be99b4f60f0183e4ba1b097ae7e5041cd",
+  "unit_tests_passed": 26,
+  "android_integration_tests_passed": 1,
+  "release_installed_and_started_on_emulator": true,
+  "ci_commit": "4678984cfa3324fbcb304aa2e2f4e07390d737b5",
+  "scope": "Automated regression tests and Android emulator; physical camera, microphone and file-provider flows not manually tested."
+}
