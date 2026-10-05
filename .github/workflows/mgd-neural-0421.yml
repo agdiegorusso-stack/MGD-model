@@ -70,17 +70,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           working-directory: mgd-neural-0421
-          script: |
-            bash -o pipefail -c 'flutter test integration_test/restored_app_android_v0421_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-test.log; mgd_test_status=${PIPESTATUS[0]}; adb shell screencap -p > tool/reports/android-last-screen.png; adb exec-out run-as it.diegorusso.mgdneurostable cat cache/restored-map421.png > tool/reports/restored-map421.png; exit "$mgd_test_status"'
-            adb exec-out run-as it.diegorusso.mgdneurostable cat cache/restored-map421.png > tool/reports/restored-map421.png
-            adb install -r build/app/outputs/flutter-apk/app-release.apk
-            adb logcat -c
-            adb shell am force-stop it.diegorusso.mgdneurostable
-            adb shell am start -W -n it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity > tool/reports/release-start.txt
-            sleep 4
-            adb shell pidof it.diegorusso.mgdneurostable > tool/reports/release-pid.txt
-            adb logcat -d -s AndroidRuntime:E flutter:E > tool/reports/release-runtime.txt
-            adb shell screencap -p > tool/reports/release-launch.png
+          script: bash tool/android_verify_421.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -88,12 +78,14 @@ jobs:
           path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
+          overwrite: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: MGD-Neural-0.42.1-verification
           path: mgd-neural-0421/tool/reports
           retention-days: 30
+          overwrite: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -110,3 +102,4 @@ jobs:
             mgd-neural-0421/docs
             mgd-neural-0421/analysis_options.yaml
           retention-days: 30
+          overwrite: true
