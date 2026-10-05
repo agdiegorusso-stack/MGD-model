@@ -51,7 +51,16 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           working-directory: mgd-neural-0420
-          script: bash -o pipefail -c 'flutter test integration_test/canonical_android_v0420_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-test.log'
+          script: |
+            bash -o pipefail -c 'flutter test integration_test/canonical_android_v0420_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-test.log'
+            adb install -r build/app/outputs/flutter-apk/app-release.apk
+            adb logcat -c
+            adb shell am force-stop it.diegorusso.mgdneurostable
+            adb shell am start -W -n it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity > tool/reports/release-start.txt
+            sleep 4
+            adb shell pidof it.diegorusso.mgdneurostable > tool/reports/release-pid.txt
+            adb logcat -d -s AndroidRuntime:E flutter:E > tool/reports/release-runtime.txt
+            adb shell screencap -p > tool/reports/release-launch.png
       - uses: actions/upload-artifact@v4
         with:
           name: MGD-Neural-0.42.0-APK
