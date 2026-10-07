@@ -168,3 +168,11 @@ Map<String, Uint8List> encodeMemoryCheckpoint425(
     }),
   };
 }
+
+Future<Uint8List> encodeResearchBackup425(PlasticLanguageBrain04 brain,
+    MgdWorld06 world, ResearchMemory11 research, MgdLanguage20 language) =>
+    Isolate.run(() => encodeSnapshot425({
+      'brain': brain.toJson(), 'world': world.toJson(),
+      'research': research.toJson(), 'language': language.toJson(),
+      'createdAt': DateTime.now().toIso8601String(),
+    }));

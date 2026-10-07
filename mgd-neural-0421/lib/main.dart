@@ -454,6 +454,13 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (enabled) unawaited(_researchOnce10(autonomous: true));
   }
 
+  Future<void> _researchBackup425(String key) async {
+    final brain = _brain, world = _world,
+        research = _researchMemory, language = _language20;
+    final bytes = await encodeResearchBackup425(brain, world, research, language);
+    await MgdStateStore26.instance.putEncodedAtomic341({key: bytes});
+  }
+
   Future<void> _maintainResearch317() async {
     if (!mounted || !_ready || _maintenance317 || _researchBusy || _busy)
       return;
@@ -463,29 +470,16 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     try {
       if (ResearchSemantics317.needsRecovery318(_researchMemory)) {
         final store = MgdStateStore26.instance;
-        if (await store.getMap('before_research318') == null) {
-          await store.putMap('before_research318', {
-            'brain': _brain.toJson(),
-            'world': _world.toJson(),
-            'research': _researchMemory.toJson(),
-            'language': _language20.toJson(),
-            'createdAt': DateTime.now().toIso8601String()
-          });
+        if (!await store.hasSnapshot425('before_research318')) {
+          await _researchBackup425('before_research318');
         }
         ResearchSemantics317.recoverTexts318(_researchMemory);
         await _checkpoint319();
       }
       if (_researchMemory.state317['migrationComplete'] != true) {
         final store = MgdStateStore26.instance;
-        final previous = await store.getMap('before_research317');
-        if (previous == null) {
-          await store.putMap('before_research317', {
-            'brain': _brain.toJson(),
-            'world': _world.toJson(),
-            'research': _researchMemory.toJson(),
-            'language': _language20.toJson(),
-            'createdAt': DateTime.now().toIso8601String(),
-          });
+        if (!await store.hasSnapshot425('before_research317')) {
+          await _researchBackup425('before_research317');
         }
         if (!mounted) return;
         for (final c in _researchMemory.claims.values.toList()) {

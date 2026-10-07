@@ -146,7 +146,8 @@ class MgdStateStore26 {
   Future<SnapshotFiles425> exportForRestore425(List<String> keys,
       {void Function(String key, int read, int total)? onProgress}) async {
     final temp = await getTemporaryDirectory();
-    final dir = await Directory('${temp.path}/mgd-restore425-').createTemp();
+    await temp.create(recursive: true);
+    final dir = await temp.createTemp('mgd-restore425-');
     final files = <String, String>{}, sizes = <String, int>{};
     try {
       final db = await _open();
@@ -187,6 +188,12 @@ class MgdStateStore26 {
       return out.takeBytes();
     });
     return payload == null ? null : compute(_decodeBinary26, payload);
+  }
+
+  /// Presence checks do not decode an entire historical checkpoint.
+  Future<bool> hasSnapshot425(String key) async {
+    final info = await _sizes425(await _open(), key);
+    return info.isNotEmpty && info['bytes']! > 0;
   }
 
   /// All memories commit together; each batch has at most eight 256 KiB parts.

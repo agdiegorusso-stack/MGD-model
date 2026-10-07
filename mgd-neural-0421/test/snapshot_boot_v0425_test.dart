@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart' as sqlite;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
 import 'package:mgd_neuro_mobile/mgd_state_store_v026.dart';
 import 'package:mgd_neuro_mobile/memory_boot_v0425.dart';
 import 'package:mgd_neuro_mobile/memory_runtime_v0319.dart';
@@ -15,8 +15,8 @@ import 'package:mgd_neuro_mobile/mgd_language_v020.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
+  ffi.sqfliteFfiInit();
+  sqlite.databaseFactory = ffi.databaseFactoryFfi;
   late Directory dir;
   final store = MgdStateStore26.instance;
   setUp(() async {
@@ -39,7 +39,7 @@ void main() {
     final maps = memorySnapshotMaps425(b, MgdWorld06(), ResearchMemory11(), MgdLanguage20());
     maps['brain_v051']!['largeTestPayload425'] = 'x' * (12 * 1024 * 1024);
     await store.putMapsAtomic319(maps);
-    final db = await openDatabase('${dir.path}/mgd_neuro_v026.db');
+    final db = await sqlite.openDatabase('${dir.path}/mgd_neuro_v026.db');
     final sizes = await db.rawQuery('SELECT MAX(length(payload)) AS n, COUNT(*) AS c FROM snapshot_parts425');
     expect(sizes.single['n'], lessThanOrEqualTo(262144));
     expect(sizes.single['c'], greaterThan(48));
@@ -66,7 +66,7 @@ void main() {
 
   test('existing large BLOBs remain readable through bounded slices', () async {
     await store.putMap('init', {'v': 1});
-    final db = await openDatabase('${dir.path}/mgd_neuro_v026.db');
+    final db = await sqlite.openDatabase('${dir.path}/mgd_neuro_v026.db');
     final original = {'text': 'memoria' * 500000};
     await db.insert('state_snapshots', {'k': 'old',
       'payload': encodeSnapshot425(original), 'updated_at': 1});
@@ -79,7 +79,7 @@ void main() {
 
   test('missing snapshot parts fail explicitly without replacing saved memory', () async {
     await store.putMap('brain_v051', {'padding': 'x' * 900000});
-    final db = await openDatabase('${dir.path}/mgd_neuro_v026.db');
+    final db = await sqlite.openDatabase('${dir.path}/mgd_neuro_v026.db');
     await db.delete('snapshot_parts425', where: 'k=? AND part=?', whereArgs: ['brain_v051', 1]);
     await expectLater(MemoryBoot425.load(), throwsStateError);
     final count = await db.rawQuery('SELECT COUNT(*) AS n FROM snapshot_manifests425 WHERE k=?', ['brain_v051']);

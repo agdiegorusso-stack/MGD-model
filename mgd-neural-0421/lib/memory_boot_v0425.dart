@@ -163,7 +163,7 @@ class MemoryBoot425 {
     subscription = updates.listen((message) => onStage?.call(message as String));
       final documents = (await getApplicationDocumentsDirectory()).path;
       final files = snapshots.files, port = updates.sendPort;
-      final restored = await Isolate.run(() => restoreMemoryFiles425(files, documents, progress: port));
+      final restored = await _restoreWorker425(files, documents, port);
       restored.elapsedMs425 = clock.elapsedMilliseconds;
       final tail = DateTime.now().difference(previous).inMilliseconds;
       restored.maxUiGapMs425 = tail > maxGap ? tail : maxGap;
@@ -176,3 +176,9 @@ class MemoryBoot425 {
     }
   }
 }
+
+// Keep the spawned closure in a small scope containing only worker input;
+// it must not capture the UI's callbacks, subscriptions or heartbeat timer.
+Future<LoadedMemory425> _restoreWorker425(Map<String, String> files,
+    String documents, SendPort port) => Isolate.run(
+        () => restoreMemoryFiles425(files, documents, progress: port));
