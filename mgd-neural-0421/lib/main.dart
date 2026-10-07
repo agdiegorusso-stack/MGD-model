@@ -43,6 +43,7 @@ import 'mgd_language_v020.dart';
 import 'cognitive_induction_v024.dart';
 import 'mgd_state_store_v026.dart';
 import 'memory_runtime_v0319.dart';
+import 'memory_boot_v0425.dart';
 import 'learning_service_v0321.dart';
 import 'reasoning_v0321.dart';
 import 'source_memory_page_v0323.dart';
@@ -211,43 +212,20 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (mounted) setState(() => _ready = false);
     final sw = Stopwatch()..start();
     try {
-      if (mounted)
-        setState(() => _status = 'Apro memoria MGD 0.29 • SQLite WAL…');
-      final loadedAll = await Future.wait<Object?>([
-        _persistence.load(),
-        _worldPersistence.load(),
-        _researchPersistence.load(),
-        _languagePersistence20.load(),
-      ]);
-      final loaded =
-          loadedAll[0] as ({PlasticLanguageBrain04 brain, bool migrated})?;
-      final world = loadedAll[1] as MgdWorld06?;
-      final research = loadedAll[2] as ResearchMemory11?;
-      final language = loadedAll[3] as MgdLanguage20?;
-
-      _brain = loaded?.brain ?? PlasticLanguageBrain04();
-      final repairedSemanticCorrections252 =
-          _brain.repairSemanticCorrections0252();
-      _world = world ?? MgdWorld06();
-      final repairedQuestion316 = _world.repairPendingCuriosity316(_brain);
+      final loaded = await MemoryBoot425.load(onStage: (stage) {
+        if (mounted) setState(() => _status = stage);
+      });
+      _brain = loaded.brain;
+      _world = loaded.world;
+      _researchMemory = loaded.research;
+      _language20 = loaded.language;
+      final repairedSemanticCorrections252 = loaded.semanticRepairs;
+      final needsConceptMigration25 = loaded.conceptMigration;
       if (_world.pendingCuriosityKey316 != null) {
-        _messages.add(ChatMessage04(
-            user: false,
+        _messages.add(ChatMessage04(user: false,
             text: _world.pendingCuriosityQuestion09!,
             curiosityKey316: _world.pendingCuriosityKey316));
       }
-
-      _researchMemory = research ?? ResearchMemory11();
-      final needsConceptMigration25 = _researchMemory.termMemory.isNotEmpty &&
-          (_researchMemory.emergentConcepts.isEmpty ||
-              _researchMemory.emergentConcepts.values
-                  .any((c) => c.quality <= 0));
-      if (needsConceptMigration25) {
-        if (mounted) setState(() => _status = 'Migro concetti MGD 0.25…');
-        CognitiveInduction24.recrystallize(_researchMemory);
-      }
-      _language20 = language ?? MgdLanguage20();
-      _language20.bootstrapFromBrain(_brain);
       ClsBridge340.active = await ClsStore340.shared;
       LearningBridge421.observe = (text, source) async {
         _lastExternalTurn421 = await (await DialogueBridge410.engine)
@@ -267,7 +245,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       sw.stop();
       setState(() {
         _ready = true;
-        _status = loaded == null
+        _status = !loaded.existed
             ? 'MGD pronto: insegna un testo in Impara e apri la Mappa'
             : loaded.migrated
                 ? 'Memoria migrata • avvio ${sw.elapsedMilliseconds} ms'
@@ -278,18 +256,22 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _world.runtime319['loadedCycles'] = _world.thoughtCycles;
       _world.runtime319['loadedEdges'] = _world.edges.length;
       _world.runtime319['loadedAge'] = _world.entropicAge;
+      _world.runtime319['restore425_ms'] = loaded.elapsedMs425;
+      _world.runtime319['restore425_ui_gap_ms'] = loaded.maxUiGapMs425;
+      debugPrint('MGD_BOOT425 ${jsonEncode({
+        'status': 'ready', 'elapsed_ms': sw.elapsedMilliseconds,
+        'ui_gap_ms': loaded.maxUiGapMs425, 'slots': _brain.slots.length,
+        'episodes': _brain.episodes.length, 'language_sentences': _language20.sentences,
+      })}');
       _startMindTimer19();
       unawaited(_maintainResearch317());
-      if (repairedSemanticCorrections252 > 0) {
-        unawaited(_checkpoint319());
-      }
-      if (needsConceptMigration25) {
-        // Persist the migrated quality/crystallization metadata so the next
-        // launch can use it directly without rebuilding the concept graph.
-        unawaited(_checkpoint319());
-      }
-      if (loaded?.migrated == true) {
-        unawaited(_legacyMaintenance19());
+      if (repairedSemanticCorrections252 > 0 || needsConceptMigration25 ||
+          loaded.migrated || loaded.languageBootstrapped425) {
+        // Paint the usable UI first; retain prepared language so reopening does
+        // not repeat the entire bootstrap. Checkpoint encoding stays in worker.
+        unawaited(Future<void>.delayed(const Duration(milliseconds: 250), () async {
+          if (mounted) await _checkpoint319();
+        }));
       }
     } catch (e) {
       // A startup problem must not trap the user forever on the splash screen.
@@ -1426,7 +1408,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _researchMemory = ResearchMemory11();
       _messages.clear();
       _language20 = MgdLanguage20();
-      _status = 'Nuova memoria MGD 0.42.4 creata';
+      _status = 'Nuova memoria MGD 0.42.5 creata';
     });
     await _save();
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'plastic_language_brain_v04.dart';
 import 'sensory_world_v06.dart';
@@ -9,7 +10,7 @@ import 'mgd_language_v020.dart';
 import 'mgd_state_store_v026.dart';
 import 'consolidation_provenance_v0331.dart';
 
-const mgdAppVersion319 = '0.42.4';
+const mgdAppVersion319 = '0.42.5';
 
 /// Rehearsal changes graph familiarity, NEVER evidence or factual confidence.
 /// It only replays externally experienced/confirmed facts, not generated thoughts.
@@ -97,10 +98,8 @@ class MemoryCheckpoint319 {
   late MgdWorld06 _world;
   late ResearchMemory11 _research;
   late MgdLanguage20 _language;
-  final Future<void> Function(Map<String, Map<String, dynamic>>) write;
-  MemoryCheckpoint319({
-    Future<void> Function(Map<String, Map<String, dynamic>>)? write,
-  }) : write = write ?? MgdStateStore26.instance.putMapsAtomic319;
+  final Future<void> Function(Map<String, Map<String, dynamic>>)? write;
+  MemoryCheckpoint319({this.write});
 
   Future<void> save(
     PlasticLanguageBrain04 brain,
@@ -123,26 +122,49 @@ class MemoryCheckpoint319 {
           world = _world,
           research = _research,
           language = _language;
-      final maps = await Isolate.run<Map<String, Map<String, dynamic>>>(
-        () => {
-          'brain_v051': brain.toJson(),
-          'world_v06': world.toJson(),
-          'research_v11': research.toJson(),
-          'language_v20': language.toJson(),
-          'checkpoint_v0319': {
-            'version': mgdAppVersion319,
-            'at': DateTime.now().toIso8601String(),
-            'brainEpisodes': brain.episodes.length,
-            'worldCycles': world.thoughtCycles,
-            'worldEdges': world.edges.length,
-            'worldAge': world.entropicAge,
-            'claims': research.claims.length,
-            'evidence': research.evidence.length,
-            'languageSentences': language.sentences,
-          },
-        },
-      );
-      await write(maps);
+      final customWrite = write;
+      if (customWrite != null) {
+        final maps = await Isolate.run(() => memorySnapshotMaps425(
+            brain, world, research, language));
+        await customWrite(maps);
+      } else {
+        final encoded = await Isolate.run(() => encodeMemoryCheckpoint425(
+            brain, world, research, language));
+        await MgdStateStore26.instance.putEncodedAtomic341(encoded);
+      }
     }
   }
+}
+
+Map<String, Map<String, dynamic>> memorySnapshotMaps425(
+    PlasticLanguageBrain04 brain, MgdWorld06 world,
+    ResearchMemory11 research, MgdLanguage20 language) => {
+  'brain_v051': brain.toJson(), 'world_v06': world.toJson(),
+  'research_v11': research.toJson(), 'language_v20': language.toJson(),
+  'checkpoint_v0319': {
+    'version': mgdAppVersion319, 'at': DateTime.now().toIso8601String(),
+    'brainEpisodes': brain.episodes.length, 'worldCycles': world.thoughtCycles,
+    'worldEdges': world.edges.length, 'worldAge': world.entropicAge,
+    'claims': research.claims.length, 'evidence': research.evidence.length,
+    'languageSentences': language.sentences,
+  },
+};
+
+Map<String, Uint8List> encodeMemoryCheckpoint425(
+    PlasticLanguageBrain04 brain, MgdWorld06 world,
+    ResearchMemory11 research, MgdLanguage20 language) {
+  // Build and encode one model at a time in the worker; return only bytes.
+  return {
+    'brain_v051': encodeSnapshot425(brain.toJson()),
+    'world_v06': encodeSnapshot425(world.toJson()),
+    'research_v11': encodeSnapshot425(research.toJson()),
+    'language_v20': encodeSnapshot425(language.toJson()),
+    'checkpoint_v0319': encodeSnapshot425({
+      'version': mgdAppVersion319, 'at': DateTime.now().toIso8601String(),
+      'brainEpisodes': brain.episodes.length, 'worldCycles': world.thoughtCycles,
+      'worldEdges': world.edges.length, 'worldAge': world.entropicAge,
+      'claims': research.claims.length, 'evidence': research.evidence.length,
+      'languageSentences': language.sentences,
+    }),
+  };
 }

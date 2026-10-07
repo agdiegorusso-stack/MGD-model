@@ -1,3 +1,11 @@
+# MGD Neural 0.42.5 — large persistent memory
+
+Cold startup streams a consistent SQLite checkpoint in 256 KiB pieces to temporary files, then decodes and reconstructs all four live memories in a worker isolate. Model factories, semantic repairs, concept migration and conditional language bootstrap run in the worker. UI progress and an event-loop heartbeat remain active during restoration; temporary files are removed afterwards. Read failures retain the protected-memory screen and suspend autosave.
+
+Checkpoint encoding also runs in the worker. SQLite schema v2 stores snapshots in 256 KiB rows and sends at most eight payload rows per batch; the complete multi-memory checkpoint remains one transaction. Existing schema-v1 BLOBs remain readable in bounded slices.
+
+Validation includes the previous 10000 actual biology facts, atomic rollback/corruption regressions, and Android startup with 50000 unique saved synthetic facts/episodes and world edges. The Android test starts with schema-v1 BLOBs, verifies GUI responsiveness, map/chat retrieval and a chunked checkpoint restart. The release APK is then restarted in a new Android process with the populated database intact.
+
 # MGD Neural 0.42.4
 
 Ripristino del progetto completo 0.41.0 dopo la regressione della 0.42.0. Tutti i 59 file Dart originali sono conservati.

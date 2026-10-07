@@ -296,10 +296,16 @@ class MgdLanguage20 {
     lastFlux = flux;
   }
 
-  void bootstrapFromBrain(PlasticLanguageBrain04 brain) {
+  void bootstrapFromBrain(PlasticLanguageBrain04 brain,
+      {void Function(int done, int total)? onProgress425}) {
     if (sentences > 0) return;
+    var done = 0;
     for (final ep in brain.episodes) {
       ingestText(ep.userText, reward: .25);
+      done++;
+      if (done % 128 == 0 || done == brain.episodes.length) {
+        onProgress425?.call(done, brain.episodes.length);
+      }
     }
   }
 

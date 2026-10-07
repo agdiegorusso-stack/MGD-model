@@ -1,5 +1,6 @@
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -30,6 +31,21 @@ Map<String, dynamic> _decodeBinary26(Uint8List bytes) {
   return Map<String, dynamic>.from(_normalizeDecoded26(raw) as Map);
 }
 
+// Invoked in the restoration/checkpoint isolate, never on the UI.
+Map<String, dynamic> decodeSnapshot425(Uint8List bytes) => _decodeBinary26(bytes);
+Uint8List encodeSnapshot425(Map<String, dynamic> map) => _encodeBinary26(map);
+
+class SnapshotFiles425 {
+  final String directory;
+  final Map<String, String> files;
+  final Map<String, int> sizes;
+  SnapshotFiles425(this.directory, this.files, this.sizes);
+  Future<void> dispose() async {
+    final dir = Directory(directory);
+    if (await dir.exists()) await dir.delete(recursive: true);
+  }
+}
+
 class MgdStateStore26 {
   MgdStateStore26._();
   static final MgdStateStore26 instance = MgdStateStore26._();
@@ -47,7 +63,7 @@ class MgdStateStore26 {
     final dir = await getApplicationDocumentsDirectory();
     final db = await openDatabase(
       '${dir.path}/mgd_neuro_v026.db',
-      version: 1,
+      version: 2,
       onConfigure: (db) async {
         // IMPORTANT on Android: journal_mode is a row-returning PRAGMA.
         // execute()/execSQL() throws:
@@ -68,64 +84,142 @@ class MgdStateStore26 {
             'CREATE INDEX graph_edges_src_idx ON graph_edges(space,src)');
         await db.execute(
             'CREATE INDEX graph_edges_dst_idx ON graph_edges(space,dst)');
+        await _createParts425(db);
+      },
+      onUpgrade: (db, old, _) async {
+        if (old < 2) await _createParts425(db);
       },
     );
     _db = db;
     return db;
   }
 
+  static const snapshotPartBytes425 = 262144;
+  static Future<void> _createParts425(DatabaseExecutor db) async {
+    await db.execute('CREATE TABLE IF NOT EXISTS snapshot_manifests425 '
+        '(k TEXT PRIMARY KEY, bytes INTEGER NOT NULL, parts INTEGER NOT NULL, updated_at INTEGER NOT NULL)');
+    await db.execute('CREATE TABLE IF NOT EXISTS snapshot_parts425 '
+        '(k TEXT NOT NULL, part INTEGER NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(k,part))');
+  }
+
+  Future<Map<String, int>> _sizes425(DatabaseExecutor db, String key) async {
+    final chunked = await db.query('snapshot_manifests425',
+        columns: ['bytes', 'parts'], where: 'k=?', whereArgs: [key]);
+    if (chunked.isNotEmpty) {
+      return {'bytes': chunked.single['bytes'] as int,
+        'parts': chunked.single['parts'] as int};
+    }
+    final old = await db.rawQuery(
+        'SELECT length(payload) AS n FROM state_snapshots WHERE k=?', [key]);
+    return old.isEmpty ? {} : {'bytes': old.single['n'] as int};
+  }
+
+  Future<void> _readParts425(DatabaseExecutor db, String key,
+      Map<String, int> info, Future<void> Function(Uint8List) consume) async {
+    final n = info['bytes']!;
+    if (n <= 0) throw StateError('Archivio $key presente ma vuoto.');
+    final parts = info['parts'];
+    if (parts != null && parts != (n + snapshotPartBytes425 - 1) ~/ snapshotPartBytes425) {
+      throw StateError('Manifesto archivio $key incoerente.');
+    }
+    var read = 0;
+    for (var offset = 0; offset < n; offset += snapshotPartBytes425) {
+      final rows = parts != null
+          ? await db.query('snapshot_parts425', columns: ['payload'],
+              where: 'k=? AND part=?', whereArgs: [key, offset ~/ snapshotPartBytes425])
+          : await db.rawQuery(
+              'SELECT substr(payload,?,?) AS payload FROM state_snapshots WHERE k=?',
+              [offset + 1, snapshotPartBytes425, key]);
+      final expected = n - offset < snapshotPartBytes425 ? n - offset : snapshotPartBytes425;
+      final part = rows.length == 1 ? rows.single['payload'] : null;
+      if (part is! Uint8List || part.length != expected) {
+        throw StateError('Archivio $key incompleto al blocco ${offset ~/ snapshotPartBytes425}.');
+      }
+      await consume(part);
+      read += part.length;
+    }
+    if (read != n) throw StateError('Dimensione archivio $key incoerente.');
+  }
+
+  /// Read one consistent checkpoint with bounded channel messages and IO.
+  /// Only temporary file paths are passed to the restoration isolate.
+  Future<SnapshotFiles425> exportForRestore425(List<String> keys,
+      {void Function(String key, int read, int total)? onProgress}) async {
+    final temp = await getTemporaryDirectory();
+    final dir = await Directory('${temp.path}/mgd-restore425-').createTemp();
+    final files = <String, String>{}, sizes = <String, int>{};
+    try {
+      final db = await _open();
+      await db.transaction((tx) async {
+        for (var i = 0; i < keys.length; i++) {
+          final key = keys[i], info = await _sizes425(tx, keys[i]);
+          if (info.isEmpty) continue;
+          final file = File('${dir.path}/$i.bin');
+          final handle = await file.open(mode: FileMode.write);
+          var done = 0;
+          try {
+            await _readParts425(tx, key, info, (part) async {
+              await handle.writeFrom(part);
+              done += part.length;
+              onProgress?.call(key, done, info['bytes']!);
+            });
+          } finally {
+            await handle.close();
+          }
+          files[key] = file.path;
+          sizes[key] = info['bytes']!;
+        }
+      });
+      return SnapshotFiles425(dir.path, files, sizes);
+    } catch (_) {
+      await dir.delete(recursive: true);
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>?> getMap(String key) async {
     final db = await _open();
-    // Android CursorWindow has a per-row capacity: never select a whole large
-    // BLOB. Read bounded slices from ONE consistent SQLite transaction.
     final payload = await db.transaction<Uint8List?>((tx) async {
-      final size = await tx.rawQuery(
-          'SELECT length(payload) AS n FROM state_snapshots WHERE k=?', [key]);
-      if (size.isEmpty) return null;
-      final n = size.single['n'] as int;
-      if (n <= 0) throw StateError('Archivio $key presente ma vuoto.');
+      final info = await _sizes425(tx, key);
+      if (info.isEmpty) return null;
       final out = BytesBuilder(copy: false);
-      for (var offset = 0; offset < n; offset += 262144) {
-        final rows = await tx.rawQuery(
-            'SELECT substr(payload,?,?) AS part FROM state_snapshots WHERE k=?',
-            [offset + 1, 262144, key]);
-        final part = rows.single['part'];
-        if (part is! Uint8List || part.isEmpty)
-          throw StateError('Archivio $key incompleto.');
-        out.add(part);
-      }
-      final bytes = out.takeBytes();
-      if (bytes.length != n)
-        throw StateError('Dimensione archivio $key incoerente.');
-      return bytes;
+      await _readParts425(tx, key, info, (part) async { out.add(part); });
+      return out.takeBytes();
     });
     return payload == null ? null : compute(_decodeBinary26, payload);
   }
 
+  /// All memories commit together; each batch has at most eight 256 KiB parts.
   Future<void> putEncodedAtomic341(Map<String, Uint8List> encoded) async {
     final db = await _open();
     await db.transaction((tx) async {
-      final batch = tx.batch(), stamp = DateTime.now().millisecondsSinceEpoch;
+      final stamp = DateTime.now().millisecondsSinceEpoch;
       for (final entry in encoded.entries) {
-        batch.insert('state_snapshots',
-            {'k': entry.key, 'payload': entry.value, 'updated_at': stamp},
-            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (entry.value.isEmpty) throw StateError('Snapshot ${entry.key} vuoto.');
+        await tx.delete('snapshot_parts425', where: 'k=?', whereArgs: [entry.key]);
+        var batch = tx.batch(), inBatch = 0, parts = 0;
+        for (var offset = 0; offset < entry.value.length; offset += snapshotPartBytes425) {
+          final end = offset + snapshotPartBytes425 < entry.value.length
+              ? offset + snapshotPartBytes425 : entry.value.length;
+          batch.insert('snapshot_parts425', {'k': entry.key, 'part': parts++,
+            'payload': Uint8List.sublistView(entry.value, offset, end)});
+          if (++inBatch == 8) {
+            await batch.commit(noResult: true);
+            batch = tx.batch(); inBatch = 0;
+          }
+        }
+        if (inBatch > 0) await batch.commit(noResult: true);
+        await tx.insert('snapshot_manifests425', {'k': entry.key,
+          'bytes': entry.value.length, 'parts': parts, 'updated_at': stamp},
+          conflictAlgorithm: ConflictAlgorithm.replace);
+        await tx.delete('state_snapshots', where: 'k=?', whereArgs: [entry.key]);
       }
-      await batch.commit(noResult: true);
     });
   }
 
   Future<void> putMap(String key, Map<String, dynamic> map) async {
     final payload = await compute(_encodeBinary26, map);
-    final db = await _open();
-    await db.insert(
-        'state_snapshots',
-        {
-          'k': key,
-          'payload': payload,
-          'updated_at': DateTime.now().millisecondsSinceEpoch
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await putEncodedAtomic341({key: payload});
   }
 
   Future<void> putMapsAtomic319(Map<String, Map<String, dynamic>> maps) async {
@@ -133,17 +227,7 @@ class MgdStateStore26 {
     for (final entry in maps.entries) {
       encoded[entry.key] = await compute(_encodeBinary26, entry.value);
     }
-    final db = await _open();
-    await db.transaction((tx) async {
-      final batch = tx.batch();
-      final stamp = DateTime.now().millisecondsSinceEpoch;
-      for (final e in encoded.entries) {
-        batch.insert('state_snapshots',
-            {'k': e.key, 'payload': e.value, 'updated_at': stamp},
-            conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      await batch.commit(noResult: true);
-    });
+    await putEncodedAtomic341(encoded);
   }
 
   Future<void> close319() async {
@@ -154,7 +238,11 @@ class MgdStateStore26 {
 
   Future<void> deleteKey(String key) async {
     final db = await _open();
-    await db.delete('state_snapshots', where: 'k=?', whereArgs: [key]);
+    await db.transaction((tx) async {
+      await tx.delete('snapshot_parts425', where: 'k=?', whereArgs: [key]);
+      await tx.delete('snapshot_manifests425', where: 'k=?', whereArgs: [key]);
+      await tx.delete('state_snapshots', where: 'k=?', whereArgs: [key]);
+    });
   }
 
   Future<void> replaceGraph(
@@ -253,6 +341,8 @@ class MgdStateStore26 {
     final db = await _open();
     await db.transaction((tx) async {
       await tx.delete('state_snapshots');
+      await tx.delete('snapshot_parts425');
+      await tx.delete('snapshot_manifests425');
       await tx.delete('graph_edges');
       await tx.delete('graph_nodes');
     });

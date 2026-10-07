@@ -106,7 +106,7 @@ void main() {
       if (find.byType(InspectorScope315).evaluate().isNotEmpty) break;
     }
     expect(find.byType(NavigationDestination), findsNWidgets(5));
-    expect(find.text('MGD Neuro 0.42.4'), findsOneWidget);
+    expect(find.text('MGD Neuro 0.42.5'), findsOneWidget);
     await tester.tap(find.text('Impara'));
     await settle421(tester);
     expect(find.byKey(const ValueKey('teaching-text421')), findsOneWidget);
