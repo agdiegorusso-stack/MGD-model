@@ -39,7 +39,40 @@ jobs:
             ~/.gradle/wrapper
             ~/.android/debug.keystore
           key: mgd-neural-0420-android-gradle-9.3.1-v1
+      - name: Reuse compiled APK only when application source is identical
+        id: reuse425
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo 'ready=false' >> "$GITHUB_OUTPUT"
+          mgd_base425=4047f8a860bb08b974f608f583a49e2bc95952c4
+          git fetch --depth=1 origin "$mgd_base425"
+          if ! git diff --quiet "$mgd_base425" HEAD -- lib android pubspec.yaml pubspec.lock; then exit 0; fi
+          mkdir -p tool/reports build/app/outputs/flutter-apk
+          gh run download 37701904775 --repo "$GITHUB_REPOSITORY" --name MGD-Neural-0.42.5-APK --dir build/app/outputs/flutter-apk
+          gh run download 37701904775 --repo "$GITHUB_REPOSITORY" --name MGD-Neural-0.42.5-verification --dir tool/reports
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('tool/reports')
+          assert (p/'BUILD-COMMIT.txt').read_text().strip()=='4047f8a860bb08b974f608f583a49e2bc95952c4'
+          assert json.loads((p/'build_status.json').read_text())['apk_built']
+          events=[]
+          for line in (p/'flutter_tests.jsonl').read_text().splitlines():
+              try: x=json.loads(line)
+              except ValueError: continue
+              if isinstance(x,dict): events.append(x)
+          assert any(x.get('type')=='done' and x.get('success') is True for x in events)
+          assert 'All tests passed!' in (p/'android-test.log').read_text()
+          apk=Path('build/app/outputs/flutter-apk/app-release.apk')
+          assert hashlib.sha256(apk.read_bytes()).hexdigest()==(p/'APK-SHA256.txt').read_text().split()[0]
+          PY
+          flutter pub get
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
       - name: Build and test actual 10000-fact biology packs
+        if: steps.reuse425.outputs.ready != 'true'
         run: bash tool/build_android.sh
       - name: Verify APK identity and signature
         run: |
@@ -48,13 +81,16 @@ jobs:
           "$mgd_tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk | tee tool/reports/signature.txt
           "$mgd_tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > tool/reports/apk-identity.txt
           grep -F "name='it.diegorusso.mgdneurostable' versionCode='87' versionName='0.42.5'" tool/reports/apk-identity.txt
-          printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
+          if [[ '${{ steps.reuse425.outputs.ready }}' != 'true' ]]; then printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt; fi
+          printf '%s\n' "$GITHUB_SHA" > tool/reports/VERIFY-COMMIT.txt
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Android persisted 50000-fact cold start
+        env:
+          MGD_REUSE_ANDROID_TEST421: ${{ steps.reuse425.outputs.ready == 'true' }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35

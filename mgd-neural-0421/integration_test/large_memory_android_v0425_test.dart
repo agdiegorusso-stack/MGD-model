@@ -144,6 +144,10 @@ void main() {
       await store.close319();
     }
     final temp = await getTemporaryDirectory();
+    // Preserve the closed, fully committed DB independently of the Flutter
+    // integration runner's package lifecycle, for a genuine release cold boot.
+    await File(path).copy('${temp.path}/large-memory425.db');
+    await File('${temp.path}/large-memory425-path.txt').writeAsString(path);
     await File('${temp.path}/large-memory425.json').writeAsString(jsonEncode(records));
     print('LARGE_MEMORY425 ${jsonEncode(records)}');
     expect(tester.takeException(), isNull);

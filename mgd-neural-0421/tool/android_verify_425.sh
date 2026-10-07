@@ -25,9 +25,43 @@ PY
 done
 adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.json \
   > tool/reports/large-memory425.json
-# Installing the actual release over the same signed debug package retains the
-# real populated database; force-stop destroys the previous Flutter process.
+adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425-path.txt \
+  > tool/reports/large-memory425-path.txt
+adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.db \
+  > /tmp/mgd-large-memory425.db
+python3 - <<'PY'
+import sqlite3, hashlib, json
+from pathlib import Path
+p=Path('/tmp/mgd-large-memory425.db')
+db=sqlite3.connect(p)
+assert db.execute('PRAGMA integrity_check').fetchone()==('ok',)
+assert db.execute('SELECT COUNT(*) FROM snapshot_parts425').fetchone()[0]>250
+assert db.execute("SELECT bytes FROM snapshot_manifests425 WHERE k='brain_v051'").fetchone()[0]>40000000
+assert db.execute("SELECT bytes FROM snapshot_manifests425 WHERE k='language_v20'").fetchone()[0]>1000000
+db.close()
+target=Path('tool/reports/large-memory425-path.txt').read_text().strip()
+assert target.startswith(('/data/user/0/it.diegorusso.mgdneurostable/',
+    '/data/data/it.diegorusso.mgdneurostable/')) and target.endswith('/mgd_neuro_v026.db')
+Path('tool/reports/large-db425.json').write_text(json.dumps({'bytes':p.stat().st_size,
+    'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'target':target},indent=2))
+PY
+# Install the actual release, then restore the exact committed test database.
+# adb root is available on this Google APIs emulator; the delivered app does
+# not request root. A full process stop follows, with no test widgets running.
 adb install -r build/app/outputs/flutter-apk/app-release.apk
+adb shell am force-stop it.diegorusso.mgdneurostable
+adb root
+adb wait-for-device
+mgd_db_target425="$(cat tool/reports/large-memory425-path.txt)"
+mgd_uid425="$(adb shell cmd package list packages -U it.diegorusso.mgdneurostable | sed -n 's/.*uid:\([0-9]*\).*/\1/p' | tr -d '\r')"
+[[ "$mgd_uid425" =~ ^[0-9]+$ ]]
+adb shell mkdir -p "$(dirname "$mgd_db_target425")"
+adb shell rm -f "${mgd_db_target425}-wal" "${mgd_db_target425}-shm"
+adb push /tmp/mgd-large-memory425.db "$mgd_db_target425"
+adb shell chown "${mgd_uid425}:${mgd_uid425}" "$mgd_db_target425"
+adb shell chown "${mgd_uid425}:${mgd_uid425}" "$(dirname "$mgd_db_target425")"
+adb shell chmod 600 "$mgd_db_target425"
+adb shell restorecon "$mgd_db_target425"
 adb shell am force-stop it.diegorusso.mgdneurostable
 adb logcat -c
 adb shell am start -W -n it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity \
