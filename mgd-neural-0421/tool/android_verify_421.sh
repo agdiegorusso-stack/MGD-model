@@ -29,13 +29,14 @@ PY
 done
 adb exec-out run-as it.diegorusso.mgdneurostable cat cache/restored-map421.png \
   > tool/reports/restored-map421.png
+adb exec-out run-as it.diegorusso.mgdneurostable cat cache/chat-map423.png \
+  > tool/reports/chat-map423.png
 python3 - <<'PY'
 from pathlib import Path
 assert Path('tool/reports/restored-map421.png').read_bytes().startswith(b'\x89PNG\r\n\x1a\n')
 PY
 fi
-# The requested delivery is a fresh installation. The reused release APK can
-# have a different development signature from this runner's temporary debug app.
+# The release is checked with a clean installation, as requested.
 if adb shell pm path it.diegorusso.mgdneurostable | grep -q '^package:'; then
   adb uninstall it.diegorusso.mgdneurostable
 fi

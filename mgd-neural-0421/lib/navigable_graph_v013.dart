@@ -9,8 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'plastic_language_brain_v04.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'mgd_language_v020.dart';
-import 'relational_memory_v0324.dart';
-import 'native_mgd_engine_v09.dart';
+import 'knowledge_chat_v0423.dart';
 import 'sensory_world_v06.dart';
 import 'knowledge_deletion_v0330.dart' show conceptNode33, episodeNode33;
 
@@ -213,45 +212,15 @@ class _NavigableSemanticGraph13State extends State<NavigableSemanticGraph13> {
         }
       }
     } else if (mode == 'mondo') {
-      links.addAll(widget.brain
-          .semanticGraph(limit: 10000000)
-          .where((x) => x.confidence >= _minConfidence));
+      links.addAll(KnowledgeChat423.links(widget.brain, research,
+          minConfidence: _minConfidence).map((e) => (
+            from: e.from, relation: e.relation, to: e.to,
+            confidence: e.confidence)));
       nodes.addAll(widget.brain.entities
           .where((e) => e.kind != 'deleted' && e.label.isNotEmpty)
           .map((e) => e.label));
       for (final e in widget.world?.experience33.episodes ?? const []) {
         nodes.add(e.label);
-      }
-      if (research != null) {
-        for (final r
-            in RelationalMemory324.rows(research, includeHistory: false)) {
-          links.add((
-            from: r['agent'].toString(),
-            relation:
-                'insegnata: ${r['negative'] == true ? 'non ' : ''}${r['relation']}',
-            to: r['patient'].toString(),
-            // Graph thickness is geometric strength, not factual confidence.
-            confidence: MgdMath09.strength(
-                weight: (r['weight'] as num).toDouble(),
-                memory: (r['memory'] as num).toDouble(),
-                material: (r['material'] as num).toDouble()),
-          ));
-        }
-        for (final c in research.claims.values.where((c) =>
-            {'documentata', 'accettata'}.contains(c.status) && !c.conflict)) {
-          links.removeWhere((l) =>
-              ResearchSemantics317.sameSubject(l.from, c.subject) &&
-              ResearchSemantics317.sameObject(l.to, c.object) &&
-              ResearchSemantics317.relation(l.relation) ==
-                  ResearchSemantics317.relation(c.relation));
-          links.add((
-            from: c.subject,
-            relation:
-                '${c.status == 'documentata' ? 'con fonte' : 'corroborata'}: ${c.relation}',
-            to: c.object,
-            confidence: c.confidence
-          ));
-        }
       }
     } else if (mode == 'ipotesi' && research != null) {
       for (final c in research.claims.values) {

@@ -108,6 +108,31 @@ void main() {
     expect(find.textContaining('cristalli'), findsWidgets);
     expect((await CognitiveCoreBridge400.stats())['relations'],
         cognitive['relations'], reason: 'A question is not another fact.');
+    // Regression: original brain knowledge is visible in Mondo but was ignored
+    // by the chat, which quoted the just-entered topic from CLS instead.
+    final inspector423 = tester.widget<InspectorScope315>(find.byType(InspectorScope315)).inspector;
+    inspector423.brain.importTeacherFact08(subject: 'Muscolo scheletrico',
+        relation: 'ha funzione', object: 'Movimento volontario', confidence: .95);
+    inspector423.brain.importTeacherFact08(subject: 'Movimento volontario',
+        relation: 'è funzione associata a', object: 'Muscolo scheletrico', confidence: .95);
+    inspector423.brain.importTeacherFact08(subject: 'Rattus',
+        relation: 'tipo di', object: 'Roditore', confidence: .95);
+    final episodes423 = (await ClsBridge340.active!.db.query('episodes')).length;
+    for (final topic423 in ['movimento volontario', 'rattus', 'Parlami del rattus']) {
+      await tester.enterText(find.byKey(const ValueKey('chat421')), topic423);
+      await keyboardClosed421(tester);
+      await tester.tap(find.byKey(const ValueKey('send421')));
+      await ready421(tester, find.byKey(const ValueKey('send421')));
+      await settle421(tester);
+      expect(find.textContaining(topic423 == 'movimento volontario'
+          ? 'Muscolo scheletrico — ha funzione → Movimento volontario'
+          : 'Rattus — è → Roditore'), findsWidgets);
+    }
+    expect(find.textContaining('Passaggio richiamato, non verificato:'), findsNothing);
+    expect((await ClsBridge340.active!.db.query('episodes')).length, episodes423);
+    expect((await CognitiveCoreBridge400.stats())['relations'], cognitive['relations']);
+    final chatPng423 = await binding.takeScreenshot('chat-map423');
+    await File('${temp.path}/chat-map423.png').writeAsBytes(chatPng423);
     await tester.tap(find.text('Mente'));
     await settle421(tester);
     await tester.scrollUntilVisible(find.text('Pensa 96 cicli'), 300,
@@ -153,6 +178,19 @@ void main() {
     expect(find.textContaining(RegExp(r'Focus:\s*zorvello\b', caseSensitive: false)), findsOneWidget);
     expect((await CognitiveCoreBridge400.stats())['relations'],
         afterLab['relations']);
+    await tester.tap(find.text('Vivi'));
+    await settle421(tester);
+    await tester.enterText(find.byKey(const ValueKey('chat421')), 'movimento volontario');
+    await keyboardClosed421(tester);
+    await tester.tap(find.byKey(const ValueKey('send421')));
+    await ready421(tester, find.byKey(const ValueKey('send421')));
+    await settle421(tester);
+    expect(find.textContaining('Muscolo scheletrico — ha funzione → Movimento volontario'), findsWidgets);
+    await tester.tap(find.text('Mappa'));
+    await settle421(tester);
+    await tester.enterText(find.byType(TextField), 'zorvello');
+    await tester.tap(find.byTooltip('Cerca'));
+    await keyboardClosed421(tester);
     // Deleting from the restored map must also remove the newer SQL memory.
     await tester.scrollUntilVisible(find.text('Elimina nodo e riferimenti'), 120,
         scrollable: find.byType(Scrollable).last);

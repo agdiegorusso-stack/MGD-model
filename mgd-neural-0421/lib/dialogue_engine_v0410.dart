@@ -101,7 +101,7 @@ class DialogueEngine410 {
     return last;
   }
 
-  Future<DialogueReply410?> process(String raw) async {
+  Future<DialogueReply410?> process(String raw, {bool queryOnly = false}) async {
     await _load();
     final text = raw.trim();
     if (text.isEmpty) return null;
@@ -121,7 +121,7 @@ class DialogueEngine410 {
           confidence: .98);
     }
 
-    if (!_question(text)) {
+    if (!queryOnly && !_question(text)) {
       final turn = await observeExternal(text, source: 'dialogo');
       if (turn == null) return null;
       _rememberFocus(turn.frame.concepts.where(isContent400).take(5));
@@ -291,8 +291,8 @@ class DialogueEngine410 {
     await _load();
     await core.store.forgetWhere(matches);
     await social.forgetWhere(matches);
-    core.workingMemory.removeWhere((f) =>
-        [f.subject, f.predicate, f.object, f.location].any(matches));
+    core.workingMemory.removeWhere(
+        (f) => [f.subject, f.predicate, f.object, f.location].any(matches));
     if (matches(core.activeGoal)) core.activeGoal = '';
     state.recent.removeWhere(matches);
     if (matches(state.focus)) state.focus = '';
@@ -485,8 +485,8 @@ class DialogueBridge410 {
     return _engine = DialogueEngine410(core, TheoryOfMind410(social), social);
   }
 
-  static Future<String?> processChat(String text) async {
-    final reply = await (await engine).process(text);
+  static Future<String?> processChat(String text, {bool queryOnly = false}) async {
+    final reply = await (await engine).process(text, queryOnly: queryOnly);
     return reply?.text;
   }
 

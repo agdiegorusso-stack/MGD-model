@@ -17,8 +17,11 @@ class ClsBridge340 {
       {String source = 'Testo utente'}) async {
     final store = active;
     if (store == null || text.trim().isEmpty) return;
-    final observed = text.split(RegExp(r'(?<=[.!?])\s+|\n+'))
-        .where((part) => part.trim().isNotEmpty && !question(part) &&
+    final observed = text
+        .split(RegExp(r'(?<=[.!?])\s+|\n+'))
+        .where((part) =>
+            part.trim().isNotEmpty &&
+            !question(part) &&
             !RegExp(r'^\s*(correggi|continua)\s*:', caseSensitive: false)
                 .hasMatch(part))
         .join('\n');
@@ -50,8 +53,12 @@ class ClsBridge340 {
     final recall = await store.recall({'text:v1': f});
     if (!recall.accepted || recall.conflict || recall.evidence.isEmpty)
       return null;
-    final e = recall.evidence.first;
-    if (e.text.trim().isEmpty) return null;
+    // Ignore historical bare-topic echoes too; the query itself is not evidence.
+    final evidence = recall.evidence.where((e) => e.text.trim().isNotEmpty &&
+        PlasticLanguageBrain04.canonicalObject(e.text) !=
+            PlasticLanguageBrain04.canonicalObject(question)).toList();
+    if (evidence.isEmpty) return null;
+    final e = evidence.first;
     return 'Passaggio richiamato, non verificato:\n${e.text}\nFonte: ${e.source}';
   }
 
@@ -72,13 +79,17 @@ class ClsBridge340 {
     var after = 0;
     while (true) {
       final rows = await store.db.query('episodes',
-          columns: ['id', 'label', 'text', 'source'], where: 'id>?',
-          whereArgs: [after], orderBy: 'id', limit: 256);
+          columns: ['id', 'label', 'text', 'source'],
+          where: 'id>?',
+          whereArgs: [after],
+          orderBy: 'id',
+          limit: 256);
       if (rows.isEmpty) break;
       after = rows.last['id'] as int;
       for (final row in rows) {
         if (['label', 'text', 'source'].any((field) =>
-            PlasticLanguageBrain04.containsLabel33('${row[field] ?? ''}', label))) {
+            PlasticLanguageBrain04.containsLabel33(
+                '${row[field] ?? ''}', label))) {
           // The store removes this episode's language delta and invalidates its
           // prototype as well as the retained text and media references.
           await store.delete(row['id'] as int);

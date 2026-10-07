@@ -3,6 +3,7 @@ import 'closed_book_page_v0350.dart';
 import 'cognitive_core_v0400.dart';
 import 'cognitive_core_page_v0400.dart';
 import 'dialogue_engine_v0410.dart';
+import 'knowledge_chat_v0423.dart';
 // BOOK_CHAT_WIRING_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
@@ -799,6 +800,25 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      final queryOnly423 = KnowledgeChat423.queryOnly(text, _brain, _researchMemory);
+      // Snapshot recall precedes any acquisition of the current utterance.
+      final recalled423 = await ClsBridge340.quote(text);
+      final mapReply423 = queryOnly423
+          ? (RelationalMemory324.answerIfKnown(_researchMemory, text) ??
+              KnowledgeChat423.answer(_brain, _researchMemory, text)) : null;
+      if (mapReply423 != null) {
+        await DialogueBridge410.processChat(text, queryOnly: true);
+        _engineStats421 = await DialogueBridge410.stats();
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false,
+              text: _brain.guardResponse331(text, mapReply423), prompt: text));
+          _status = 'Risposta dalle relazioni condivise con la mappa';
+        });
+        _scrollDown();
+        await _save('Consultazione della mappa e cronologia salvate');
+        return;
+      }
       final closedReply350 = await ClosedBookBridge350.chat(text);
       final bookReply342 =
           closedReply350 ?? await BookLab342.chat(_researchMemory, text);
@@ -817,9 +837,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             'Domanda al libro completata; nessuna risposta appresa come nuova conoscenza');
         return;
       }
-      final cognitiveReply400 = await DialogueBridge410.processChat(text);
+      final cognitiveReply400 = await DialogueBridge410.processChat(text, queryOnly: queryOnly423);
       _engineStats421 = await DialogueBridge410.stats();
-      await ClsBridge340.observeText(text, source: 'Chat utente');
+      if (!queryOnly423) await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||
           RegExp(r'^\s*correggi\s*:', caseSensitive: false).hasMatch(text)) {
@@ -892,7 +912,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                   realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
               SourceMemory323.answer(text, _researchMemory);
       final episodic340 = sourced317 == null && grounded == null
-          ? await ClsBridge340.quote(text)
+          ? recalled423
           : null;
       final semanticAnswer = sourced317 ??
           cognitiveReply400 ??
@@ -914,7 +934,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final proposed = sensoryGrounding != null
           ? 'Ho collegato questa percezione a $sensoryGrounding.'
           : (sourced317 ??
+              cognitiveReply400 ??
               episodic340 ??
+              grounded ??
               fluent ??
               semanticAnswer ??
               'Ho incorporato questa esperienza.');
@@ -1233,17 +1255,18 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _status = 'Apprendo relazioni e forme linguistiche dallo stesso testo…';
     });
     try {
-      final n = await LearningService321.learnText(
-          _brain, _world, _language20, raw,
-          passes: passes, memory: _researchMemory,
-          shouldContinue: () => mounted && !_cancelLearning421,
-          progress: (done, total) {
-        if (mounted)
-          setState(() {
-            _progress = done / total;
-            _status = 'Frasi elaborate: $done/$total';
-          });
-      });
+      final n =
+          await LearningService321.learnText(_brain, _world, _language20, raw,
+              passes: passes,
+              memory: _researchMemory,
+              shouldContinue: () => mounted && !_cancelLearning421,
+              progress: (done, total) {
+                if (mounted)
+                  setState(() {
+                    _progress = done / total;
+                    _status = 'Frasi elaborate: $done/$total';
+                  });
+              });
       _engineStats421 = await DialogueBridge410.stats();
       await _save(
           '${_cancelLearning421 ? 'Apprendimento interrotto e salvato' : 'Apprendimento completato'} • $n frasi elaborate • ${RelationalMemory324.stats(_researchMemory)['current']} relazioni • mappa aggiornata');
@@ -1398,7 +1421,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _researchMemory = ResearchMemory11();
       _messages.clear();
       _language20 = MgdLanguage20();
-      _status = 'Nuova memoria MGD 0.42.2 creata';
+      _status = 'Nuova memoria MGD 0.42.3 creata';
     });
     await _save();
   }
@@ -3261,7 +3284,8 @@ class _TeachPage04 extends StatelessWidget {
         if (busy)
           TextButton(
               key: const ValueKey('cancel-learning422'),
-              onPressed: onCancel, child: const Text('Interrompi apprendimento')),
+              onPressed: onCancel,
+              child: const Text('Interrompi apprendimento')),
         const SizedBox(height: 12),
         OutlinedButton.icon(
             onPressed: busy ? null : onExperiences,
