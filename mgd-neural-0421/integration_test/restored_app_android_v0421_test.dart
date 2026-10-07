@@ -160,6 +160,14 @@ void main() {
     await settle421(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Elimina'));
     await settle421(tester);
+    final deletionDeadline = DateTime.now().add(const Duration(seconds: 45));
+    while (find.textContaining(RegExp(r'Focus:\s*zorvello\b',
+            caseSensitive: false)).evaluate().isNotEmpty &&
+        DateTime.now().isBefore(deletionDeadline)) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.textContaining(RegExp(r'Focus:\s*zorvello\b',
+        caseSensitive: false)), findsNothing);
     final core = await CognitiveCoreBridge400.core;
     expect(await core.store.concept('zorvello'), isNull);
     expect(await core.store.answerRelation('Cosa contiene il zorvello?'), isNull);
@@ -180,7 +188,8 @@ void main() {
     await keyboardClosed421(tester);
     expect(find.textContaining('non è presente nelle memorie consultabili'),
         findsOneWidget);
-    expect(await core.store.concept('zorvello'), isNull);
+    expect(await (await CognitiveCoreBridge400.core).store.concept('zorvello'),
+        isNull);
     expect(tester.takeException(), isNull);
   });
 }
