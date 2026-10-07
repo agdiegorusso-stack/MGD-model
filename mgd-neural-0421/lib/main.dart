@@ -273,8 +273,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           if (mounted) await _checkpoint319();
         }));
       }
-    } catch (e) {
+    } catch (e, stack) {
       // A startup problem must not trap the user forever on the splash screen.
+      debugPrint('MGD_BOOT425_ERROR $e\n$stack');
       _brain = PlasticLanguageBrain04();
       _world = MgdWorld06();
       _researchMemory = ResearchMemory11();

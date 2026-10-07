@@ -60,7 +60,7 @@ Map<String, Uint8List> stressCheckpoint425() {
     temporal.add({...edgeTemplate, 'from': tid, 'to': otherToken});
     associative.add({...edgeTemplate, 'from': tid, 'to': otherToken});
     associative.add({...edgeTemplate, 'from': otherToken, 'to': tid});
-    edges.add({...worldTemplate, 'a': eid, 'b': oid});
+    edges.add({...worldTemplate, 'a': 'e:$eid', 'b': 'e:$oid'});
   }
   raw['nextEpisodeId'] = stressCount425 + 1;
   final r = ResearchMemory11(enabled: false);
