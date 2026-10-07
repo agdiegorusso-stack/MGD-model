@@ -15,8 +15,34 @@ void main() {
     expect(s.tokens, greaterThan(8));
     expect(s.edges, greaterThan(10));
     expect(s.chunks, greaterThan(0));
-    final out = l.generate('parlami del cane', semanticHint: 'Il cane è un mammifero', brain: PlasticLanguageBrain04());
+    final out = l.generate('parlami del cane',
+        semanticHint: 'Il cane è un mammifero',
+        brain: PlasticLanguageBrain04());
     expect(out, isNotNull);
     expect(out!.split(' ').length, greaterThanOrEqualTo(4));
+  });
+
+  test('rare chunk pruning preserves recurrent paths through reopen and forgetting', () {
+    final l = MgdLanguage20();
+    for (var n = 0; n < 8; n++) {
+      l.ingestText('Il cane vive con le persone.');
+    }
+    final before = (l.toJson()['ch'] as List)
+        .firstWhere((c) => c['t'] == 'vive con le persone');
+    for (var n = 0; n < 1800; n++) {
+      l.ingestText('Campione $n contiene organello speciale numero $n.');
+    }
+    final after = (l.toJson()['ch'] as List)
+        .firstWhere((c) => c['t'] == 'vive con le persone');
+    expect(after, before);
+    final reopened = MgdLanguage20.fromJson(l.toJson());
+    String? answer(MgdLanguage20 m) => m.generate('cane',
+        semanticHint: 'Il cane vive con le persone', brain: PlasticLanguageBrain04());
+    expect(answer(l), isNotNull);
+    expect(answer(reopened), answer(l));
+    l.forgetNode33('cane');
+    expect((l.toJson()['ch'] as List).any((c) =>
+        PlasticLanguageBrain04.containsLabel33(c['t'], 'cane')), isFalse);
+    expect(answer(MgdLanguage20.fromJson(l.toJson())), answer(l));
   });
 }

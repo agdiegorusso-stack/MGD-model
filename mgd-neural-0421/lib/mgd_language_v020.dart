@@ -169,6 +169,7 @@ class MgdLanguage20 {
   // bound; a thought only touches the locally active neighbourhood.
   final Map<String, List<_LangEdge20>> _outgoing21 = {};
   final Map<String, List<_Chunk20>> _chunksByHead21 = {};
+  final Set<String> _indexedChunks425 = {};
   bool _indexesReady21 = false;
   int lastGenerateMicros21 = 0;
   int lastVisitedEdges21 = 0;
@@ -205,20 +206,23 @@ class MgdLanguage20 {
 
   void _indexEdge21(_LangEdge20 e) {
     final xs = _outgoing21.putIfAbsent(e.a, () => <_LangEdge20>[]);
-    if (!xs.contains(e)) xs.add(e);
+    // Called once for a newly created edge or once during a full rebuild.
+    // Scanning a common head's entire adjacency list makes restore quadratic.
+    xs.add(e);
   }
 
   void _indexChunk21(_Chunk20 c) {
-    if (c.count < 3) return;
+    if (c.count < 3 || !_indexedChunks425.add(c.text)) return;
     final ts = c.text.split(' ');
     if (ts.isEmpty) return;
     final xs = _chunksByHead21.putIfAbsent(ts.first, () => <_Chunk20>[]);
-    if (!xs.contains(c)) xs.add(c);
+    xs.add(c);
   }
 
   void _rebuildIndexes21() {
     _outgoing21.clear();
     _chunksByHead21.clear();
+    _indexedChunks425.clear();
     for (final e in edges.values) _indexEdge21(e);
     for (final c in chunks.values) _indexChunk21(c);
     _indexesReady21 = true;
@@ -290,9 +294,11 @@ class MgdLanguage20 {
         }
       }
     }
-    final beforeChunks = chunks.length;
-    chunks.removeWhere((_, c) => c.count < 3 && chunks.length > 5000);
-    if (chunks.length != beforeChunks) _rebuildIndexes21();
+    if (chunks.length > 5000) {
+      // Rare chunks have never entered the active index (count >= 3), so
+      // pruning them cannot invalidate it or require rebuilding all edges.
+      chunks.removeWhere((_, c) => c.count < 3 && chunks.length > 5000);
+    }
     lastFlux = flux;
   }
 
