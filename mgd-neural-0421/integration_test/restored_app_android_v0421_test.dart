@@ -51,6 +51,21 @@ Future<void> keyboardClosed421(WidgetTester tester) async {
   throw TestFailure('The Android keyboard did not close.');
 }
 
+Future<void> sendTopic423(WidgetTester tester, String topic) async {
+  await keyboardClosed421(tester);
+  await ready421(tester, find.byKey(const ValueKey('send421')));
+  // Set the editing value with the IME disconnected: closing the native
+  // keyboard after tester.enterText can replay its stale empty editing state.
+  final field = tester.widget<TextField>(find.byKey(const ValueKey('chat421')));
+  field.controller!.value = TextEditingValue(text: topic,
+      selection: TextSelection.collapsed(offset: topic.length));
+  await settle421(tester);
+  expect(field.controller!.text, topic);
+  expect(tester.widget<IconButton>(find.byKey(const ValueKey('send421'))).onPressed,
+      isNotNull);
+  await tester.tap(find.byKey(const ValueKey('send421')));
+}
+
 Future<ChatMessage04> reply423(WidgetTester tester, String prompt) async {
   final deadline = DateTime.now().add(const Duration(seconds: 45));
   while (DateTime.now().isBefore(deadline)) {
@@ -145,9 +160,7 @@ void main() {
         relation: 'tipo di', object: 'Roditore', confidence: .95);
     final episodes423 = (await ClsBridge340.active!.db.query('episodes')).length;
     for (final topic423 in ['movimento volontario', 'rattus', 'Parlami del rattus']) {
-      await tester.enterText(find.byKey(const ValueKey('chat421')), topic423);
-      await keyboardClosed421(tester);
-      await tester.tap(find.byKey(const ValueKey('send421')));
+      await sendTopic423(tester, topic423);
       final reply = await reply423(tester, topic423);
       final expected = topic423 == 'movimento volontario'
           ? 'Muscolo scheletrico — ha funzione → Movimento volontario'
@@ -208,9 +221,7 @@ void main() {
         afterLab['relations']);
     await tester.tap(find.text('Vivi'));
     await settle421(tester);
-    await tester.enterText(find.byKey(const ValueKey('chat421')), 'movimento volontario');
-    await keyboardClosed421(tester);
-    await tester.tap(find.byKey(const ValueKey('send421')));
+    await sendTopic423(tester, 'movimento volontario');
     final restartedReply423 = await reply423(tester, 'movimento volontario');
     expect(restartedReply423.text, contains('Muscolo scheletrico — ha funzione → Movimento volontario'));
     await showReply423(tester, 'Muscolo scheletrico — ha funzione → Movimento volontario');
