@@ -163,6 +163,8 @@ void main() {
     final core = await CognitiveCoreBridge400.core;
     expect(await core.store.concept('zorvello'), isNull);
     expect(await core.store.answerRelation('Cosa contiene il zorvello?'), isNull);
+    final retained = await ClsBridge340.active!.db.query('episodes');
+    expect(retained.any((row) => '${row['text']}'.contains('zorvello')), false);
     expect(await core.store.concept('marta'), isNotNull);
     await tester.pumpWidget(const SizedBox());
     await settle421(tester);

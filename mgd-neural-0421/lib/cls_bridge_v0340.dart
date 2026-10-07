@@ -2,6 +2,7 @@ import 'closed_book_service_v0350.dart';
 import 'cls_core_v0340.dart';
 import 'cls_store_v0340.dart';
 import 'web_knowledge_explorer_v11.dart';
+import 'plastic_language_brain_v04.dart';
 
 /// Runtime integration is explicitly activated by the app, not by unit tests.
 /// Generated answers are never used as new external observations.
@@ -15,12 +16,14 @@ class ClsBridge340 {
   static Future<void> observeText(String text,
       {String source = 'Testo utente'}) async {
     final store = active;
-    if (store == null ||
-        text.trim().isEmpty ||
-        question(text) ||
-        RegExp(r'^\s*(correggi|continua)\s*:', caseSensitive: false)
-            .hasMatch(text)) return;
-    await store.importText(text, source: source);
+    if (store == null || text.trim().isEmpty) return;
+    final observed = text.split(RegExp(r'(?<=[.!?])\s+|\n+'))
+        .where((part) => part.trim().isNotEmpty && !question(part) &&
+            !RegExp(r'^\s*(correggi|continua)\s*:', caseSensitive: false)
+                .hasMatch(part))
+        .join('\n');
+    if (observed.isEmpty) return;
+    await store.importText(observed, source: source);
     await store.consolidate(budget: 2);
   }
 
@@ -66,10 +69,21 @@ class ClsBridge340 {
     await ClosedBookBridge350.forgetConcept(label);
     final store = active;
     if (store == null) return;
-    final rows = await store.db.query('episodes',
-        columns: ['id'], where: 'label=?', whereArgs: [norm340(label)]);
-    for (final row in rows) {
-      await store.delete(row['id'] as int);
+    var after = 0;
+    while (true) {
+      final rows = await store.db.query('episodes',
+          columns: ['id', 'label', 'text', 'source'], where: 'id>?',
+          whereArgs: [after], orderBy: 'id', limit: 256);
+      if (rows.isEmpty) break;
+      after = rows.last['id'] as int;
+      for (final row in rows) {
+        if (['label', 'text', 'source'].any((field) =>
+            PlasticLanguageBrain04.containsLabel33('${row[field] ?? ''}', label))) {
+          // The store removes this episode's language delta and invalidates its
+          // prototype as well as the retained text and media references.
+          await store.delete(row['id'] as int);
+        }
+      }
     }
   }
 

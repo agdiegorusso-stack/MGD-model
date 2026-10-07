@@ -13,6 +13,8 @@ import 'package:mgd_neuro_mobile/sensory_world_v06.dart';
 import 'package:mgd_neuro_mobile/text_learning_v0421.dart';
 import 'package:mgd_neuro_mobile/web_knowledge_explorer_v11.dart';
 import 'package:mgd_neuro_mobile/knowledge_deletion_v0330.dart';
+import 'package:mgd_neuro_mobile/cls_bridge_v0340.dart';
+import 'package:mgd_neuro_mobile/cls_store_v0340.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +23,11 @@ void main() {
   late CognitiveStore400 cognitive;
   late SocialStore410 social;
   late DialogueEngine410 engine;
+  ClsStore340? cls;
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('mgd421-');
+    cls = null;
+    ClsBridge340.active = null;
     cognitive = await CognitiveStore400.openAt('${dir.path}/c.db',
         factory: databaseFactoryFfi);
     social = await SocialStore410.openAt('${dir.path}/s.db',
@@ -38,6 +43,8 @@ void main() {
   tearDown(() async {
     LearningBridge421.observe = null;
     LearningBridge421.forget = null;
+    ClsBridge340.active = null;
+    await cls?.close();
     await social.close();
     await cognitive.close();
     await dir.delete(recursive: true);
@@ -153,10 +160,15 @@ void main() {
 
   test('map deletion forgets cognitive and social references across restart',
       () async {
+    cls = await ClsStore340.open(path: '${dir.path}/cls.db',
+        factory: databaseFactoryFfi);
+    ClsBridge340.active = cls;
     final b = PlasticLanguageBrain04(), w = MgdWorld06();
     final r = ResearchMemory11(enabled: false), l = MgdLanguage20();
     await LearningService321.learnText(b, w, l,
-        'Marta apre la porta. Martabella chiude la finestra.', memory: r);
+        'Marta apre la porta.', memory: r);
+    await LearningService321.learnText(b, w, l,
+        'Martabella chiude la finestra.', memory: r);
     for (final holder in ['marta', 'martabella']) {
       await social.putBelief(MentalBelief410(holder: holder, subject: holder,
           predicate: 'vede', object: 'libro', location: '', negative: false,
@@ -177,6 +189,9 @@ void main() {
     expect(engine.core.workingMemory.any((f) => f.subject == 'marta'), false);
     expect(l.tokenCount.containsKey('marta'), false);
     expect(l.tokenCount.containsKey('martabella'), true);
+    final retained = await cls!.db.query('episodes');
+    expect(retained, hasLength(1));
+    expect(retained.single['text'], contains('Martabella'));
     await cognitive.close();
     cognitive = await CognitiveStore400.openAt('${dir.path}/c.db',
         factory: databaseFactoryFfi);
@@ -186,5 +201,18 @@ void main() {
     expect(await cognitive.answerRelation('Chi apre la porta?'), isNull);
     expect(await social.beliefsOf('marta'), isEmpty);
     expect(await cognitive.concept('martabella'), isNotNull);
+  });
+
+  test('mixed paragraph retains observed statements in CLS without the question',
+      () async {
+    cls = await ClsStore340.open(path: '${dir.path}/cls.db',
+        factory: databaseFactoryFfi);
+    ClsBridge340.active = cls;
+    await ClsBridge340.observeText('Marta apre la porta. Chi apre la porta?');
+    final rows = await cls!.db.query('episodes');
+    expect(rows, hasLength(1));
+    expect(rows.single['text'], 'Marta apre la porta.');
+    await ClsBridge340.observeText('Chi apre la porta?');
+    expect(await cls!.db.query('episodes'), hasLength(1));
   });
 }
