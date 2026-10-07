@@ -50,9 +50,12 @@ jobs:
           mgd_base425=4047f8a860bb08b974f608f583a49e2bc95952c4
           git fetch --depth=1 origin "$mgd_base425"
           if ! git diff --quiet "$mgd_base425" HEAD -- lib android pubspec.yaml pubspec.lock; then exit 0; fi
+          mgd_stage425="$(mktemp -d)"
+          gh run download 37701904775 --repo "$GITHUB_REPOSITORY" --name MGD-Neural-0.42.5-APK --dir "$mgd_stage425/apk"
+          gh run download 37701904775 --repo "$GITHUB_REPOSITORY" --name MGD-Neural-0.42.5-verification --dir "$mgd_stage425/reports"
           mkdir -p tool/reports build/app/outputs/flutter-apk
-          gh run download 37701904775 --repo "$GITHUB_REPOSITORY" --name MGD-Neural-0.42.5-APK --dir build/app/outputs/flutter-apk
-          gh run download 37701904775 --repo "$GITHUB_REPOSITORY" --name MGD-Neural-0.42.5-verification --dir tool/reports
+          cp -a "$mgd_stage425/reports/." tool/reports/
+          cp "$mgd_stage425/apk/app-release.apk" build/app/outputs/flutter-apk/
           python3 - <<'PY'
           import hashlib,json
           from pathlib import Path

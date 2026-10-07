@@ -13,10 +13,13 @@ for mgd_attempt in 1 2; do
   if (( mgd_attempt == 1 )) && python3 - <<'PY'
 from pathlib import Path
 s=Path('tool/reports/large-memory425.log').read_text()
-raise SystemExit(0 if 'Connecting to the VM Service timed out' in s and
+raise SystemExit(0 if any(x in s for x in ['Connecting to the VM Service timed out',
+    'registerService: (-32000) Service connection disposed']) and
     '50000 saved facts:' not in s else 1)
 PY
   then
+    adb reconnect offline || true
+    timeout 30 adb wait-for-device
     adb shell am force-stop it.diegorusso.mgdneurostable
     continue
   fi
