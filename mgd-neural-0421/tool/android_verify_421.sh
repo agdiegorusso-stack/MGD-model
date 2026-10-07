@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p tool/reports
+if [[ "${MGD_REUSE_ANDROID_TEST421:-false}" != 'true' ]]; then
 for mgd_attempt in 1 2; do
   set +e
   flutter test integration_test/restored_app_android_v0421_test.dart \
@@ -32,7 +33,13 @@ python3 - <<'PY'
 from pathlib import Path
 assert Path('tool/reports/restored-map421.png').read_bytes().startswith(b'\x89PNG\r\n\x1a\n')
 PY
-adb install -r build/app/outputs/flutter-apk/app-release.apk
+fi
+# The requested delivery is a fresh installation. The reused release APK can
+# have a different development signature from this runner's temporary debug app.
+if adb shell pm path it.diegorusso.mgdneurostable | grep -q '^package:'; then
+  adb uninstall it.diegorusso.mgdneurostable
+fi
+adb install build/app/outputs/flutter-apk/app-release.apk
 adb logcat -c
 adb shell am force-stop it.diegorusso.mgdneurostable
 adb shell am start -W -n it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity \

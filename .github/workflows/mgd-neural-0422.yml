@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
       - name: Detect unchanged production and unit sources
         id: reuse
         run: |
@@ -34,6 +34,12 @@ jobs:
             mgd-neural-0421/test mgd-neural-0421/tool/build_android.sh \
             mgd-neural-0421/analysis_options.yaml; then
             echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            if git diff --quiet 4a3474231df179b773968fbf3879d3a153bf9fa7 HEAD -- \
+              mgd-neural-0421/lib mgd-neural-0421/android mgd-neural-0421/assets \
+              mgd-neural-0421/pubspec.yaml mgd-neural-0421/pubspec.lock \
+              mgd-neural-0421/test mgd-neural-0421/integration_test; then
+              echo 'android=true' >> "$GITHUB_OUTPUT"
+            fi
           else
             echo 'enabled=false' >> "$GITHUB_OUTPUT"
           fi
@@ -57,21 +63,21 @@ jobs:
         if: steps.reuse.outputs.enabled == 'true'
         with:
           name: MGD-Neural-0.42.2-APK
-          run-id: 37604964661
+          run-id: 37606958458
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: mgd-neural-0421/build/app/outputs/flutter-apk
       - uses: actions/download-artifact@v4
         if: steps.reuse.outputs.enabled == 'true'
         with:
           name: MGD-Neural-0.42.2-verification
-          run-id: 37604964661
+          run-id: 37606958458
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: mgd-neural-0421/tool/reports
       - uses: actions/download-artifact@v4
         if: steps.reuse.outputs.enabled == 'true'
         with:
           name: MGD-Neural-0.42.2-tested-source
-          run-id: 37604964661
+          run-id: 37606958458
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: mgd422-reuse-source
       - name: Verify reused production and prepare Android test
@@ -84,6 +90,10 @@ jobs:
           diff -qr lib ../mgd422-reuse-source/lib
           diff -qr test ../mgd422-reuse-source/test
           diff pubspec.yaml ../mgd422-reuse-source/pubspec.yaml
+          if [[ '${{ steps.reuse.outputs.android }}' == 'true' ]]; then
+            diff -qr integration_test ../mgd422-reuse-source/integration_test
+            grep -F 'All tests passed!' tool/reports/android-test.log
+          fi
           python3 - <<'PYVERIFY'
           import hashlib, pathlib
           apk = pathlib.Path('build/app/outputs/flutter-apk/app-release.apk')
@@ -92,7 +102,8 @@ jobs:
           pathlib.Path('tool/reports/REUSED-BUILD.txt').write_text(
               'APK and 382 passing unit tests: run 37604964661, commit 2a530f890c4e33242cba584cd974a0f8498038fa.\n'
               'Production and unit sources compared byte-for-byte after formatting.\n'
-              'Android integration is executed again with the current test.\n')
+              'Android integration passed: run 37606958458, commit 4a3474231df179b773968fbf3879d3a153bf9fa7.\n'
+              'An identical integration test may be reused; release installation and launch are always executed.\n')
           PYVERIFY
       - name: Build and run unit tests
         if: steps.reuse.outputs.enabled != 'true'
@@ -127,7 +138,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           working-directory: mgd-neural-0421
-          script: bash tool/android_verify_421.sh
+          script: MGD_REUSE_ANDROID_TEST421='${{ steps.reuse.outputs.android }}' bash tool/android_verify_421.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
