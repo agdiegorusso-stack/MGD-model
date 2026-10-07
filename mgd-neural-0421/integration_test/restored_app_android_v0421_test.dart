@@ -51,6 +51,32 @@ Future<void> keyboardClosed421(WidgetTester tester) async {
   throw TestFailure('The Android keyboard did not close.');
 }
 
+Future<ChatMessage04> reply423(WidgetTester tester, String prompt) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 45));
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    final page = tester.widget<LivePage07>(find.byType(LivePage07));
+    final replies = page.messages.where((m) => !m.user && m.prompt == prompt);
+    if (!page.busy && replies.isNotEmpty) return replies.last;
+  }
+  final page = tester.widget<LivePage07>(find.byType(LivePage07));
+  throw TestFailure('No completed reply for $prompt. Messages: '
+      '${page.messages.map((m) => m.text).toList()}. '
+      'UI: ${find.byType(Text).evaluate().map((e) => (e.widget as Text).data).toList()}');
+}
+
+Future<void> showReply423(WidgetTester tester, String expected) async {
+  // A builder can leave the last long message outside its estimated extent.
+  // Scroll as a user would, then assert the actual rendered response too.
+  final finder = find.textContaining(expected);
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(finder, 200,
+        scrollable: find.byType(Scrollable).first, maxScrolls: 20);
+  }
+  await settle421(tester);
+  expect(finder, findsWidgets);
+}
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('teach, map, answer, engine controls and persisted restart',
@@ -122,11 +148,13 @@ void main() {
       await tester.enterText(find.byKey(const ValueKey('chat421')), topic423);
       await keyboardClosed421(tester);
       await tester.tap(find.byKey(const ValueKey('send421')));
-      await ready421(tester, find.byKey(const ValueKey('send421')));
-      await settle421(tester);
-      expect(find.textContaining(topic423 == 'movimento volontario'
+      final reply = await reply423(tester, topic423);
+      final expected = topic423 == 'movimento volontario'
           ? 'Muscolo scheletrico — ha funzione → Movimento volontario'
-          : 'Rattus — è → Roditore'), findsWidgets);
+          : 'Rattus — è → Roditore';
+      debugPrint('CHAT423: $topic423 -> ${reply.text}');
+      expect(reply.text, contains(expected));
+      await showReply423(tester, expected);
     }
     expect(find.textContaining('Passaggio richiamato, non verificato:'), findsNothing);
     expect((await ClsBridge340.active!.db.query('episodes')).length, episodes423);
@@ -183,9 +211,9 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('chat421')), 'movimento volontario');
     await keyboardClosed421(tester);
     await tester.tap(find.byKey(const ValueKey('send421')));
-    await ready421(tester, find.byKey(const ValueKey('send421')));
-    await settle421(tester);
-    expect(find.textContaining('Muscolo scheletrico — ha funzione → Movimento volontario'), findsWidgets);
+    final restartedReply423 = await reply423(tester, 'movimento volontario');
+    expect(restartedReply423.text, contains('Muscolo scheletrico — ha funzione → Movimento volontario'));
+    await showReply423(tester, 'Muscolo scheletrico — ha funzione → Movimento volontario');
     await tester.tap(find.text('Mappa'));
     await settle421(tester);
     await tester.enterText(find.byType(TextField), 'zorvello');
