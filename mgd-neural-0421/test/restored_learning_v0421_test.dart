@@ -175,6 +175,7 @@ void main() {
           confidence: .8, source: 'test'));
       await social.putGoal(holder, 'leggere');
     }
+    final preservedBeliefs = (await social.beliefsOf('martabella')).length;
     await KnowledgeDeletion33.delete(brain: b, world: w, research: r,
         language: l, mode: 'mondo', node: 'Marta');
     expect(await cognitive.concept('marta'), isNull);
@@ -185,7 +186,7 @@ void main() {
     expect(await cognitive.answerRelation('Chi apre la porta?'), isNull);
     expect(await social.beliefsOf('marta'), isEmpty);
     expect(await social.goalsOf('marta'), isEmpty);
-    expect(await social.beliefsOf('martabella'), hasLength(1));
+    expect(await social.beliefsOf('martabella'), hasLength(preservedBeliefs));
     expect(engine.core.workingMemory.any((f) => f.subject == 'marta'), false);
     expect(l.tokenCount.containsKey('marta'), false);
     expect(l.tokenCount.containsKey('martabella'), true);
