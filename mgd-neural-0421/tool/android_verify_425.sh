@@ -1,6 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 bash tool/android_verify_421.sh
+mgd_export_fixture425() {
+  local mgd_deadline425=$((SECONDS + 480))
+  while (( SECONDS < mgd_deadline425 )); do
+    if timeout 15 adb shell run-as it.diegorusso.mgdneurostable test -f cache/large-memory425-ready.txt >/dev/null 2>&1; then
+      timeout 60 adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.db > /tmp/mgd-large-memory425.db
+      timeout 15 adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.json > tool/reports/large-memory425.json
+      timeout 15 adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425-path.txt > tool/reports/large-memory425-path.txt
+      python3 - <<'PY'
+import json,sqlite3
+from pathlib import Path
+p=Path('/tmp/mgd-large-memory425.db')
+with p.open('rb') as f: assert f.read(16)==b'SQLite format 3\x00'
+records=json.loads(Path('tool/reports/large-memory425.json').read_text())
+assert len(records)==2 and all(x['facts']==50000 for x in records)
+db=sqlite3.connect(p)
+assert db.execute('PRAGMA integrity_check').fetchone()==('ok',)
+db.close()
+PY
+      timeout 15 adb shell run-as it.diegorusso.mgdneurostable touch cache/large-memory425-exported.txt
+      return 0
+    fi
+    sleep 2
+  done
+  echo 'Test database was not made available for export.' >&2
+  return 1
+}
+mgd_export_fixture425 &
+mgd_export_pid425=$!
+trap 'kill "$mgd_export_pid425" 2>/dev/null || true' EXIT
 for mgd_attempt in 1 2; do
   set +e
   flutter test integration_test/large_memory_android_v0425_test.dart \
@@ -26,12 +55,8 @@ PY
   adb shell screencap -p > tool/reports/large-memory425-failure.png
   exit "$mgd_status"
 done
-adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.json \
-  > tool/reports/large-memory425.json
-adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425-path.txt \
-  > tool/reports/large-memory425-path.txt
-adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.db \
-  > /tmp/mgd-large-memory425.db
+wait "$mgd_export_pid425"
+trap - EXIT
 python3 - <<'PY'
 import sqlite3, hashlib, json
 from pathlib import Path

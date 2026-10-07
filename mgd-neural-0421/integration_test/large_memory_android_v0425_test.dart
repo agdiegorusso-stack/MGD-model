@@ -150,6 +150,15 @@ void main() {
     await File('${temp.path}/large-memory425-path.txt').writeAsString(path);
     await File('${temp.path}/large-memory425.json').writeAsString(jsonEncode(records));
     print('LARGE_MEMORY425 ${jsonEncode(records)}');
+    await File('${temp.path}/large-memory425-ready.txt').writeAsString('ready');
+    // Flutter uninstalls the test package at completion. Let the host export
+    // this committed DB first, then acknowledge the transfer before teardown.
+    final exported = File('${temp.path}/large-memory425-exported.txt');
+    final deadline = DateTime.now().add(const Duration(seconds: 120));
+    while (!await exported.exists()) {
+      if (DateTime.now().isAfter(deadline)) fail('Host did not export the committed database before teardown.');
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(minutes: 12)));
 }
