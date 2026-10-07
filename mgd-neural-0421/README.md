@@ -1,4 +1,4 @@
-# MGD Neural 0.42.3
+# MGD Neural 0.42.4
 
 Ripristino del progetto completo 0.41.0 dopo la regressione della 0.42.0. Tutti i 59 file Dart originali sono conservati.
 
@@ -14,4 +14,6 @@ Compilazione: `bash tool/build_android.sh`. La CI esegue tutti i test originali 
 
 Correzioni 0.42.2 conservate: interruzione del testo incollato e dei replay con salvataggio delle sole frasi acquisite; cancellazione dalla mappa estesa ai riferimenti cognitivi, sociali, alle esperienze CLS contenenti il nome e alla memoria di lavoro; contatori cognitivi aggiornati anche dalla chat; export PNG annullato senza falsa conferma. La cancellazione rimuove riferimenti attivi, non ricostruisce ogni contributo storico ai pesi.
 
-Correzione 0.42.3: chat e vista Mondo leggono la stessa memoria relazionale, anche per nomi composti e archi entranti. Le consultazioni di un concetto non sono insegnamenti. Il richiamo CLS precede l’acquisizione del messaggio corrente ed esclude le copie esatte della richiesta. I conflitti vengono segnalati; un nodo senza relazioni non produce una definizione inventata.
+Correzione 0.42.4: chat e vista Mondo leggono la stessa memoria relazionale, anche per nomi composti e archi entranti. Le consultazioni di un concetto non sono insegnamenti. Il richiamo CLS precede l’acquisizione del messaggio corrente ed esclude le copie esatte della richiesta. I conflitti vengono segnalati; un nodo senza relazioni non produce una definizione inventata.
+
+Correzione 0.42.4: le relazioni dei pack conservano più oggetti compatibili e le etichette degli oggetti restano atomiche. Contenimento, localizzazione, funzioni, processi, cofattori e interazioni non generano conflitti per la sola molteplicità. Le relazioni funzionali note e le affermazioni positive/negative incompatibili mantengono il controllo dei conflitti. La manutenzione non accorpa più i predicati ha-funzione/ha-localizzazione in ha.

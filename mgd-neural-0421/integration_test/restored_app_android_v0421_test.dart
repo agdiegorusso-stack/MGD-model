@@ -158,6 +158,20 @@ void main() {
         relation: 'è funzione associata a', object: 'Muscolo scheletrico', confidence: .95);
     inspector423.brain.importTeacherFact08(subject: 'Rattus',
         relation: 'tipo di', object: 'Roditore', confidence: .95);
+    // 0.42.4: compatible containment/localization facts must coexist on Android.
+    for (final fixture424 in [
+      ('Cellula eucariotica', 'contiene o ospita', 'nucleo'),
+      ('Cellula eucariotica', 'contiene o ospita', 'mitocondrio'),
+      ('Proteina AOX2 (Arabidopsis thaliana)', 'ha localizzazione o associazione cellulare annotata in', 'cloroplasto'),
+      ('Proteina AOX2 (Arabidopsis thaliana)', 'ha localizzazione o associazione cellulare annotata in', 'mitocondrio'),
+    ]) {
+      inspector423.brain.importTeacherFact08(subject: fixture424.$1,
+          relation: fixture424.$2, object: fixture424.$3, confidence: .9);
+    }
+    await sendTopic423(tester, 'cellula eucariotica');
+    final compatible424 = await reply423(tester, 'cellula eucariotica');
+    expect(compatible424.text, allOf(contains('Nucleo'), contains('Mitocondrio')));
+    expect(compatible424.text, isNot(contains('IN CONFLITTO')));
     final episodes423 = (await ClsBridge340.active!.db.query('episodes')).length;
     for (final topic423 in ['movimento volontario', 'rattus', 'Parlami del rattus']) {
       await sendTopic423(tester, topic423);
@@ -221,6 +235,10 @@ void main() {
         afterLab['relations']);
     await tester.tap(find.text('Vivi'));
     await settle421(tester);
+    await sendTopic423(tester, 'cellula eucariotica');
+    final restartedCompatible424 = await reply423(tester, 'cellula eucariotica');
+    expect(restartedCompatible424.text, allOf(contains('Nucleo'), contains('Mitocondrio')));
+    expect(restartedCompatible424.text, isNot(contains('IN CONFLITTO')));
     await sendTopic423(tester, 'movimento volontario');
     final restartedReply423 = await reply423(tester, 'movimento volontario');
     expect(restartedReply423.text, contains('Muscolo scheletrico — ha funzione → Movimento volontario'));

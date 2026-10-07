@@ -1323,6 +1323,7 @@ class PlasticLanguageBrain04 {
 
   String? _legacyFamilyForRelation(
       RelationMemory04 relation, List<RelationSlot04> relationSlots) {
+    if (relation.key.contains(':teacher-')) return null;
     if (relation.key.startsWith('sem:')) return relation.key.substring(4);
     final direct = _semanticFamilyOf(relation.label);
     if (direct != null) return direct;
@@ -1416,7 +1417,9 @@ class PlasticLanguageBrain04 {
     for (final slot in multiSlots) {
       final expanded = <String, FactCandidate04>{};
       for (final c in slot.candidates.values) {
-        final values = _splitObjectValues(c.display);
+        final values = _relationUsesObjectLists424(slot.relationId)
+            ? _splitObjectValues(c.display)
+            : <String>[c.display];
         for (final value in values) {
           final key = canonicalObject(value);
           final existing = expanded[key];
@@ -2104,6 +2107,14 @@ class PlasticLanguageBrain04 {
     final id = _canonicalRelation(relationId);
     if (id < 0 || id >= relations.length) return false;
     return relations[id].multiValued;
+  }
+
+  // Cardinality and text coordination are separate. A GO term containing
+  // "e" or commas is one object, even when the relation has many objects.
+  bool _relationUsesObjectLists424(int relationId) {
+    final key = relations[_canonicalRelation(relationId)].key;
+    return {'sem:children', 'sem:siblings', 'latent:children', 'latent:siblings'}
+        .contains(key);
   }
 
   List<String> _splitObjectValues(String raw) {
@@ -3132,9 +3143,10 @@ class PlasticLanguageBrain04 {
     required double reward,
     int? episodeId,
     bool synchronize = true,
+    bool atomicObject = false,
   }) {
     relationId = _canonicalRelation(relationId);
-    final values = _relationIsMulti(relationId)
+    final values = _relationIsMulti(relationId) && !atomicObject
         ? _splitObjectValues(objectText)
         : <String>[objectText.trim()];
     if (values.isEmpty) return 0;
@@ -4583,6 +4595,18 @@ class PlasticLanguageBrain04 {
         .trim();
   }
 
+  // Unknown teacher predicates are set-valued. Several compatible objects
+  // do not establish exclusivity or negation.
+  bool _teacherRelationIsMulti424(String raw) {
+    final n = _teacherRelationKey082(raw);
+    return !{
+      'posizione', 'identità', 'identita', 'nome', 'numero atomico',
+      'ha numero atomico', 'ha simbolo chimico',
+      'ha codice a tre lettere', 'ha codice a una lettera',
+      'data di nascita', 'ha data di nascita',
+    }.contains(n);
+  }
+
   int _teacherRelationId082(String raw) {
     final n = _teacherRelationKey082(raw);
     final compact = n.replaceAll(' ', '');
@@ -4637,6 +4661,7 @@ class PlasticLanguageBrain04 {
         'qualcosa ' + readable + ' qualcosa',
         'cosa ' + readable + ' qualcosa?',
       ],
+      multiValued: _teacherRelationIsMulti424(raw),
     );
   }
 
@@ -4650,13 +4675,19 @@ class PlasticLanguageBrain04 {
       final label = _teacherRelationKey082(relation.label);
       int? target;
 
-      if (key.contains('teacher-is-a') ||
+      if ({'latent:teacher-is-a', 'sem:teacher-is-a'}.contains(key) ||
           label == 'is a' ||
           label == 'isa' ||
           label == 'is_a') {
         target = _teacherRelationId082('is_a');
-      } else if (key.contains('teacher-ha') || label == 'ha') {
+      } else if ({'latent:teacher-ha', 'sem:teacher-ha'}.contains(key) || label == 'ha') {
         target = _teacherRelationId082('ha');
+      }
+
+      if (target == null && key.contains(':teacher-') &&
+          _teacherRelationIsMulti424(relation.label) && !relation.multiValued) {
+        relation.multiValued = true;
+        repaired++;
       }
 
       if (target == null || target == relation.id) continue;
@@ -4805,6 +4836,7 @@ class PlasticLanguageBrain04 {
       reward: reward,
       episodeId: ep.id,
       synchronize: false,
+      atomicObject: true,
     );
     relations[relationId].uses++;
     return flux;

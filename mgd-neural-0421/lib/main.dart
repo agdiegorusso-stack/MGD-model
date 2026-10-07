@@ -800,19 +800,23 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
-      final queryOnly423 = KnowledgeChat423.queryOnly(text, _brain, _researchMemory);
+      final queryOnly423 =
+          KnowledgeChat423.queryOnly(text, _brain, _researchMemory);
       // Snapshot recall precedes any acquisition of the current utterance.
       final recalled423 = await ClsBridge340.quote(text);
       final mapReply423 = queryOnly423
           ? (RelationalMemory324.answerIfKnown(_researchMemory, text) ??
-              KnowledgeChat423.answer(_brain, _researchMemory, text)) : null;
+              KnowledgeChat423.answer(_brain, _researchMemory, text))
+          : null;
       if (mapReply423 != null) {
         await DialogueBridge410.processChat(text, queryOnly: true);
         _engineStats421 = await DialogueBridge410.stats();
         if (!mounted) return;
         setState(() {
-          _messages.add(ChatMessage04(user: false,
-              text: _brain.guardResponse331(text, mapReply423), prompt: text));
+          _messages.add(ChatMessage04(
+              user: false,
+              text: _brain.guardResponse331(text, mapReply423),
+              prompt: text));
           _status = 'Risposta dalle relazioni condivise con la mappa';
         });
         _scrollDown();
@@ -837,9 +841,11 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             'Domanda al libro completata; nessuna risposta appresa come nuova conoscenza');
         return;
       }
-      final cognitiveReply400 = await DialogueBridge410.processChat(text, queryOnly: queryOnly423);
+      final cognitiveReply400 =
+          await DialogueBridge410.processChat(text, queryOnly: queryOnly423);
       _engineStats421 = await DialogueBridge410.stats();
-      if (!queryOnly423) await ClsBridge340.observeText(text, source: 'Chat utente');
+      if (!queryOnly423)
+        await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||
           RegExp(r'^\s*correggi\s*:', caseSensitive: false).hasMatch(text)) {
@@ -911,9 +917,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
               ResearchSemantics317.answer(text, _researchMemory,
                   realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
               SourceMemory323.answer(text, _researchMemory);
-      final episodic340 = sourced317 == null && grounded == null
-          ? recalled423
-          : null;
+      final episodic340 =
+          sourced317 == null && grounded == null ? recalled423 : null;
       final semanticAnswer = sourced317 ??
           cognitiveReply400 ??
           episodic340 ??
@@ -1421,7 +1426,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _researchMemory = ResearchMemory11();
       _messages.clear();
       _language20 = MgdLanguage20();
-      _status = 'Nuova memoria MGD 0.42.3 creata';
+      _status = 'Nuova memoria MGD 0.42.4 creata';
     });
     await _save();
   }
@@ -1592,7 +1597,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         result.facts.toString() +
         ' fatti + ' +
         result.links.toString() +
-        ' legami importati');
+        ' legami aggiuntivi importati (i fatti creano già collegamenti)' );
   }
 
   Future<void> _importTeacherPack08() async {
