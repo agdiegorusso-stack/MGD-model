@@ -153,6 +153,32 @@ void main() {
     expect(find.textContaining(RegExp(r'Focus:\s*zorvello\b', caseSensitive: false)), findsOneWidget);
     expect((await CognitiveCoreBridge400.stats())['relations'],
         afterLab['relations']);
+    // Deleting from the restored map must also remove the newer SQL memory.
+    await tester.scrollUntilVisible(find.text('Elimina nodo e riferimenti'), 120,
+        scrollable: find.byType(Scrollable).last);
+    await tester.tap(find.text('Elimina nodo e riferimenti').hitTestable());
+    await settle421(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Elimina'));
+    await settle421(tester);
+    final core = await CognitiveCoreBridge400.core;
+    expect(await core.store.concept('zorvello'), isNull);
+    expect(await core.store.answerRelation('Cosa contiene il zorvello?'), isNull);
+    expect(await core.store.concept('marta'), isNotNull);
+    await tester.pumpWidget(const SizedBox());
+    await settle421(tester);
+    await tester.pumpWidget(const MgdNeuro04App());
+    for (var n = 0; n < 150; n++) {
+      await tester.pump(const Duration(milliseconds: 200));
+      if (find.byType(InspectorScope315).evaluate().isNotEmpty) break;
+    }
+    await tester.tap(find.text('Mappa'));
+    await settle421(tester);
+    await tester.enterText(find.byType(TextField), 'zorvello');
+    await tester.tap(find.byTooltip('Cerca'));
+    await keyboardClosed421(tester);
+    expect(find.textContaining('non è presente nelle memorie consultabili'),
+        findsOneWidget);
+    expect(await core.store.concept('zorvello'), isNull);
     expect(tester.takeException(), isNull);
   });
 }

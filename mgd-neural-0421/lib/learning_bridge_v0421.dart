@@ -2,9 +2,15 @@
 /// Disabled in standalone tools/tests unless their owner explicitly enables it.
 class LearningBridge421 {
   static Future<void> Function(String text, String source)? observe;
+  static Future<void> Function(String node)? forget;
 
   static Future<void> external(String text, String source) async {
     if (text.trim().isEmpty) return;
     await observe?.call(text, source);
+  }
+
+  static Future<void> deleteNode(String node) async {
+    if (node.trim().isEmpty) return;
+    await forget?.call(node);
   }
 }

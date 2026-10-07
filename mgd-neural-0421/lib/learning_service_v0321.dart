@@ -18,6 +18,7 @@ class LearningService321 {
       {int passes = 1,
       String source = 'Testo insegnato',
       bool observeCls = true,
+      bool Function()? shouldContinue,
       ResearchMemory11? memory,
       void Function(int done, int total)? progress}) async {
     final chunks = text
@@ -25,21 +26,30 @@ class LearningService321 {
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
-    var done = 0;
+    var done = 0, acquired = 0;
     final clock = Stopwatch()..start();
+    acquisition:
     for (var p = 0; p < passes; p++) {
       for (final sentence in chunks) {
+        if (shouldContinue != null && !shouldContinue()) break acquisition;
         brain.learnEvent(sentence, reward: .45);
         language.ingestText(sentence, reward: .45);
         world.integrateLanguageExperience09(brain, sentence, reward: .30);
         done++;
+        if (p == 0) acquired++;
         progress?.call(done, chunks.length * passes);
         await Future<void>.delayed(Duration.zero);
       }
     }
+    if (acquired == 0) return done;
+    // Only the acquired prefix may enter durable semantic memories. A stopped
+    // replay adds exposures but does not add independent source evidence.
+    final observed = acquired == chunks.length
+        ? text
+        : chunks.take(acquired).join('\n');
     if (memory != null) {
-      await RelationalMemory324.learnAsync(memory, text);
-      final id = ResearchSemantics317.digest(ResearchSemantics317.norm(text));
+      await RelationalMemory324.learnAsync(memory, observed, source: source);
+      final id = ResearchSemantics317.digest(ResearchSemantics317.norm(observed));
       SourceMemory323.retain(
           memory,
           WebDocument11(
@@ -47,11 +57,11 @@ class LearningService321 {
               family: 'locale:utente',
               title: source,
               url: 'local://corpus/' + id,
-              text: text,
+              text: observed,
               trust: .75));
     }
-    if (observeCls) await ClsBridge340.observeText(text, source: source);
-    await LearningBridge421.external(text, source);
+    if (observeCls) await ClsBridge340.observeText(observed, source: source);
+    await LearningBridge421.external(observed, source);
     brain.discoverConcepts();
     world.runtime319['lastLearning321'] = {
       'kind': 'testo insegnato',

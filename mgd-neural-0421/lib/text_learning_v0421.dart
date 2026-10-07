@@ -9,8 +9,8 @@ import 'web_knowledge_explorer_v11.dart';
 class TextImport421 {
   final int fragments, exposures, retainedOnly;
   final bool cancelled;
-  const TextImport421(this.fragments, this.exposures, this.retainedOnly,
-      this.cancelled);
+  const TextImport421(
+      this.fragments, this.exposures, this.retainedOnly, this.cancelled);
 }
 
 /// Streamed acquisition into the same memories used by chat and the map.
@@ -30,21 +30,28 @@ class TextLearning421 {
       if (part.semanticSafe) {
         exposures += await LearningService321.learnText(
             brain, world, language, part.text,
-            memory: research, source: name);
+            memory: research, source: name,
+            shouldContinue: () => !(cancelled?.call() ?? false));
       } else {
         // A sentence cut by the resource budget is evidence, not a new fact.
         language.ingestText(part.text, reward: .42, learnFrames341: false);
-        SourceMemory323.retain(research, WebDocument11(
-            provider: 'TXT locale', family: 'locale:utente', title: name,
-            url: 'local://fragment/${ResearchSemantics317.digest(part.text)}',
-            text: part.text, trust: .75));
+        SourceMemory323.retain(
+            research,
+            WebDocument11(
+                provider: 'TXT locale',
+                family: 'locale:utente',
+                title: name,
+                url:
+                    'local://fragment/${ResearchSemantics317.digest(part.text)}',
+                text: part.text,
+                trust: .75));
         retained++;
       }
       fragments++;
       progress?.call(fragments, exposures);
       await Future<void>.delayed(Duration.zero);
     }
-    return TextImport421(fragments, exposures, retained,
-        cancelled?.call() ?? false);
+    return TextImport421(
+        fragments, exposures, retained, cancelled?.call() ?? false);
   }
 }

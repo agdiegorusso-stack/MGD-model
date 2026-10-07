@@ -197,6 +197,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     _teach.dispose();
     _cancelLearning421 = true;
     LearningBridge421.observe = null;
+    LearningBridge421.forget = null;
     _senseLabel.dispose();
     _mindTimer?.cancel();
     unawaited(_recorder.dispose());
@@ -250,6 +251,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       LearningBridge421.observe = (text, source) async {
         _lastExternalTurn421 = await (await DialogueBridge410.engine)
             .observeExternal(text, source: source);
+      };
+      LearningBridge421.forget = (node) async {
+        await (await DialogueBridge410.engine).forgetWhere(
+            (text) => PlasticLanguageBrain04.containsLabel33(text, node));
+        _lastExternalTurn421 = null;
+        _engineStats421 = await DialogueBridge410.stats();
       };
       _engineStats421 = await DialogueBridge410.stats();
 
@@ -811,6 +818,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         return;
       }
       final cognitiveReply400 = await DialogueBridge410.processChat(text);
+      _engineStats421 = await DialogueBridge410.stats();
       await ClsBridge340.observeText(text, source: 'Chat utente');
       _language20.ingestText(text, reward: 0.38);
       if (LearnedReader324.handles(text) ||
@@ -886,8 +894,11 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final episodic340 = sourced317 == null && grounded == null
           ? await ClsBridge340.quote(text)
           : null;
-      final semanticAnswer =
-          sourced317 ?? cognitiveReply400 ?? episodic340 ?? grounded ?? languageAnswer;
+      final semanticAnswer = sourced317 ??
+          cognitiveReply400 ??
+          episodic340 ??
+          grounded ??
+          languageAnswer;
       final composed031 = (semanticAnswer == null ||
               sensoryGrounding != null ||
               curiosityAnswer != null)
@@ -1218,12 +1229,15 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     setState(() {
       _busy = true;
       _progress = 0;
+      _cancelLearning421 = false;
       _status = 'Apprendo relazioni e forme linguistiche dallo stesso testo…';
     });
     try {
       final n = await LearningService321.learnText(
           _brain, _world, _language20, raw,
-          passes: passes, memory: _researchMemory, progress: (done, total) {
+          passes: passes, memory: _researchMemory,
+          shouldContinue: () => mounted && !_cancelLearning421,
+          progress: (done, total) {
         if (mounted)
           setState(() {
             _progress = done / total;
@@ -1231,7 +1245,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           });
       });
       _engineStats421 = await DialogueBridge410.stats();
-      await _save('$n frasi elaborate • ${RelationalMemory324.stats(_researchMemory)['current']} relazioni • mappa aggiornata');
+      await _save(
+          '${_cancelLearning421 ? 'Apprendimento interrotto e salvato' : 'Apprendimento completato'} • $n frasi elaborate • ${RelationalMemory324.stats(_researchMemory)['current']} relazioni • mappa aggiornata');
     } catch (e) {
       if (mounted) setState(() => _status = 'Apprendimento interrotto: $e');
     } finally {
@@ -1248,7 +1263,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
-  Future<CognitiveTurn400?> _externalCoreText421(String text, String source) async {
+  Future<CognitiveTurn400?> _externalCoreText421(
+      String text, String source) async {
     _lastExternalTurn421 = null;
     await _externalText421(text, source);
     return _lastExternalTurn421;
@@ -1257,28 +1273,40 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   Future<void> _importText421() async {
     if (_busy || !_ready || _researchBusy || _maintenance317) return;
     File? staged;
-    setState(() { _busy = true; _cancelLearning421 = false; _progress = 0; });
+    setState(() {
+      _busy = true;
+      _cancelLearning421 = false;
+      _progress = 0;
+    });
     try {
       final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom, allowedExtensions: const ['txt'],
-          withReadStream: true, withData: false);
+          type: FileType.custom,
+          allowedExtensions: const ['txt'],
+          withReadStream: true,
+          withData: false);
       if (result == null || result.files.isEmpty) return;
       final selected = result.files.single;
       final input = selected.readStream ??
           (selected.path == null ? null : File(selected.path!).openRead());
-      if (input == null) throw StateError('Il provider non ha fornito il testo.');
+      if (input == null)
+        throw StateError('Il provider non ha fornito il testo.');
       final dir = await getTemporaryDirectory();
-      staged = File('${dir.path}/mgd-import-${DateTime.now().microsecondsSinceEpoch}.txt');
-      await BookText420.stage(input, staged, name: selected.name,
-          cancelled: () => _cancelLearning421 || !mounted);
+      staged = File(
+          '${dir.path}/mgd-import-${DateTime.now().microsecondsSinceEpoch}.txt');
+      await BookText420.stage(input, staged,
+          name: selected.name, cancelled: () => _cancelLearning421 || !mounted);
       if (_cancelLearning421 || !mounted) return;
       final report = await TextLearning421.importFile(staged,
-          name: selected.name, brain: _brain, world: _world,
-          research: _researchMemory, language: _language20,
+          name: selected.name,
+          brain: _brain,
+          world: _world,
+          research: _researchMemory,
+          language: _language20,
           cancelled: () => _cancelLearning421 || !mounted,
           progress: (blocks, sentences) {
-            if (mounted) setState(() => _status =
-                '$blocks blocchi letti • $sentences frasi elaborate');
+            if (mounted)
+              setState(() => _status =
+                  '$blocks blocchi letti • $sentences frasi elaborate');
           });
       _engineStats421 = await DialogueBridge410.stats();
       await _save('${report.cancelled ? 'Lettura interrotta' : 'TXT appreso'}: '
@@ -1370,7 +1398,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       _researchMemory = ResearchMemory11();
       _messages.clear();
       _language20 = MgdLanguage20();
-      _status = 'Nuova memoria MGD 0.42.1 creata';
+      _status = 'Nuova memoria MGD 0.42.2 creata';
     });
     await _save();
   }
@@ -1734,7 +1762,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     setState(() => _busy = true);
     try {
       await Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => ClsPage340(world: _world, onSave: _checkpoint319,
+          builder: (_) => ClsPage340(
+              world: _world,
+              onSave: _checkpoint319,
               onTextLearned: _externalText421)));
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -1851,9 +1881,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         onBind: _bindSense06,
       ),
       _TeachPage04(
-        controller: _teach, busy: _busy || _maintenance317 || _researchBusy,
-        progress: _progress, onLearn: _learnCorpus,
-        onImport: _importText421, onBooks: _openLanguage20,
+        controller: _teach,
+        busy: _busy || _maintenance317 || _researchBusy,
+        progress: _progress,
+        onLearn: _learnCorpus,
+        onImport: _importText421,
+        onBooks: _openLanguage20,
         onExperiences: _openExperience33,
         onCancel: () => setState(() => _cancelLearning421 = true),
         relations: RelationalMemory324.stats(_researchMemory)['current'] ?? 0,
@@ -1863,12 +1896,20 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       Padding(
         padding: const EdgeInsets.all(8),
         child: NavigableSemanticGraph13(
-          brain: _brain, research: _researchMemory, language: _language20,
-          world: _world, initialNodeLimit: 80, fullPage: true,
+          brain: _brain,
+          research: _researchMemory,
+          language: _language20,
+          world: _world,
+          initialNodeLimit: 80,
+          fullPage: true,
           onDelete33: (mode, node) async {
-            await KnowledgeDeletion33.delete(brain: _brain, world: _world,
-                research: _researchMemory, language: _language20,
-                mode: mode, node: node);
+            await KnowledgeDeletion33.delete(
+                brain: _brain,
+                world: _world,
+                research: _researchMemory,
+                language: _language20,
+                mode: mode,
+                node: node);
             await _checkpoint319();
             if (mounted) setState(() {});
           },
@@ -2503,7 +2544,8 @@ class _MindPage07 extends StatelessWidget {
   final double worstFrameMs;
   final MgdLanguage20 language20;
   final Future<void> Function() onLanguage20;
-  final Future<CognitiveTurn400?> Function(String text, String source) onExternalText421;
+  final Future<CognitiveTurn400?> Function(String text, String source)
+      onExternalText421;
 
   const _MindPage07({
     required this.brain,
@@ -2657,9 +2699,12 @@ class _MindPage07 extends StatelessWidget {
                   const SizedBox(height: 8),
                   FilledButton.tonalIcon(
                     key: const ValueKey('cognitive-open400'),
-                    onPressed: busy ? null : () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => CognitiveCorePage400(
-                          onLearn: (text) => onExternalText421(text, 'Core cognitivo')))),
+                    onPressed: busy
+                        ? null
+                        : () => Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => CognitiveCorePage400(
+                                onLearn: (text) => onExternalText421(
+                                    text, 'Core cognitivo')))),
                     icon: const Icon(Icons.psychology_alt_outlined),
                     label: const Text('Cognitive Core 0.41 · dialogo + ToM'),
                   ),
@@ -3152,8 +3197,12 @@ class _TeachPage04 extends StatelessWidget {
     required this.busy,
     required this.progress,
     required this.onLearn,
-    required this.onImport, required this.onBooks, required this.onExperiences,
-    required this.onCancel, required this.relations, required this.tokens,
+    required this.onImport,
+    required this.onBooks,
+    required this.onExperiences,
+    required this.onCancel,
+    required this.relations,
+    required this.tokens,
     required this.cognitiveRelations,
   });
 
@@ -3209,14 +3258,18 @@ class _TeachPage04 extends StatelessWidget {
             ),
           ],
         ),
-        if (busy) TextButton(onPressed: onCancel,
-            child: const Text('Interrompi lettura TXT')),
+        if (busy)
+          TextButton(
+              key: const ValueKey('cancel-learning422'),
+              onPressed: onCancel, child: const Text('Interrompi apprendimento')),
         const SizedBox(height: 12),
-        OutlinedButton.icon(onPressed: busy ? null : onExperiences,
+        OutlinedButton.icon(
+            onPressed: busy ? null : onExperiences,
             icon: const Icon(Icons.layers_outlined),
             label: const Text('Esperienze, immagini, audio e atlante')),
         const SizedBox(height: 8),
-        OutlinedButton.icon(onPressed: busy ? null : onBooks,
+        OutlinedButton.icon(
+            onPressed: busy ? null : onBooks,
             icon: const Icon(Icons.menu_book_outlined),
             label: const Text('Archivio libri e verifica del richiamo')),
         const SizedBox(height: 18),

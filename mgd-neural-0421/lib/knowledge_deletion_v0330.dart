@@ -10,6 +10,7 @@ import 'sensory_world_v06.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'mgd_language_v020.dart';
 import 'relational_memory_v0324.dart';
+import 'learning_bridge_v0421.dart';
 
 String conceptNode33(Experience33 e) => '${e.label} · ${e.context}';
 String episodeNode33(Experience33 e) =>
@@ -59,6 +60,7 @@ class KnowledgeDeletion33 {
       research.narrativeLinks.removeWhere((e) => e.episodeId == 'e24:$id');
       return;
     }
+    await LearningBridge421.deleteNode(node);
     await ClsBridge340.forgetLabel(node);
     bool matches(String s) => PlasticLanguageBrain04.containsLabel33(s, node);
     bool deep(dynamic v) => v is String
