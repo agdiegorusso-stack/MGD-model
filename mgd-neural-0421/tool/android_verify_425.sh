@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 bash tool/android_verify_421.sh
+# A reused release can be signed by another CI machine's debug key. Start the
+# test package fresh rather than asking Flutter to update an incompatible key.
+if adb shell pm path it.diegorusso.mgdneurostable | grep -q '^package:'; then
+  timeout 30 adb uninstall it.diegorusso.mgdneurostable
+fi
 mgd_export_fixture425() {
   local mgd_deadline425=$((SECONDS + 480))
   while (( SECONDS < mgd_deadline425 )); do
@@ -76,7 +81,10 @@ PY
 # Install the actual release, then restore the exact committed test database.
 # adb root is available on this Google APIs emulator; the delivered app does
 # not request root. A full process stop follows, with no test widgets running.
-adb install -r build/app/outputs/flutter-apk/app-release.apk
+if adb shell pm path it.diegorusso.mgdneurostable | grep -q '^package:'; then
+  timeout 30 adb uninstall it.diegorusso.mgdneurostable
+fi
+timeout 60 adb install build/app/outputs/flutter-apk/app-release.apk
 adb shell am force-stop it.diegorusso.mgdneurostable
 timeout 30 adb root
 timeout 30 adb wait-for-device
