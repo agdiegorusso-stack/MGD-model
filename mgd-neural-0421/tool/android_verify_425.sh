@@ -78,21 +78,21 @@ PY
 # not request root. A full process stop follows, with no test widgets running.
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 adb shell am force-stop it.diegorusso.mgdneurostable
-adb root
-adb wait-for-device
+timeout 30 adb root
+timeout 30 adb wait-for-device
 mgd_db_target425="$(cat tool/reports/large-memory425-path.txt)"
 mgd_uid425="$(adb shell cmd package list packages -U it.diegorusso.mgdneurostable | sed -n 's/.*uid:\([0-9]*\).*/\1/p' | tr -d '\r')"
 [[ "$mgd_uid425" =~ ^[0-9]+$ ]]
-adb shell mkdir -p "$(dirname "$mgd_db_target425")"
-adb shell rm -f "${mgd_db_target425}-wal" "${mgd_db_target425}-shm"
-adb push /tmp/mgd-large-memory425.db "$mgd_db_target425"
-adb shell chown "${mgd_uid425}:${mgd_uid425}" "$mgd_db_target425"
-adb shell chown "${mgd_uid425}:${mgd_uid425}" "$(dirname "$mgd_db_target425")"
-adb shell chmod 600 "$mgd_db_target425"
-adb shell restorecon "$mgd_db_target425"
+timeout 15 adb shell mkdir -p "$(dirname "$mgd_db_target425")"
+timeout 15 adb shell rm -f "${mgd_db_target425}-wal" "${mgd_db_target425}-shm"
+timeout 60 adb push /tmp/mgd-large-memory425.db "$mgd_db_target425"
+timeout 15 adb shell chown "${mgd_uid425}:${mgd_uid425}" "$mgd_db_target425"
+timeout 15 adb shell chown "${mgd_uid425}:${mgd_uid425}" "$(dirname "$mgd_db_target425")"
+timeout 15 adb shell chmod 600 "$mgd_db_target425"
+timeout 15 adb shell restorecon "$mgd_db_target425"
 adb shell am force-stop it.diegorusso.mgdneurostable
 adb logcat -c
-adb shell am start -W -n it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity \
+timeout 30 adb shell am start -W -n it.diegorusso.mgdneurostable/it.diegorusso.mgd_neuro_mobile.MainActivity \
   > tool/reports/large-release425-start.txt
 python3 - <<'PY'
 import json, subprocess, time

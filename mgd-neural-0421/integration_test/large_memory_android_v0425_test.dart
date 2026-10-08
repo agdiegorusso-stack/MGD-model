@@ -157,7 +157,7 @@ void main() {
     final deadline = DateTime.now().add(const Duration(seconds: 120));
     while (!await exported.exists()) {
       if (DateTime.now().isAfter(deadline)) fail('Host did not export the committed database before teardown.');
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
     }
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(minutes: 12)));
