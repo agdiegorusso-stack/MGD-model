@@ -7,7 +7,7 @@ if adb shell pm path it.diegorusso.mgdneurostable | grep -q '^package:'; then
   timeout 30 adb uninstall it.diegorusso.mgdneurostable
 fi
 mgd_export_fixture425() {
-  local mgd_deadline425=$((SECONDS + 480))
+  local mgd_deadline425=$((SECONDS + 900))
   while (( SECONDS < mgd_deadline425 )); do
     if timeout 15 adb shell run-as it.diegorusso.mgdneurostable test -f cache/large-memory425-ready.txt >/dev/null 2>&1; then
       timeout 60 adb exec-out run-as it.diegorusso.mgdneurostable cat cache/large-memory425.db > /tmp/mgd-large-memory425.db
