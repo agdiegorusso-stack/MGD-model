@@ -18,17 +18,17 @@ class MemoryQuery428 {
       KnowledgeChat423.answer(brain, memory, prompt);
 
   static String? sourced(ResearchMemory11 memory, String prompt,
-          {String? Function(String, String, String)? realize}) =>
+          {String? Function(String, String, String)? realize, bool readOnly = false}) =>
       RelationalMemory324.answerIfKnown(memory, prompt) ??
       Reasoning321.answer(prompt, memory) ??
       ResearchSemantics317.answer(prompt, memory, realize: realize) ??
-      SourceMemory323.answer(prompt, memory);
+      SourceMemory323.answer(prompt, memory, recordDiagnostics: !readOnly);
 
   static Future<VerificationAnswer428> answer(PlasticLanguageBrain04 brain,
       ResearchMemory11 memory, String prompt, CognitiveCore400 core) async {
     final mapped = map(brain, memory, prompt);
     if (mapped != null) return VerificationAnswer428(mapped, 'relazioni');
-    final sourcedText = sourced(memory, prompt);
+    final sourcedText = sourced(memory, prompt, readOnly: true);
     if (sourcedText != null) {
       return VerificationAnswer428(sourcedText,
           sourcedText.startsWith('Passaggi pertinenti') ? 'passaggi' : 'fonti');
