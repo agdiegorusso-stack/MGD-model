@@ -1247,6 +1247,10 @@ class WebKnowledgeExplorer11 {
           claims: _dedupeClaims(claims),
           passages: passages.take(40).toList(),
           sentencesRead: sentenceCount,
+          error: docs.isEmpty && claims.isEmpty
+              ? 'Nessun documento pertinente per “$topic”. '
+                  '${diagnostics.where((d) => d['status'] == 'errore').take(3).map((d) => '${d['provider']}: ${d['error']}').join('; ')}'
+              : null,
           diagnostics318: diagnostics);
     } catch (e) {
       return ResearchDraft11(
