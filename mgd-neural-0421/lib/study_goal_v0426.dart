@@ -5,6 +5,7 @@ import 'web_knowledge_explorer_v11.dart';
 /// Persistent research frontier. Reading coverage is never a mastery score.
 class StudyGoal426 {
   static const key = 'studyGoal426';
+  static const schema = 2;
   static String norm(String s) => s.toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9àèéìòù ]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -52,10 +53,10 @@ class StudyGoal426 {
     }
     memory.state317[key] = {
       'id': t.microsecondsSinceEpoch.toString(),
-      'topic': topic, 'paused': false,
+      'topic': topic, 'paused': false, 'schema': schema,
       'createdAt': t.toIso8601String(), 'lastError': null,
       'items': facets.map((f) => <String, dynamic>{
-        'label': f, 'attempts': 0, 'failures': 0,
+        'label': f, 'lookup': lookup(topic, f), 'attempts': 0, 'failures': 0,
         'documents': 0, 'novel': 0, 'families': <String>[],
         'hashes': <String>[], 'nextAt': '',
       }).toList(),
@@ -75,6 +76,82 @@ class StudyGoal426 {
 
   static int count(Map<String, dynamic> x, String key) =>
       (x[key] as num?)?.toInt() ?? 0;
+
+  /// A plan label is not an entity name. Keep the session query separate from
+  /// the actual subject whose title, redirects and evidence must be resolved.
+  static String lookup(String topic, String label) {
+    final n = norm(topic);
+    if (n.contains('cellul')) {
+      const subjects = {
+        'struttura e tipi cellulari': 'Cellula',
+        'membrane e trasporto': 'Membrana cellulare',
+        'organelli': 'Organulo',
+        'metabolismo ed energia': 'Metabolismo cellulare',
+        'genetica ed espressione': 'Espressione genica',
+        'ciclo cellulare': 'Ciclo cellulare',
+        'segnalazione': 'Segnalazione cellulare',
+        'differenziamento': 'Differenziamento cellulare',
+        'evoluzione cellulare': 'Endosimbiosi',
+        'domande aperte': 'Biologia cellulare',
+      };
+      if (subjects[label] != null) return subjects[label]!;
+    } else if (n.contains('microrgan') || n.contains('microbiolog')) {
+      const subjects = {
+        'classificazione': 'Microrganismo',
+        'struttura cellulare': 'Procarioti',
+        'metabolismo': 'Metabolismo microbico',
+        'genetica': 'Genetica microbica',
+        'ecologia': 'Ecologia microbica',
+        'microbioma': 'Microbiota',
+        'evoluzione': 'Evoluzione dei microrganismi',
+        'interazioni con gli ospiti': 'Simbiosi',
+        'biodiversità': 'Diversità microbica',
+        'domande aperte': 'Microbiologia',
+      };
+      if (subjects[label] != null) return subjects[label]!;
+    }
+    if (label == 'definizioni') return topic;
+    // A concept discovered in a source has its own subject, rather than the
+    // root goal prepended to its name. Unresolved seed facets remain explicit.
+    return '$topic $label';
+  }
+
+  static String query(Map<String, dynamic> g, Map<String, dynamic> item) =>
+      '${g['topic']} ${item['label']}';
+
+  /// Release only the empty legacy attempts delayed by the old eight-hour
+  /// backoff; preserve the goal, pause setting, history and acquired memory.
+  static void upgrade(ResearchMemory11 memory) {
+    final g = state(memory);
+    if (g == null || g['schema'] == schema) return;
+    final all = items(g);
+    for (final i in all) {
+      i['lookup'] = i['discoveredFrom'] != null
+          ? '${i['label']}' : lookup('${g['topic']}', '${i['label']}');
+      if (count(i, 'documents') == 0) {
+        i['nextAt'] = '';
+        memory.queryLastIso.removeWhere((k, _) => norm(k) == norm(query(g, i)));
+      }
+    }
+    g['items'] = all;
+    g['schema'] = schema;
+    memory.state317[key] = g;
+  }
+
+  static void retry(ResearchMemory11 memory) {
+    upgrade(memory);
+    final g = state(memory);
+    if (g == null) return;
+    final all = items(g);
+    for (final i in all) {
+      if (count(i, 'documents') == 0 || i['lastError'] != null) {
+        i['nextAt'] = '';
+        memory.queryLastIso.removeWhere((k, _) => norm(k) == norm(query(g, i)));
+      }
+    }
+    g['items'] = all;
+    memory.state317[key] = g;
+  }
 
   /// Grow the plan from relevant extracted concepts, with source provenance.
   /// These are research candidates, not accepted facts or proof of mastery.
@@ -99,7 +176,7 @@ class StudyGoal426 {
       if (subject.length < 4 || subject.length > 80 || n == norm('${g['topic']}') ||
           !seen.add(n)) continue;
       all.add({
-        'label': subject, 'attempts': 0, 'failures': 0,
+        'label': subject, 'lookup': subject, 'attempts': 0, 'failures': 0,
         'documents': 0, 'novel': 0, 'families': <String>[],
         'nextAt': '', 'parentQuery': draft.goal.query,
         'discoveredFrom': claim.source.url,
@@ -111,22 +188,28 @@ class StudyGoal426 {
   }
 
   static ResearchGoal11? next(ResearchMemory11 memory, {DateTime? now}) {
+    upgrade(memory);
     final g = state(memory);
     if (g == null || g['paused'] == true || !memory.enabled) return null;
     final t = now ?? DateTime.now();
-    final ready = items(g).where((i) {
+    final all = items(g);
+    final order = {for (var j = 0; j < all.length; j++) '${all[j]['label']}': j};
+    final ready = all.where((i) {
       final due = DateTime.tryParse('${i['nextAt']}');
       return due == null || !due.isAfter(t);
     }).toList()
       ..sort((a, b) {
         final byAttempts = count(a, 'attempts').compareTo(count(b, 'attempts'));
         return byAttempts != 0 ? byAttempts :
-            '${a['label']}'.compareTo('${b['label']}');
+            order['${a['label']}']!.compareTo(order['${b['label']}']!);
       });
     for (final item in ready) {
-      final query = '${g['topic']} ${item['label']}';
-      if (!memory.canResearch(query, now: t)) continue;
-      return ResearchGoal11(query: query, topic: query,
+      final q = query(g, item);
+      // The item deadline owns retry cadence, including transient failures.
+      if (!memory.canResearch(q, now: t,
+          repeatAfter: const Duration(seconds: 30))) continue;
+      final subject = '${item['lookup'] ?? lookup('${g['topic']}', '${item['label']}')}';
+      return ResearchGoal11(query: q, topic: subject,
           reason: 'Obiettivo persistente: ${g['topic']}',
           value: 1, contextTerms: ['${g['topic']}', '${item['label']}']);
     }
@@ -135,12 +218,11 @@ class StudyGoal426 {
 
   static void record(ResearchMemory11 memory, String goalId,
       ResearchGoal11 query, List<WebDocument11> documents,
-      {String? error, DateTime? now}) {
+      {String? error, List<Map<String, dynamic>> diagnostics = const [], DateTime? now}) {
     final g = state(memory);
     if (g == null || g['id'] != goalId) return;
     final all = items(g);
-    final index = all.indexWhere(
-        (i) => '${g['topic']} ${i['label']}' == query.query);
+    final index = all.indexWhere((i) => StudyGoal426.query(g, i) == query.query);
     if (index < 0) return;
     final i = all[index];
     final t = now ?? DateTime.now();
@@ -167,12 +249,16 @@ class StudyGoal426 {
     i['lastAt'] = t.toIso8601String();
     i['lastError'] = error ?? (readable == 0 ? 'Nessun testo leggibile' : null);
     // Retryable waiting is not completion. No hard cap on study cycles.
-    final hours = failed
-        ? (4 * (1 << count(i, 'failures').clamp(0, 4).toInt()))
-        : novel == 0 ? 24 : 4;
-    i['nextAt'] = t.add(Duration(hours: hours)).toIso8601String();
+    final delay = failed
+        ? Duration(minutes: 1 << (count(i, 'failures') - 1).clamp(0, 5).toInt())
+        : Duration(hours: novel == 0 ? 24 : 4);
+    i['nextAt'] = t.add(delay).toIso8601String();
     g['items'] = all;
     g['lastError'] = i['lastError'];
+    g['lastLookup'] = query.topic;
+    g['lastDocuments'] = readable;
+    g['lastAt'] = t.toIso8601String();
+    g['diagnostics'] = diagnostics;
     memory.state317[key] = g;
   }
 
