@@ -6,6 +6,28 @@ import '../lib/plastic_language_brain_v04.dart';
 import '../lib/sensory_world_v06.dart';
 
 void main() {
+  test('0.42.11 failed areas become due after upgrade while readings and pause persist', () {
+    final now = DateTime.utc(2026, 10, 10);
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'la dialisi', now: now);
+    final g = StudyGoal426.state(m)!;
+    g['schema'] = 3;
+    g['paused'] = true;
+    g['items'] = StudyGoal426.items(g).where((i) =>
+        ['definizioni', 'evidenze scientifiche'].contains(i['label'])).map((i) => {
+      ...i, 'documents': i['label'] == 'definizioni' ? 4 : 0,
+      'attempts': 2, 'nextAt': now.add(const Duration(hours: 8)).toIso8601String(),
+    }).toList();
+    m.state317[StudyGoal426.key] = g;
+    m.begin('la dialisi evidenze scientifiche', now);
+    StudyGoal426.upgrade(m);
+    expect(StudyGoal426.state(m)!['id'], g['id']);
+    expect(StudyGoal426.state(m)!['schema'], 4);
+    expect(StudyGoal426.items(StudyGoal426.state(m)!).first['documents'], 4);
+    expect(StudyGoal426.next(m, now: now), isNull);
+    StudyGoal426.pause(m, false);
+    expect(StudyGoal426.next(m, now: now)!.contextTerms.last, 'evidenze scientifiche');
+  });
   test('scientific area resolves English names and reads abstracts, excluding titles and unrelated bodies', () async {
     final m = ResearchMemory11();
     StudyGoal426.start(m, 'la dialisi');
