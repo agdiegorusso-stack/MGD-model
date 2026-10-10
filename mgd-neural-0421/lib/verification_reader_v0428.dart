@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'cognitive_core_v0400.dart';
@@ -15,19 +16,22 @@ import 'web_knowledge_explorer_v11.dart';
 /// facts, questions and answer keys cannot enter the user's real memories.
 class VerificationReader428 {
   final PlasticLanguageBrain04 brain = PlasticLanguageBrain04();
-  final ResearchMemory11 memory = ResearchMemory11(enabled: false);
+  final ResearchMemory11 memory;
   final MgdWorld06 world = MgdWorld06();
   final MgdLanguage20 language = MgdLanguage20();
   final CognitiveCore400 core;
   final Directory directory;
-  VerificationReader428._(this.core, this.directory);
+  VerificationReader428._(this.core, this.directory, this.memory);
 
-  static Future<VerificationReader428> open({DatabaseFactory? factory, String? temporaryRoot}) async {
+  static Future<VerificationReader428> open({DatabaseFactory? factory, String? temporaryRoot,
+      ResearchMemory11? retained}) async {
     final root = temporaryRoot == null ? await getTemporaryDirectory() : Directory(temporaryRoot);
     final directory = await root.createTemp('mgd-verification-');
     try {
       final store = await CognitiveStore400.openAt('${directory.path}/core.db', factory: factory);
-      return VerificationReader428._(CognitiveCore400(store), directory);
+      return VerificationReader428._(CognitiveCore400(store), directory,
+          retained == null ? ResearchMemory11(enabled: false)
+              : ResearchMemory11.fromJson(jsonDecode(jsonEncode(retained.toJson()))));
     } catch (_) {
       await directory.delete(recursive: true);
       rethrow;

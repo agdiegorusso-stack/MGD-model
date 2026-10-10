@@ -23,6 +23,8 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'application_verification_v0433.dart';
+import 'transport_reasoning_v0433.dart';
 import 'book_text_v0420.dart';
 import 'text_learning_v0421.dart';
 import 'learning_bridge_v0421.dart';
@@ -601,6 +603,31 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                 query: (prompt) => MemoryQuery428.answer(_brain, _researchMemory, prompt, core),
                 cancelled: cancelled, progress: progress,
                 goalId: goal?['id']?.toString(), topic: goal?['topic']?.toString());
+            } else if (mode == 'application') {
+              progress(0, 1, 'Acquisizione del principio da OpenStax');
+              final doc = await ApplicationVerification433.fetchDocument();
+              if (cancelled()) throw VerificationCancelled428();
+              final reader = await VerificationReader428.open(retained: _researchMemory);
+              try {
+                report = await LearningVerification428.run(mode: mode, seed: seed,
+                  cases: ApplicationVerification433.cases(doc, seed), query: reader.answer,
+                  read: () => reader.read([doc], cancelled: cancelled),
+                  cancelled: cancelled, progress: progress,
+                  goalId: goal?['id']?.toString(), topic: 'Diffusione: sistema ideale');
+                report['acquisition433'] = doc.meta318;
+                report['scope433'] = 'Verso del flusso di un soluto neutro in un sistema ideale a sola diffusione.';
+              } finally { await reader.close(); }
+              if (cancelled()) throw VerificationCancelled428();
+              // Retain the actual reading so the same inference is available
+              // in normal chat. Neither questions nor keys enter this intake.
+              WebKnowledgeExplorer11().integrate(_brain, _world, _researchMemory, ResearchDraft11(
+                goal: ResearchGoal11(query: 'diffusione', topic: 'diffusione',
+                  reason: 'Principio letto nella verifica di applicazione', value: 1),
+                documents: [doc], claims: const [], passages: const [], sentencesRead: 0));
+              while (ResearchSemantics317.getPending(_researchMemory) > 0) {
+                ResearchSemantics317.processQueue(_brain, _world, _researchMemory);
+                await Future<void>.delayed(Duration.zero);
+              }
             } else {
               final reader = await VerificationReader428.open();
               try {
@@ -918,6 +945,18 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      final transport433 = TransportReasoning433.answer(_researchMemory, text);
+      if (transport433 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: transport433.text, prompt: text));
+          _status = transport433.proof == null ? 'Informazioni mancanti o in conflitto'
+              : 'Principio letto applicato alle concentrazioni';
+        });
+        _scrollDown();
+        await _save('Applicazione e cronologia salvate');
+        return;
+      }
       final logic429 = RuleReasoning429.answer(_researchMemory, text);
       if (logic429 != null) {
         if (!mounted) return;

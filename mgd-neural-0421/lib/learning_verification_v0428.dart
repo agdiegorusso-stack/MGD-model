@@ -7,6 +7,8 @@ import 'plastic_language_brain_v04.dart';
 import 'reasoning_v0321.dart';
 import 'rule_reasoning_v0429.dart';
 import 'reading_query_v0430.dart';
+import 'transport_reasoning_v0433.dart';
+import 'application_verification_v0433.dart';
 import 'relational_memory_v0324.dart';
 import 'study_goal_v0426.dart';
 import 'web_knowledge_explorer_v11.dart';
@@ -28,6 +30,10 @@ class MemoryQuery428 {
 
   static Future<VerificationAnswer428> answer(PlasticLanguageBrain04 brain,
       ResearchMemory11 memory, String prompt, CognitiveCore400 core) async {
+    final transport = TransportReasoning433.answer(memory, prompt);
+    if (transport != null) return VerificationAnswer428(transport.text,
+        transport.truth == 'unknown' || transport.truth == 'conflict' ? 'astensione' : 'inferenza',
+        proof: transport.proof);
     final logic = RuleReasoning429.answer(memory, prompt);
     if (logic != null) return VerificationAnswer428(logic.text,
         logic.truth == 'unknown' || logic.truth == 'conflict' ? 'astensione' : 'inferenza',
@@ -67,10 +73,11 @@ class VerificationCase428 {
   final Map<String, String> names;
   final List<Map<String, String>> acceptable;
   final String? expectedAtom;
+  final Map<String, dynamic>? expectedTransfer433;
   const VerificationCase428({required this.id, required this.capability,
     required this.prompt, required this.expected, this.subject = '',
     this.relation = '', this.object = '', this.sources = const [], this.claimKey,
-    this.names = const {}, this.acceptable = const [], this.expectedAtom});
+    this.names = const {}, this.acceptable = const [], this.expectedAtom, this.expectedTransfer433});
 }
 
 class VerificationWorld428 {
@@ -231,6 +238,7 @@ class LearningVerification428 {
   static ({bool passed, String reason}) grade(
       VerificationCase428 question, VerificationAnswer428 answer) {
     final clean = norm(answer.text);
+    if (question.expectedTransfer433 != null) return ApplicationVerification433.grade(question, answer);
     if (question.expected == 'conflict') {
       final passed = clean.startsWith('non determinabile') &&
           answer.text.toUpperCase().contains('IN CONFLITTO');
@@ -303,7 +311,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.12'}) async {
+    String? goalId, String? topic, String version = '0.42.13'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;
@@ -317,7 +325,7 @@ class LearningVerification428 {
         await Future<void>.delayed(Duration.zero);
       }
       check();
-      progress?.call(done, total, 'Lettura dei mondi simulati');
+      progress?.call(done, total, mode == 'application' ? 'Lettura del principio dalla fonte' : 'Lettura del testo di prova');
       await read();
     }
     for (final c in cases) {
@@ -330,6 +338,7 @@ class LearningVerification428 {
         'sources': c.sources,
         if (c.names.isNotEmpty) 'names': c.names,
         if (c.expectedAtom != null) 'expectedAtom': c.expectedAtom,
+        if (c.expectedTransfer433 != null) 'expectedTransfer433': c.expectedTransfer433,
         if (before.containsKey(c.id)) ...{
           'before': before[c.id]!.toJson(), 'beforePassed': grade(c, before[c.id]!).passed},
       });
