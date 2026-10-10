@@ -215,7 +215,12 @@ void main() {
     final all = StudyGoal426.items(g);
     all.single.addAll({'lookup': 'la dialisi struttura', 'attempts': 4, 'failures': 4,
       'nextAt': now.add(const Duration(hours: 8)).toIso8601String()});
-    g['items'] = all;
+    g['items'] = [
+      {...all.single, 'label': 'definizioni', 'lookup': 'dialisi',
+        'documents': 2, 'novel': 2, 'families': ['wikimedia'],
+        'failures': 0, 'lastError': null},
+      ...all,
+    ];
     m.state317[StudyGoal426.key] = g;
     m.begin('la dialisi struttura', now);
     m.state317['unrelatedMemory'] = 'preserved';
@@ -226,7 +231,10 @@ void main() {
     expect(StudyGoal426.next(restored, now: now)!.topic, 'dialisi');
     expect(StudyGoal426.state(restored)!['id'], g['id']);
     expect(StudyGoal426.state(restored)!['hashes'], ['retained']);
-    expect(StudyGoal426.items(StudyGoal426.state(restored)!).single['attempts'], 4);
+    final restoredItems = StudyGoal426.items(StudyGoal426.state(restored)!);
+    expect(restoredItems.last['attempts'], 4);
+    expect(restoredItems.first['documents'], 2);
+    expect(restoredItems.first['families'], ['wikimedia']);
     expect(restored.state317['unrelatedMemory'], 'preserved');
   });
 
