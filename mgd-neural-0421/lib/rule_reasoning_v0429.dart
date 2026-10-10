@@ -438,6 +438,15 @@ class RuleReasoning429 {
       p.premises.any((parent) => _tainted(parent, known));
 
   static LogicAnswer429? answer(ResearchMemory11 memory, String prompt) {
+    // Instructions after the interrogative must not hide the actual query.
+    // No words from these instructions are promoted to factual assumptions.
+    final end = prompt.lastIndexOf('?');
+    if (end >= 0 && prompt.substring(end + 1).trim().isNotEmpty) {
+      final instruction = norm(prompt.substring(end + 1));
+      if (RegExp(r'^(mostra|spiega|indica|rispondi|giustifica)\b').hasMatch(instruction)) {
+        prompt = prompt.substring(0, end + 1);
+      }
+    }
     if (!prompt.trim().endsWith('?')) return null;
     final parts = prompt.trim().split(RegExp(r'(?<=[.!])\s+|\n+'));
     var question = _clean(parts.last);

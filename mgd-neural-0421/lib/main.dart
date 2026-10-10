@@ -9,6 +9,7 @@ import 'study_goal_page_v0426.dart';
 import 'learning_verification_v0428.dart';
 import 'rule_reasoning_v0429.dart';
 import 'reading_query_v0430.dart';
+import 'reading_reasoning_v0435.dart';
 import 'prose_verification_v0430.dart';
 import 'transfer_verification_v0429.dart';
 import 'learning_verification_page_v0428.dart';
@@ -958,6 +959,18 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         });
         _scrollDown();
         await _save('Applicazione e cronologia salvate');
+        return;
+      }
+      final semantic435 = ReadingReasoning435.answer(_researchMemory, text);
+      if (semantic435 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: semantic435.text, prompt: text));
+          _status = semantic435.unknown ? 'Dato mancante identificato nelle letture'
+              : 'Soluzione ricavata dalle letture con i passaggi e le fonti';
+        });
+        _scrollDown();
+        await _save('Soluzione e cronologia salvate');
         return;
       }
       final logic429 = RuleReasoning429.answer(_researchMemory, text);

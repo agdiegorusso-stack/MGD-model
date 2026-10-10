@@ -7,6 +7,7 @@ import 'plastic_language_brain_v04.dart';
 import 'reasoning_v0321.dart';
 import 'rule_reasoning_v0429.dart';
 import 'reading_query_v0430.dart';
+import 'reading_reasoning_v0435.dart';
 import 'transport_reasoning_v0433.dart';
 import 'application_verification_v0433.dart';
 import 'relational_memory_v0324.dart';
@@ -34,6 +35,9 @@ class MemoryQuery428 {
     if (transport != null) return VerificationAnswer428(transport.text,
         transport.truth == 'unknown' || transport.truth == 'conflict' ? 'astensione' : 'inferenza',
         proof: transport.proof);
+    final semantic = ReadingReasoning435.answer(memory, prompt);
+    if (semantic != null) return VerificationAnswer428(semantic.text,
+        semantic.unknown ? 'astensione' : 'inferenza', proof: semantic.proof);
     final logic = RuleReasoning429.answer(memory, prompt);
     if (logic != null) return VerificationAnswer428(logic.text,
         logic.truth == 'unknown' || logic.truth == 'conflict' ? 'astensione' : 'inferenza',
@@ -311,7 +315,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.14'}) async {
+    String? goalId, String? topic, String version = '0.42.15'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;
