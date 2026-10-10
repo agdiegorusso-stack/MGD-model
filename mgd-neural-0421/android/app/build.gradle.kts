@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = System.getenv("MGD_APPLICATION_ID") ?: "it.diegorusso.mgdneurostable"
-        manifestPlaceholders["mgdAppLabel"] = if (System.getenv("MGD_APPLICATION_ID").isNullOrBlank()) "MGD Neuro" else "MGD Studio"
+        manifestPlaceholders["mgdAppLabel"] = System.getenv("MGD_APPLICATION_LABEL") ?: if (System.getenv("MGD_APPLICATION_ID").isNullOrBlank()) "MGD Neuro" else "MGD Studio"
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
