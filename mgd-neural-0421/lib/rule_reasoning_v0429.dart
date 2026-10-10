@@ -177,8 +177,8 @@ class RuleReasoning429 {
         final condition = atom(m[4]!);
         if (_name(channel) && _name(cargo) && condition != null) {
           _conditional(p, source, LogicAtom429('entra', [cargo, r'$x']), [condition],
-              guards: [LogicAtom429('contiene', [r'$x', channel])], iff: true,
-              allowNegative: exclusive.contains(source.url));
+              guards: [LogicAtom429('contiene', [r'$x', channel])],
+              iff: exclusive.contains(source.url));
         }
         continue;
       }
@@ -393,7 +393,9 @@ class RuleReasoning429 {
         final predicate = quantity[1] == 'quanto misura' ? 'misura' : 'pesa';
         final known = program.facts.where((p) => p.conclusion.positive &&
             p.conclusion.predicate == predicate && p.conclusion.args.first == subject).toList();
-        if (known.map((p) => p.conclusion.key).toSet().length > 1) {
+        if (known.map((p) => p.conclusion.key).toSet().length > 1 ||
+            known.any((p) => program.facts.any((other) =>
+                other.conclusion.signedKey == p.conclusion.opposite.signedKey))) {
           return const LogicAnswer429('conflict', 'Non determinabile: i valori letti sono IN CONFLITTO.');
         }
         if (known.isNotEmpty) {
