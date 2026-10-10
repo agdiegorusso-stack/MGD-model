@@ -18,6 +18,7 @@ class LearningVerificationCard428 extends StatelessWidget {
     final id = StudyGoal426.state(memory)?['id'];
     final sources = reports.where((r) => r['mode'] == 'sources' && r['goalId'] == id).firstOrNull;
     final controls = reports.where((r) => r['mode'] == 'controlled').firstOrNull;
+    final transfer = reports.where((r) => r['mode'] == 'transfer').firstOrNull;
     return Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
         crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Verifica dell’apprendimento', style: Theme.of(context).textTheme.titleMedium),
@@ -25,8 +26,12 @@ class LearningVerificationCard428 extends StatelessWidget {
           : 'Recupero delle letture: ${sources['passed']}/${sources['total']} prove superate.'),
       if (controls != null) ...[
         Text('Casi nuovi simulati: ${controls['passed']}/${controls['total']} prove superate.'),
+        if (controls['version'] != null) Text('Misurati con la versione ${controls['version']}.'),
+        if (controls['version'] != null && controls['version'] != '0.42.9')
+          const Text('Ripeti la verifica per misurare il motore aggiornato.'),
         const Text('Il risultato riguarda le capacità provate nel modello simulato.'),
       ],
+      if (transfer != null) Text('Regole in contesti nuovi: ${transfer['passed']}/${transfer['total']} prove superate.'),
       const SizedBox(height: 8),
       FilledButton.icon(onPressed: busy ? null : onOpen,
           icon: const Icon(Icons.fact_check_outlined), label: const Text('Verifica ciò che ha letto')),
