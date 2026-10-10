@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import '../lib/learning_verification_v0428.dart';
+import '../lib/verification_reader_v0428.dart';
 import '../lib/study_goal_v0426.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
 import '../lib/plastic_language_brain_v04.dart';
@@ -9,6 +12,7 @@ import '../lib/sensory_world_v06.dart';
 // Explicit network regression, run separately from reproducible offline tests.
 // Uses the production HTTP client, scheduler, acquisition, intake and storage.
 void main() {
+  sqfliteFfiInit();
   test('real goals and migrated dialysis structure acquire and persist sourced readings', () async {
     HttpOverrides.global = null;
     final report = <Map<String, dynamic>>[];
@@ -69,10 +73,67 @@ void main() {
               reason: 'The root article content must be read; bibliographic title matches are insufficient.');
         }
       }
+      // Regression for 0.42.11's 6/8 readings + empty source assessment.
+      // Use one persistent goal through every seed area, then restore and query
+      // its real memory. No test question or reference answer is ever taught.
+      final m = ResearchMemory11();
+      final b = PlasticLanguageBrain04(), w = MgdWorld06();
+      final now = DateTime.now();
+      StudyGoal426.start(m, 'la dialisi', now: now);
+      final id = '${StudyGoal426.state(m)!['id']}';
+      final areas = <Map<String, dynamic>>[];
+      final explorer = WebKnowledgeExplorer11();
+      for (var index = 0; index < 8; index++) {
+        final goal = StudyGoal426.next(m, now: now)!;
+        final draft = await explorer.research(goal).timeout(const Duration(minutes: 3));
+        explorer.integrate(b, w, m, draft);
+        for (var j = 0; j < 10000 && ResearchSemantics317.getPending(m) > 0; j++) {
+          ResearchSemantics317.processQueue(b, w, m);
+        }
+        StudyGoal426.record(m, id, goal, draft.documents,
+            error: draft.error, diagnostics: draft.diagnostics318, now: now);
+        StudyGoal426.expand(m, id, draft);
+        final row = {'area': goal.contextTerms.last, 'query': goal.query,
+          'error': draft.error, 'documents': draft.documents.map((d) => {
+            'provider': d.provider, 'title': d.title, 'url': d.url,
+            'characters': d.text.length, 'excerpt': d.text.substring(0, d.text.length.clamp(0, 350).toInt()),
+            'aliases': d.meta318['topicAliases432'],
+          }).toList(), 'diagnostics': draft.diagnostics318};
+        areas.add(row);
+        print('AREA432 ${jsonEncode(row)}');
+      }
+      final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(m.toJson())));
+      final cases = LearningVerification428.sourceCases(restored, 432);
+      final coreReader = await VerificationReader428.open(factory: databaseFactoryFfi,
+          temporaryRoot: Directory.systemTemp.path);
+      late Map<String, dynamic> assessment;
+      try {
+        final frozen = jsonEncode(restored.toJson());
+        assessment = await LearningVerification428.run(mode: 'sources', seed: 432,
+            goalId: id, topic: 'la dialisi', cases: cases,
+            query: (q) => MemoryQuery428.answer(b, restored, q, coreReader.core));
+        expect(jsonEncode(restored.toJson()), frozen,
+            reason: 'Assessments must not add questions/answer keys to retained learning.');
+      } finally { await coreReader.close(); }
+      final row = <String, dynamic>{'goal': 'la dialisi', 'scenario': 'dialisi-piano-fonti',
+        'areas': areas, 'eligible': LearningVerification428.sourceClaims432(restored).length,
+        'readings': StudyGoal426.items(StudyGoal426.state(restored)!)
+            .where((i) => StudyGoal426.count(i, 'documents') > 0).length,
+        'pending': ResearchSemantics317.getPending(restored), 'assessment': assessment};
+      report.add(row);
+      print('LIVE427 ${jsonEncode(row)}');
+      expect(areas.map((a) => a['area']).toSet().length, 8);
+      final scientific = areas.firstWhere((a) => a['area'] == 'evidenze scientifiche');
+      expect((scientific['documents'] as List).whereType<Map>().any((d) =>
+          d['provider'] == 'Europe PMC' && (d['characters'] as int) >= 80), isTrue,
+          reason: 'Scientific area must read relevant abstract content from Europe PMC, not titles.');
+      expect(assessment['total'], greaterThan(0), reason: jsonEncode(row));
+      expect(assessment['passed'], greaterThan(0), reason: jsonEncode(assessment));
+      expect(ResearchSemantics317.getPending(restored), 0);
     } finally {
       final out = File('tool/reports/live-study-0.42.7.json');
       out.parent.createSync(recursive: true);
       out.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(report));
     }
-  }, timeout: const Timeout(Duration(minutes: 12)));
+  }, timeout: const Timeout(Duration(minutes: 24)));
 }
