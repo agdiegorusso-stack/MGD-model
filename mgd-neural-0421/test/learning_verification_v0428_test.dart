@@ -13,6 +13,19 @@ import '../lib/reading_query_v0430.dart';
 
 void main() {
   sqfliteFfiInit();
+  test('possibilities, opinions and unspecific outcome estimates are not auto-graded source references', () {
+    ResearchClaim11 claim(String relation, String object) => ResearchClaim11(key: 'fixture',
+      subject: 'Alfa', relation: relation, object: object, confidence: .9,
+      conflict: false, status: 'documentata', lastSeenIso: '', meta317: {'usable': true});
+    for (final object in ['possibile', "un'ottima scelta", 'senza dubbio da preferire',
+        'un intervento per pazienti che soddisfano certe condizioni']) {
+      expect(LearningVerification428.assessableFact432(claim('tipo di', object)), isFalse);
+    }
+    expect(LearningVerification428.assessableFact432(
+        claim('produce', 'impressive outcomes, with mortality 53% lower')), isFalse);
+    expect(LearningVerification428.assessableFact432(claim('contiene', 'modulo')), isTrue);
+    expect(LearningVerification428.assessableFact432(claim('tipo di', 'dispositivo')), isTrue);
+  });
   test('persisted homonyms and generic verb fragments cannot become clinical source questions', () {
     final m = ResearchMemory11();
     final created = DateTime.utc(2026, 10, 10);
