@@ -29,7 +29,7 @@ class LearningVerificationCard428 extends StatelessWidget {
       Text('Verifica dell’apprendimento', style: Theme.of(context).textTheme.titleMedium),
       Text(sources == null ? 'Letture conservate: ancora da verificare.'
           : sources['total'] == 0 ? eligible > 0
-              ? 'Verifica da ripetere: $eligible fatti documentati disponibili.'
+              ? 'Verifica da ripetere: $eligible ${eligible == 1 ? 'fatto documentato disponibile' : 'fatti documentati disponibili'}.'
               : 'Letture non verificate: nessun fatto documentato idoneo per generare prove.'
           : 'Recupero delle letture: ${sources['passed']}/${sources['total']} prove superate.'),
       if (controls != null) ...[
