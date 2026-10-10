@@ -6,6 +6,7 @@ import 'knowledge_chat_v0423.dart';
 import 'plastic_language_brain_v04.dart';
 import 'reasoning_v0321.dart';
 import 'rule_reasoning_v0429.dart';
+import 'reading_query_v0430.dart';
 import 'relational_memory_v0324.dart';
 import 'study_goal_v0426.dart';
 import 'web_knowledge_explorer_v11.dart';
@@ -31,6 +32,8 @@ class MemoryQuery428 {
     if (logic != null) return VerificationAnswer428(logic.text,
         logic.truth == 'unknown' || logic.truth == 'conflict' ? 'astensione' : 'inferenza',
         proof: logic.proof?.toJson());
+    final reading = ReadingQuery430.answer(memory, prompt);
+    if (reading != null) return VerificationAnswer428(reading.text, 'letture', proof: reading.proof);
     final mapped = map(brain, memory, prompt);
     if (mapped != null) return VerificationAnswer428(mapped, 'relazioni');
     final sourcedText = sourced(memory, prompt, readOnly: true);
@@ -61,9 +64,13 @@ class VerificationCase428 {
   final String id, capability, prompt, expected, subject, relation, object;
   final List<Map<String, String>> sources;
   final String? claimKey;
+  final Map<String, String> names;
+  final List<Map<String, String>> acceptable;
+  final String? expectedAtom;
   const VerificationCase428({required this.id, required this.capability,
     required this.prompt, required this.expected, this.subject = '',
-    this.relation = '', this.object = '', this.sources = const [], this.claimKey});
+    this.relation = '', this.object = '', this.sources = const [], this.claimKey,
+    this.names = const {}, this.acceptable = const [], this.expectedAtom});
 }
 
 class VerificationWorld428 {
@@ -118,11 +125,13 @@ class LearningVerification428 {
           family: 'locale:verifica', title: 'Mondo ${index + 1}',
           url: 'local://verification/$nonce/$index', text: text, trust: .8);
       final evidence = [{'title': doc.title, 'url': doc.url, 'text': text}];
+      final names = {cell: 'Cellula ${index + 1}A', other: 'Cellula ${index + 1}B',
+        channel: 'Canale ${index + 1}', substance: 'Sostanza ${index + 1}', resource: 'Risorsa ${index + 1}'};
       VerificationCase428 question(String type, String prompt, String expected,
           {String relation = '', String object = ''}) => VerificationCase428(
           id: '$index-$type', capability: type.split('-').first,
           prompt: prompt, expected: expected, subject: cell,
-          relation: relation, object: object, sources: evidence);
+          relation: relation, object: object, sources: evidence, names: names);
       return VerificationWorld428(doc, [
         question('recall', 'Che cosa contiene $cell?', channel,
             relation: 'contiene', object: channel),
@@ -173,7 +182,11 @@ class LearningVerification428 {
               : 'Quali elementi sono collegati a ${c.subject} dalla relazione ${c.relation}?',
           expected: '${c.subject} — ${c.relation} → ${c.object}',
           subject: c.subject, relation: c.relation, object: c.object,
-          sources: evidence, claimKey: c.key));
+          sources: evidence, claimKey: c.key,
+          acceptable: type == 'recall' ? eligible.where((other) =>
+              ReadingQuery430.key(other.subject) == ReadingQuery430.key(c.subject))
+              .map((other) => {'subject': other.subject, 'relation': other.relation,
+                'object': other.object}).toList() : const []));
       }
     }
     return out;
@@ -201,7 +214,26 @@ class LearningVerification428 {
           ? 'Ha riconosciuto che manca l’informazione.'
           : 'Non ha dichiarato in modo esplicito che l’informazione manca.');
     }
+    if (question.expectedAtom != null) {
+      final passed = answer.proof?['conclusion'] == question.expectedAtom &&
+          answer.proof?['ruleId'] != null &&
+          (answer.proof?['premises'] as List? ?? []).isNotEmpty;
+      return (passed: passed, reason: passed ? 'La conclusione ha passaggi verificabili nel testo.'
+          : 'Non ha ricavato la conclusione richiesta con una catena di premesse.');
+    }
     if (question.object.isNotEmpty) {
+      if (question.acceptable.isNotEmpty && answer.proof?['kind'] == 'retrieval') {
+        final assertions = (answer.proof?['claims'] as List? ?? []).whereType<Map>().toList();
+        final passed = assertions.isNotEmpty && assertions.every((a) =>
+            question.acceptable.any((expected) =>
+              ResearchSemantics317.sameSubject('${a['subject']}', expected['subject']!) &&
+              ResearchSemantics317.relation('${a['relation']}') == ResearchSemantics317.relation(expected['relation']!) &&
+              ResearchSemantics317.sameObject('${a['object']}', expected['object']!)) &&
+            '${a['url'] ?? ''}'.isNotEmpty);
+        return (passed: passed, reason: passed
+            ? 'Ha recuperato fatti pertinenti con la fonte. Questa prova misura il recupero.'
+            : 'Almeno una delle affermazioni non corrisponde ai fatti documentati idonei.');
+      }
       final exact = clean == norm(question.object);
       final triple = answer.text.split('\n').any((line) {
         final row = line.replaceFirst(RegExp(r'^\s*[•*-]\s*'), '')
@@ -237,7 +269,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.9'}) async {
+    String? goalId, String? topic, String version = '0.42.10'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;
@@ -262,6 +294,8 @@ class LearningVerification428 {
         'expected': c.expected, 'answer': answer.toJson(), 'passed': score.passed,
         'reason': score.reason, 'subject': c.subject, 'claimKey': c.claimKey,
         'sources': c.sources,
+        if (c.names.isNotEmpty) 'names': c.names,
+        if (c.expectedAtom != null) 'expectedAtom': c.expectedAtom,
         if (before.containsKey(c.id)) ...{
           'before': before[c.id]!.toJson(), 'beforePassed': grade(c, before[c.id]!).passed},
       });
