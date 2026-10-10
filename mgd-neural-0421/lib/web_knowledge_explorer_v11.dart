@@ -984,8 +984,8 @@ class WebKnowledgeExplorer11 {
     try {
       final topic = goal.topic.trim().isEmpty ? goal.query : goal.topic.trim();
       final hasFacet431 = goal.facetTerms431.isNotEmpty;
-      final evidenceArea432 = hasFacet431 &&
-          goal.contextTerms.lastOrNull == 'evidenze scientifiche';
+      final scholarlyArea432 = hasFacet431 &&
+          {'evidenze scientifiche', 'domande aperte'}.contains(goal.contextTerms.lastOrNull);
       Future<List<WebDocument11>> safeDocs(
           String provider, Future<List<WebDocument11>> source) async {
         try {
@@ -1013,7 +1013,7 @@ class WebKnowledgeExplorer11 {
 
       // Resolve the root's English sitelink before querying scientific indexes.
       // This translation comes from the resolved page, not a guessed synonym.
-      final rootDocuments432 = evidenceArea432
+      final rootDocuments432 = scholarlyArea432
           ? await safeDocs('Wikipedia IT', _wikipedia(topic, fullText431: true))
           : <WebDocument11>[];
       final translated432 = <String>{};
@@ -1032,7 +1032,7 @@ class WebKnowledgeExplorer11 {
           }
         }
       }
-      if (evidenceArea432 && translated432.isEmpty) {
+      if (scholarlyArea432 && translated432.isEmpty) {
         try { translated432.addAll(await _wikidataLexicalAliases0312(topic)); }
         catch (e) { diagnostics.add({'provider': 'Wikidata nomi', 'status': 'errore', 'error': '$e'}); }
       }
@@ -1040,14 +1040,14 @@ class WebKnowledgeExplorer11 {
       if (translated432.isNotEmpty) diagnostics.add({'provider': 'Nomi nelle fonti',
           'status': 'nomi risolti per ricerca scientifica', 'topic': topic,
           'aliases': translated432.toList()});
-      final scientificFirst = evidenceArea432 || goal.diversityVerification031 ||
+      final scientificFirst = scholarlyArea432 || goal.diversityVerification031 ||
           _looksScientific031(
               '$topic ${goal.query} ${goal.contextTerms.join(' ')}');
 
       final scientificQueries0312 = <String>{
-        if (evidenceArea432) ...translated432,
-        if (!hasFacet431 || evidenceArea432) topic,
-        if (!evidenceArea432) goal.query.trim()};
+        if (scholarlyArea432) ...translated432,
+        if (!hasFacet431 || scholarlyArea432) topic,
+        if (!scholarlyArea432) goal.query.trim()};
       final subjectAliases0313 = <String>{topic};
       if (goal.diversityVerification031 && goal.verifySubject031 != null) {
         final subject = goal.verifySubject031!.trim();
@@ -1072,7 +1072,7 @@ class WebKnowledgeExplorer11 {
               final bs = b.split(RegExp(r'\s+')).length;
               return as.compareTo(bs);
             });
-      if (evidenceArea432) preferredQueries0312.sort((a, b) =>
+      if (scholarlyArea432) preferredQueries0312.sort((a, b) =>
           (translated432.contains(b) ? 1 : 0).compareTo(translated432.contains(a) ? 1 : 0));
       final requests = <Future<List<WebDocument11>>>[
         if (scientificFirst)
@@ -1081,7 +1081,7 @@ class WebKnowledgeExplorer11 {
         if (scientificFirst)
           for (final q in preferredQueries0312.take(2))
             safeDocs('Crossref', _crossref031(q)),
-        if (!evidenceArea432) safeDocs('Wikipedia IT', _wikipedia(topic, fullText431: hasFacet431)),
+        if (!scholarlyArea432) safeDocs('Wikipedia IT', _wikipedia(topic, fullText431: hasFacet431)),
         if (!hasFacet431) safeDocs('Wikidata', _wikidata(topic)),
         safeDocs('DuckDuckGo', _duck(hasFacet431 ? goal.query : topic)),
         if (!scientificFirst) safeDocs('Crossref', _crossref031(goal.query)),
@@ -1091,7 +1091,7 @@ class WebKnowledgeExplorer11 {
       final seen = <String>{};
       for (final group in [rootDocuments432, ...first]) {
         for (final d in group) {
-          final document432 = evidenceArea432 &&
+          final document432 = scholarlyArea432 &&
               {'Europe PMC', 'Crossref'}.contains(d.provider)
               ? WebDocument11(provider: d.provider, family: d.family, title: d.title,
                   url: d.url, text: d.text, trust: d.trust,
