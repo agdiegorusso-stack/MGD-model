@@ -8,6 +8,8 @@ import 'study_goal_v0426.dart';
 import 'study_goal_page_v0426.dart';
 import 'learning_verification_v0428.dart';
 import 'rule_reasoning_v0429.dart';
+import 'reading_query_v0430.dart';
+import 'prose_verification_v0430.dart';
 import 'transfer_verification_v0429.dart';
 import 'learning_verification_page_v0428.dart';
 import 'verification_reader_v0428.dart';
@@ -602,8 +604,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             } else {
               final reader = await VerificationReader428.open();
               try {
-                final worlds = mode == 'transfer'
-                    ? TransferVerification429.worlds(seed) : LearningVerification428.worlds(seed);
+                final worlds = mode == 'prose' ? [ProseVerification430.world()]
+                    : mode == 'transfer' ? TransferVerification429.worlds(seed)
+                    : LearningVerification428.worlds(seed);
                 report = await LearningVerification428.run(mode: mode, seed: seed,
                   cases: worlds.expand((w) => w.cases).toList(), query: reader.answer,
                   read: () => reader.read(worlds.map((w) => w.document).toList(), cancelled: cancelled),
@@ -615,6 +618,37 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             LearningVerification428.store(_researchMemory, report);
             await _checkpoint319();
             return report;
+          },
+          onCustom: (text, questions, cancelled, progress) async {
+            final reader = await VerificationReader428.open();
+            try {
+              final before = <VerificationAnswer428>[];
+              for (final question in questions) {
+                if (cancelled()) throw VerificationCancelled428();
+                before.add(await reader.answer(question));
+              }
+              progress(0, questions.length, 'Lettura del tuo testo');
+              await reader.read([WebDocument11(provider: 'Testo scelto dall’utente',
+                family: 'locale:verifica', title: 'Testo scelto da te',
+                url: 'local://verification/custom', text: text, trust: .8)], cancelled: cancelled);
+              final rows = <Map<String, dynamic>>[];
+              for (var i = 0; i < questions.length; i++) {
+                if (cancelled()) throw VerificationCancelled428();
+                final answer = await reader.answer(questions[i]);
+                rows.add({'id': 'custom-$i', 'capability': 'manual', 'prompt': questions[i],
+                  'answer': answer.toJson(), 'before': before[i].toJson(),
+                  'reason': 'Confronta la risposta e i passaggi con il testo.',
+                  'sources': [{'title': 'Testo scelto da te', 'url': 'local://verification/custom', 'text': text}]});
+                progress(i + 1, questions.length, 'Risposte al tuo testo');
+              }
+              final report = <String, dynamic>{'schema': 1, 'mode': 'custom',
+                'version': mgdAppVersion319, 'at': DateTime.now().toIso8601String(),
+                'total': questions.length, 'results': rows};
+              if (cancelled()) throw VerificationCancelled428();
+              LearningVerification428.store(_researchMemory, report);
+              await _checkpoint319();
+              return report;
+            } finally { await reader.close(); }
           },
           onReview: (topics) async {
             StudyGoal426.review(_researchMemory, topics);
@@ -898,6 +932,17 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
       final queryOnly423 =
           KnowledgeChat423.queryOnly(text, _brain, _researchMemory);
+      final reading430 = ReadingQuery430.answer(_researchMemory, text);
+      if (queryOnly423 && reading430 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: reading430.text, prompt: text));
+          _status = 'Fatti recuperati dalle letture con le fonti';
+        });
+        _scrollDown();
+        await _save('Consultazione delle letture e cronologia salvate');
+        return;
+      }
       // Snapshot recall precedes any acquisition of the current utterance.
       final recalled423 = await ClsBridge340.quote(text);
       final mapReply423 = queryOnly423
