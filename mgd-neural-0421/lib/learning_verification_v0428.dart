@@ -156,19 +156,31 @@ class LearningVerification428 {
 
   /// Source recall has an extracted proposition as its reference. It measures
   /// consistency with retained evidence, not the scientific truth of a source.
-  static List<VerificationCase428> sourceCases(ResearchMemory11 memory, int seed) {
+  static List<ResearchClaim11> sourceClaims432(ResearchMemory11 memory) {
     final goal = StudyGoal426.state(memory);
     final subjects = goal == null ? <String>[] : [
       '${goal['topic']}',
       ...StudyGoal426.items(goal).map((i) => '${i['lookup'] ?? i['label']}'),
     ];
-    final eligible = memory.claims.values.where((c) =>
-      !c.conflict && {'documentata', 'accettata'}.contains(c.status) &&
-      c.evidenceIds.isNotEmpty && c.meta317['usable'] == true &&
-      c.meta317['negative'] != true &&
-      (c.meta317['qualifiers'] is! Map || (c.meta317['qualifiers'] as Map).isEmpty) &&
+    // The page's own subject may differ from the requested root (e.g. a
+    // subtype). Scope by the actual study sessions, preserving that subject.
+    // An alias or a URL shared with an unrelated study is not an equivalence.
+    final queries = goal == null ? <String>{} : StudyGoal426.items(goal)
+        .map((i) => StudyGoal426.query(goal, i)).toSet();
+    final created = DateTime.tryParse('${goal?['createdAt']}');
+    final studied = memory.sessions.where((s) => queries.contains(s.query) &&
+        created != null && DateTime.tryParse(s.startedAtIso)?.isBefore(created) == false)
+        .expand((s) => (s.audit315['decisions'] as List? ?? []).whereType<Map>())
+        .map((d) => '${d['claimKey']}').toSet();
+    return memory.claims.values.where((c) => ReadingQuery430.usable(c) &&
+      memory.evidence.any((e) => c.evidenceIds.contains(e.id) &&
+          e.sourceUrl.isNotEmpty && e.excerpt.trim().isNotEmpty) &&
       (subjects.isEmpty || subjects.any((s) =>
-          ResearchSemantics317.sameSubject(s, c.subject)))).toList();
+          ResearchSemantics317.sameSubject(s, c.subject)) || studied.contains(c.key))).toList();
+  }
+
+  static List<VerificationCase428> sourceCases(ResearchMemory11 memory, int seed) {
+    final eligible = sourceClaims432(memory);
     eligible.shuffle(Random(seed));
     final out = <VerificationCase428>[];
     for (final c in eligible.take(4)) {
@@ -183,7 +195,8 @@ class LearningVerification428 {
           expected: '${c.subject} — ${c.relation} → ${c.object}',
           subject: c.subject, relation: c.relation, object: c.object,
           sources: evidence, claimKey: c.key,
-          acceptable: type == 'recall' ? eligible.where((other) =>
+          acceptable: type == 'recall' ? memory.claims.values.where((other) =>
+              ReadingQuery430.usable(other) &&
               ReadingQuery430.key(other.subject) == ReadingQuery430.key(c.subject))
               .map((other) => {'subject': other.subject, 'relation': other.relation,
                 'object': other.object}).toList() : const []));
@@ -269,7 +282,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.11'}) async {
+    String? goalId, String? topic, String version = '0.42.12'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;
@@ -304,6 +317,7 @@ class LearningVerification428 {
     }
     check();
     return {'schema': 1, 'mode': mode, 'seed': seed, 'version': version,
+      'status': results.isEmpty ? 'not_assessed' : 'completed',
       'at': DateTime.now().toIso8601String(), 'goalId': goalId, 'topic': topic,
       'results': results, 'total': results.length,
       'passed': results.where((r) => r['passed'] == true).length,
