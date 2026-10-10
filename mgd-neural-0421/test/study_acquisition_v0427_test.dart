@@ -107,6 +107,6 @@ void main() {
     StudyGoal426.start(m, 'i microrganismi', now: now);
     expect(StudyGoal426.next(m, now: now)!.topic, 'Microrganismo');
     StudyGoal426.start(m, 'i numeri complessi', now: now);
-    expect(StudyGoal426.next(m, now: now)!.topic, 'i numeri complessi');
+    expect(StudyGoal426.next(m, now: now)!.topic, 'numeri complessi');
   });
 }
