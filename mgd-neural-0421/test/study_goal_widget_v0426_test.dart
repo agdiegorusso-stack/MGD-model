@@ -13,7 +13,8 @@ void main() {
     Future<void> render() => tester.pumpWidget(MaterialApp(home: Scaffold(
       body: StudyGoalCard426(memory: memory, busy: false,
         onStart: (s) async { started = s; StudyGoal426.start(memory, s); },
-        onPause: (p) async { paused = p; StudyGoal426.pause(memory, p); }))));
+        onPause: (p) async { paused = p; StudyGoal426.pause(memory, p); },
+        onRetry: () async {}))));
     await render();
     await tester.tap(find.text('Nuovo obiettivo'));
     await tester.pumpAndSettle();
