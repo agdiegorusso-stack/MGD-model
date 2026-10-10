@@ -587,6 +587,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     final requestedTopic = manualTopic?.trim() ?? '';
     final persistentGoal426 = StudyGoal426.state(_researchMemory);
     final persistentId426 = persistentGoal426?['id']?.toString();
+    var progressRecorded426 = false;
     final goal = requestedTopic.isNotEmpty
         ? ResearchGoal11(
             query: requestedTopic,
@@ -681,7 +682,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             goal.topic, session.audit315['newEvidence321'] as int? ?? 0);
       }
       if (requestedTopic.isEmpty && persistentId426 != null) {
-        StudyGoal426.record(_researchMemory, persistentId426, goal, draft.documents);
+        StudyGoal426.record(_researchMemory, persistentId426, goal, draft.documents,
+            error: draft.error);
+        progressRecorded426 = true;
+        StudyGoal426.expand(_researchMemory, persistentId426, draft);
       }
       // All readings and updated metrics are persisted together.
       await _checkpoint319();
@@ -692,7 +696,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
     } catch (e) {
       _researchMemory.lastError = e.toString();
-      if (requestedTopic.isEmpty && persistentId426 != null) {
+      if (requestedTopic.isEmpty && persistentId426 != null && !progressRecorded426) {
         StudyGoal426.record(_researchMemory, persistentId426, goal, const [],
             error: e.toString());
       }
