@@ -1,0 +1,41 @@
+name: Recover MGD study signing certificate
+on:
+  push:
+    branches: ['codex/mgd-neural-0426-study-goal']
+    paths: ['.github/workflows/mgd-signing-recovery.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/debug.keystore
+          key: mgd-study-goal-android-signing-v1
+      - name: Inspect cached debug certificates without exporting private keys
+        run: |
+          python3 - <<'PY'
+          import pathlib, subprocess, json, os
+          root=pathlib.Path.home()
+          locations=[root/'.android',root/'.config/.android',root/'.gradle',pathlib.Path(os.environ['GITHUB_WORKSPACE'])/'mgd-neural-0421/android']
+          candidates=[]
+          for folder in locations:
+              if folder.exists(): candidates.extend(folder.rglob('debug.keystore'))
+          rows=[]
+          for f in sorted(set(candidates)):
+              p=subprocess.run(['keytool','-list','-keystore',str(f),'-storepass','android','-alias','androiddebugkey'],text=True,capture_output=True)
+              rows.append({'path':str(f),'result':p.stdout,'error':p.stderr if p.returncode else None})
+          pathlib.Path('signing-recovery.json').write_text(json.dumps({'candidates':rows,'android_user_home':os.environ.get('ANDROID_USER_HOME'),'android_sdk_home':os.environ.get('ANDROID_SDK_HOME')},indent=2))
+          print(json.dumps({'candidates':rows},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-signing-recovery
+          path: signing-recovery.json

@@ -1,0 +1,60 @@
+name: MGD 0.42.11 persistent study goal
+on:
+  push:
+    branches: ['codex/mgd-neural-0426-study-goal']
+    paths: ['mgd-neural-0421/**', '.github/workflows/mgd-neural-0426.yml']
+  workflow_dispatch:
+concurrency:
+  group: mgd-study-goal-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.11
+    defaults:
+      run:
+        working-directory: mgd-neural-0421
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/debug.keystore
+          key: mgd-study-goal-android-signing-v1
+      - name: Analyze, test and compile
+        run: bash tool/build_android.sh
+      - name: Record APK signature and identity
+        run: |
+          set -euo pipefail
+          mgd_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          "$mgd_tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk > tool/reports/signature.txt
+          "$mgd_tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > tool/reports/apk-identity.txt
+          printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
+          cp "$mgd_tools/lib/apksigner.jar" tool/reports/apksigner.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neural-0.42.11-APK
+          path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-Neural-0.42.11-verification
+          path: mgd-neural-0421/tool/reports
+

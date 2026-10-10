@@ -739,6 +739,8 @@ class ResearchGoal11 {
   final String reason;
   final double value;
   final List<String> contextTerms;
+  // Optional area of a persistent study goal. It never changes entity identity.
+  final List<String> facetTerms431;
   final Set<String> avoidFamilies031;
   final bool diversityVerification031;
   final String? verifySubject031;
@@ -751,6 +753,7 @@ class ResearchGoal11 {
     required this.reason,
     required this.value,
     this.contextTerms = const <String>[],
+    this.facetTerms431 = const <String>[],
     this.avoidFamilies031 = const <String>{},
     this.diversityVerification031 = false,
     this.verifySubject031,
@@ -845,7 +848,7 @@ class WebKnowledgeExplorer11 {
     return data;
   }
 
-  static const _ua = 'MGD-Neuro/0.12 autonomous knowledge explorer';
+  static const _ua = 'MGD-Studio/0.42.11 (https://github.com/agdiegorusso-stack/MGD-model; educational reader)';
   static final Map<String, Map<String, dynamic>> _cache12 =
       <String, Map<String, dynamic>>{};
   static final Map<String, DateTime> _hostNext12 = <String, DateTime>{};
@@ -980,6 +983,7 @@ class WebKnowledgeExplorer11 {
     final diagnostics = <Map<String, dynamic>>[];
     try {
       final topic = goal.topic.trim().isEmpty ? goal.query : goal.topic.trim();
+      final hasFacet431 = goal.facetTerms431.isNotEmpty;
       Future<List<WebDocument11>> safeDocs(
           String provider, Future<List<WebDocument11>> source) async {
         try {
@@ -990,6 +994,10 @@ class WebKnowledgeExplorer11 {
                 result.isEmpty ? 'nessun documento' : 'documenti acquisiti',
             'documents': result.length
           });
+          for (final doc in result.where((d) => d.meta318['contentRoute431'] == 'parse')) {
+            diagnostics.add({'provider': provider, 'status': 'contenuto alternativo acquisito',
+              'title': doc.title, 'error': doc.meta318['extractError431']});
+          }
           return result;
         } catch (e) {
           diagnostics.add({
@@ -1005,7 +1013,8 @@ class WebKnowledgeExplorer11 {
           _looksScientific031(
               '$topic ${goal.query} ${goal.contextTerms.join(' ')}');
 
-      final scientificQueries0312 = <String>{topic, goal.query.trim()};
+      final scientificQueries0312 = <String>{
+        if (!hasFacet431) topic, goal.query.trim()};
       final subjectAliases0313 = <String>{topic};
       if (goal.diversityVerification031 && goal.verifySubject031 != null) {
         final subject = goal.verifySubject031!.trim();
@@ -1037,9 +1046,9 @@ class WebKnowledgeExplorer11 {
         if (scientificFirst)
           for (final q in preferredQueries0312.take(2))
             safeDocs('Crossref', _crossref031(q)),
-        safeDocs('Wikipedia IT', _wikipedia(topic)),
-        safeDocs('Wikidata', _wikidata(topic)),
-        safeDocs('DuckDuckGo', _duck(topic)),
+        safeDocs('Wikipedia IT', _wikipedia(topic, fullText431: hasFacet431)),
+        if (!hasFacet431) safeDocs('Wikidata', _wikidata(topic)),
+        safeDocs('DuckDuckGo', _duck(hasFacet431 ? goal.query : topic)),
         if (!scientificFirst) safeDocs('Crossref', _crossref031(goal.query)),
       ];
       final first = await Future.wait<List<WebDocument11>>(requests);
@@ -1061,9 +1070,9 @@ class WebKnowledgeExplorer11 {
           return b.trust.compareTo(a.trust);
         });
       }
-      if (docs.length < 2 && _n11(goal.query) != _n11(topic)) {
+      if (!hasFacet431 && docs.length < 2 && _n11(goal.query) != _n11(topic)) {
         for (final d
-            in await safeDocs('Wikipedia IT', _wikipedia(goal.query))) {
+            in await safeDocs('Wikipedia IT', _wikipedia(goal.query, fullText431: hasFacet431))) {
           if (seen.add(d.url)) docs.add(d);
         }
       }
@@ -1080,11 +1089,47 @@ class WebKnowledgeExplorer11 {
         });
       }
       docs.removeWhere((d) => rejected.contains(d));
+      if (hasFacet431) {
+        List<WebDocument11> focus431(List<WebDocument11> candidates) {
+          final selected = <WebDocument11>[];
+          for (final doc in candidates) {
+          if (!documentMatches320(goal, doc)) continue;
+          // A paper title locates a source; it is not an area-specific reading.
+          final body = '${doc.meta318['contentText431'] ?? doc.text}';
+          final text = facetText431(body, goal.facetTerms431);
+          final focused = WebDocument11(provider: doc.provider, family: doc.family,
+              title: doc.title, url: doc.url, text: text, trust: doc.trust,
+              meta318: {...doc.meta318, 'studyArea431': goal.contextTerms.lastOrNull,
+                'selection431': 'passaggi o sezioni pertinenti all’area'});
+          final resolvedRoot = doc.meta318['resolvedTopic'] == true &&
+              ResearchSemantics317.sameSubject('${doc.meta318['requestedTopic'] ?? ''}', topic);
+          final mentionsRoot = ' ${ResearchSemantics317.concept(text)} '
+              .contains(' ${ResearchSemantics317.concept(topic)} ');
+          if (text.length >= 80 && documentMatches320(goal, focused) &&
+              (resolvedRoot || mentionsRoot)) {
+            selected.add(focused);
+            diagnostics.add({'provider': doc.provider, 'status': 'sezione acquisita',
+                'title': doc.title, 'url': doc.url, 'characters': text.length});
+          } else {
+            diagnostics.add({'provider': doc.provider, 'status': 'area non trattata',
+                'title': doc.title, 'url': doc.url,
+                'reason': 'Nessun passaggio leggibile pertinente a questa area.'});
+          }
+        }
+          return selected;
+        }
+        var selected = focus431(docs);
+        if (selected.isEmpty && _n11(goal.query) != _n11(topic)) {
+          selected = focus431(await safeDocs('Wikipedia IT',
+              _wikipedia(goal.query, fullText431: true)));
+        }
+        docs..clear()..addAll(selected);
+      }
       // A label imported as "A o B" may contain alternative descriptions.
       // Retry the parts only after the complete label yields no relevant
       // document, and preserve the page's own subject instead of asserting
       // that the alternatives are equivalent entities.
-      if (docs.isEmpty) {
+      if (docs.isEmpty && !hasFacet431) {
         for (final part in alternativeTopics322(topic)) {
           final alternatives = await safeDocs('Wikipedia IT', _wikipedia(part));
           for (final d in alternatives) {
@@ -1192,7 +1237,7 @@ class WebKnowledgeExplorer11 {
         }
       }
       try {
-        final xs = await _wikidataClaims(topic,
+        final xs = hasFacet431 ? <ExtractedClaim11>[] : await _wikidataClaims(topic,
             documents: docs, diagnostics: diagnostics);
         claims.addAll(xs);
         diagnostics.add({
@@ -1247,6 +1292,10 @@ class WebKnowledgeExplorer11 {
           claims: _dedupeClaims(claims),
           passages: passages.take(40).toList(),
           sentencesRead: sentenceCount,
+          error: docs.isEmpty && claims.isEmpty
+              ? 'Nessun documento pertinente per “$topic”. '
+                  '${diagnostics.where((d) => d['status'] == 'errore').take(3).map((d) => '${d['provider']}: ${d['error']}').join('; ')}'
+              : null,
           diagnostics318: diagnostics);
     } catch (e) {
       return ResearchDraft11(
@@ -1577,6 +1626,7 @@ class WebKnowledgeExplorer11 {
         url: url,
         text: '$title. $abstractText',
         trust: 0.93,
+        meta318: {'contentText431': abstractText},
       ));
     }
     return out;
@@ -1608,12 +1658,108 @@ class WebKnowledgeExplorer11 {
         url: url,
         text: '$title. $abstractText',
         trust: 0.86,
+        meta318: {'contentText431': abstractText},
       ));
     }
     return out;
   }
 
-  Future<List<WebDocument11>> _wikipedia(String q) async {
+  /// Keep only area-specific sections/paragraphs. A root introduction alone
+  /// must never fill every area in a generic plan. Selection preserves prose.
+  static String facetText431(String text, List<String> terms) {
+    bool matches(String s) {
+      final words = ResearchSemantics317.norm(s).split(' ');
+      return terms.any((term) => term.contains(' ')
+          ? ResearchSemantics317.norm(s).contains(term)
+          : words.any((word) => word.startsWith(term)));
+    }
+    final selected = <String>[];
+    var heading = '';
+    var lines = <String>[];
+    void flush() {
+      final body = lines.join('\n').trim();
+      if (body.isEmpty) return;
+      if (const {'note', 'bibliografia', 'voci correlate', 'collegamenti esterni',
+          'altri progetti'}.contains(ResearchSemantics317.norm(heading))) return;
+      if (heading.isNotEmpty && matches(heading)) {
+        selected.add('$heading\n$body');
+      } else {
+        for (final paragraph in body.split(RegExp(r'\n\s*\n'))) {
+          if (matches(paragraph)) selected.add(paragraph.trim());
+        }
+      }
+    }
+    for (final line in text.split('\n')) {
+      final title = RegExp(r'^\s*={2,}\s*(.*?)\s*={2,}\s*$').firstMatch(line);
+      if (title == null) {
+        lines.add(line);
+      } else {
+        flush();
+        heading = title.group(1)!;
+        lines = [];
+      }
+    }
+    flush();
+    final result = selected.toSet().join('\n\n');
+    return result.length > 12000 ? result.substring(0, 12000) : result;
+  }
+
+  Future<List<WebDocument11>> _wikipedia(String q, {bool fullText431 = false}) async {
+    if (!fullText431) return _wikipediaExtract431(q);
+    String? extractError;
+    try {
+      final documents = await _wikipediaExtract431(q, fullText431: true);
+      if (documents.isNotEmpty) return documents;
+    } catch (e) {
+      extractError = e.toString();
+      // Keep the subject and use a separate content representation. The HTTP
+      // client still owns bounded retries and provider pacing for both routes.
+    }
+    final raw = await _json(Uri.https('it.wikipedia.org', '/w/api.php', {
+      'action': 'parse', 'page': q, 'redirects': '1', 'prop': 'text|properties',
+      'disableeditsection': '1', 'disabletoc': '1', 'disablelimitreport': '1',
+      'format': 'json', 'formatversion': '2', 'origin': '*',
+    }));
+    final parsed = raw['parse'];
+    if (parsed is! Map || '${parsed['title'] ?? ''}'.trim().isEmpty) return const [];
+    if (((parsed['properties'] as List?) ?? []).whereType<Map>()
+        .any((p) => p['name'] == 'disambiguation')) return const [];
+    final html = parsed['text'] is Map ? '${(parsed['text'] as Map)['*'] ?? ''}'
+        : '${parsed['text'] ?? ''}';
+    final text = wikiHtmlText431(html);
+    if (text.length < 80) return const [];
+    final title = '${parsed['title']}';
+    return [WebDocument11(provider: 'Wikipedia IT', family: 'wikimedia', title: title,
+      url: Uri.https('it.wikipedia.org', '/wiki/${title.replaceAll(' ', '_')}').toString(),
+      text: text, trust: .84, meta318: {
+        'requestedTopic': q, 'resolvedTopic': true,
+        'resolution': 'titolo o redirect Wikipedia (contenuto HTML)',
+        'contentRoute431': 'parse',
+        if (extractError != null) 'extractError431': extractError,
+      })];
+  }
+
+  static String wikiHtmlText431(String html) {
+    final source = html.replaceAll(RegExp(r'<(?:script|style)\b[^>]*>[\s\S]*?</(?:script|style)>',
+        caseSensitive: false), ' ');
+    final headings = source.replaceAllMapped(RegExp(r'<h[1-6]\b[^>]*>([\s\S]*?)</h[1-6]>',
+        caseSensitive: false), (m) => '\n\n== ${m.group(1)!.replaceAll(RegExp(r'<[^>]+>'), '')} ==\n\n');
+    final text = headings.replaceAll(RegExp(r'</(?:p|div|li|tr)>|<br\s*/?>', caseSensitive: false), '\n\n')
+        .replaceAll(RegExp(r'<[^>]+>'), ' ').replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&').replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'").replaceAll('&lt;', '<').replaceAll('&gt;', '>')
+        .replaceAll('&ndash;', '–').replaceAll('&mdash;', '—').replaceAll('&apos;', "'")
+        .replaceAllMapped(RegExp(r'&#(?:x([0-9a-fA-F]+)|(\d+));'), (m) {
+          final code = m.group(1) != null ? int.tryParse(m.group(1)!, radix: 16)
+              : int.tryParse(m.group(2)!);
+          return code != null && code > 0 && code <= 0x10ffff &&
+              !(code >= 0xd800 && code <= 0xdfff) ? String.fromCharCode(code) : m.group(0)!;
+        })
+        .replaceAll(RegExp(r'[ \t]+'), ' ').replaceAll(RegExp(r'\n\s*\n'), '\n\n').trim();
+    return text.length > 60000 ? text.substring(0, 60000) : text;
+  }
+
+  Future<List<WebDocument11>> _wikipediaExtract431(String q, {bool fullText431 = false}) async {
     final forms = ResearchSemantics317.queryForms318(q);
     final raw = await _json(Uri.https('it.wikipedia.org', '/w/api.php', {
       'action': 'query',
@@ -1621,7 +1767,9 @@ class WebKnowledgeExplorer11 {
       'redirects': '1',
       'prop': 'extracts|info|pageprops',
       'ppprop': 'wikibase_item|disambiguation',
-      'exintro': '1',
+      if (!fullText431) 'exintro': '1',
+      if (fullText431) 'exlimit': '1',
+      if (fullText431) 'exsectionformat': 'wiki',
       'explaintext': '1',
       'inprop': 'url',
       'format': 'json',
@@ -1637,7 +1785,9 @@ class WebKnowledgeExplorer11 {
       'gsrlimit': '4',
       'prop': 'extracts|info|pageprops',
       'ppprop': 'wikibase_item|disambiguation',
-      'exintro': '1',
+      if (!fullText431) 'exintro': '1',
+      if (fullText431) 'exlimit': '1',
+      if (fullText431) 'exsectionformat': 'wiki',
       'explaintext': '1',
       'inprop': 'url',
       'format': 'json',
@@ -1655,7 +1805,8 @@ class WebKnowledgeExplorer11 {
       if (j.containsKey('missing')) continue;
       final pp = j['pageprops'] is Map ? j['pageprops'] as Map : const {};
       if (pp.containsKey('disambiguation')) continue;
-      final text = '${j['extract'] ?? ''}'.trim(),
+      final extract = '${j['extract'] ?? ''}'.trim();
+      final text = extract.length > 60000 ? extract.substring(0, 60000) : extract,
           title = '${j['title'] ?? ''}'.trim();
       if (text.length < 20 || title.isEmpty) continue;
       out.add(WebDocument11(
@@ -1667,6 +1818,7 @@ class WebKnowledgeExplorer11 {
           trust: 0.84,
           meta318: {
             'wikidataId': pp['wikibase_item'],
+            if (extract.length > 60000) 'truncated431': true,
             'requestedTopic': q,
             'resolvedTopic':
                 resolved || ResearchSemantics317.sameSubject(title, q),

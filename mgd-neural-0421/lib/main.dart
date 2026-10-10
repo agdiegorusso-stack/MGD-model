@@ -4,6 +4,15 @@ import 'cognitive_core_v0400.dart';
 import 'cognitive_core_page_v0400.dart';
 import 'dialogue_engine_v0410.dart';
 import 'knowledge_chat_v0423.dart';
+import 'study_goal_v0426.dart';
+import 'study_goal_page_v0426.dart';
+import 'learning_verification_v0428.dart';
+import 'rule_reasoning_v0429.dart';
+import 'reading_query_v0430.dart';
+import 'prose_verification_v0430.dart';
+import 'transfer_verification_v0429.dart';
+import 'learning_verification_page_v0428.dart';
+import 'verification_reader_v0428.dart';
 // BOOK_CHAT_WIRING_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
@@ -45,7 +54,6 @@ import 'mgd_state_store_v026.dart';
 import 'memory_runtime_v0319.dart';
 import 'memory_boot_v0425.dart';
 import 'learning_service_v0321.dart';
-import 'reasoning_v0321.dart';
 import 'source_memory_page_v0323.dart';
 import 'relational_memory_v0324.dart';
 import 'relational_memory_page_v0324.dart';
@@ -330,6 +338,11 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             setState(() => _status = 'Consolidamento CLS sospeso: $e');
         }
       }
+      if (_lifecycle319 == AppLifecycleState.resumed &&
+          !_busy && !_researchBusy && !_maintenance317 && !_bookImportBusy341 &&
+          _chat.text.isEmpty && StudyGoal426.state(_researchMemory) != null) {
+        await _researchOnce10(autonomous: true);
+      }
       if (_world.eventDriven33) {
         _world.runtime319['state'] =
             'MGD su evento; consolidamento CLS secondo le impostazioni';
@@ -551,6 +564,101 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _startStudyGoal426(String topic) async {
+    StudyGoal426.start(_researchMemory, topic);
+    _researchMemory.enabled = true;
+    await _checkpoint319();
+    if (mounted) setState(() => _status = StudyGoal426.summary(_researchMemory));
+    await _researchOnce10(autonomous: true);
+  }
+
+  Future<void> _pauseStudyGoal426(bool paused) async {
+    StudyGoal426.pause(_researchMemory, paused);
+    await _checkpoint319();
+    if (mounted) setState(() => _status = StudyGoal426.summary(_researchMemory));
+  }
+
+  Future<void> _retryStudyGoal426() async {
+    StudyGoal426.retry(_researchMemory);
+    await _checkpoint319();
+    await _researchOnce10(autonomous: true);
+  }
+
+  Future<void> _openLearningVerification428() async {
+    if (!_ready || _busy || _researchBusy || _maintenance317 || _bookImportBusy341) return;
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) =>
+        LearningVerificationPage428(memory: _researchMemory,
+          onRun: (mode, cancelled, progress) async {
+            final seed = Random.secure().nextInt(1 << 30);
+            final goal = StudyGoal426.state(_researchMemory);
+            Map<String, dynamic> report;
+            if (mode == 'sources') {
+              final core = await CognitiveCoreBridge400.core;
+              report = await LearningVerification428.run(mode: mode, seed: seed,
+                cases: LearningVerification428.sourceCases(_researchMemory, seed),
+                query: (prompt) => MemoryQuery428.answer(_brain, _researchMemory, prompt, core),
+                cancelled: cancelled, progress: progress,
+                goalId: goal?['id']?.toString(), topic: goal?['topic']?.toString());
+            } else {
+              final reader = await VerificationReader428.open();
+              try {
+                final worlds = mode == 'prose' ? [ProseVerification430.world()]
+                    : mode == 'transfer' ? TransferVerification429.worlds(seed)
+                    : LearningVerification428.worlds(seed);
+                report = await LearningVerification428.run(mode: mode, seed: seed,
+                  cases: worlds.expand((w) => w.cases).toList(), query: reader.answer,
+                  read: () => reader.read(worlds.map((w) => w.document).toList(), cancelled: cancelled),
+                  cancelled: cancelled, progress: progress,
+                  goalId: goal?['id']?.toString(), topic: goal?['topic']?.toString());
+              } finally { await reader.close(); }
+            }
+            if (cancelled()) throw VerificationCancelled428();
+            LearningVerification428.store(_researchMemory, report);
+            await _checkpoint319();
+            return report;
+          },
+          onCustom: (text, questions, cancelled, progress) async {
+            final reader = await VerificationReader428.open();
+            try {
+              final before = <VerificationAnswer428>[];
+              for (final question in questions) {
+                if (cancelled()) throw VerificationCancelled428();
+                before.add(await reader.answer(question));
+              }
+              progress(0, questions.length, 'Lettura del tuo testo');
+              await reader.read([WebDocument11(provider: 'Testo scelto dall’utente',
+                family: 'locale:verifica', title: 'Testo scelto da te',
+                url: 'local://verification/custom', text: text, trust: .8)], cancelled: cancelled);
+              final rows = <Map<String, dynamic>>[];
+              for (var i = 0; i < questions.length; i++) {
+                if (cancelled()) throw VerificationCancelled428();
+                final answer = await reader.answer(questions[i]);
+                rows.add({'id': 'custom-$i', 'capability': 'manual', 'prompt': questions[i],
+                  'answer': answer.toJson(), 'before': before[i].toJson(),
+                  'reason': 'Confronta la risposta e i passaggi con il testo.',
+                  'sources': [{'title': 'Testo scelto da te', 'url': 'local://verification/custom', 'text': text}]});
+                progress(i + 1, questions.length, 'Risposte al tuo testo');
+              }
+              final report = <String, dynamic>{'schema': 1, 'mode': 'custom',
+                'version': mgdAppVersion319, 'at': DateTime.now().toIso8601String(),
+                'total': questions.length, 'results': rows};
+              if (cancelled()) throw VerificationCancelled428();
+              LearningVerification428.store(_researchMemory, report);
+              await _checkpoint319();
+              return report;
+            } finally { await reader.close(); }
+          },
+          onReview: (topics) async {
+            StudyGoal426.review(_researchMemory, topics);
+            await _checkpoint319();
+          })));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _researchOnce10({
     bool autonomous = false,
     bool allowWhileBusy = false,
@@ -564,6 +672,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (_busy && !allowWhileBusy) return;
 
     final requestedTopic = manualTopic?.trim() ?? '';
+    final persistentGoal426 = StudyGoal426.state(_researchMemory);
+    final persistentId426 = persistentGoal426?['id']?.toString();
+    var progressRecorded426 = false;
     final goal = requestedTopic.isNotEmpty
         ? ResearchGoal11(
             query: requestedTopic,
@@ -571,7 +682,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             reason: 'argomento scelto manualmente dall’utente',
             value: 1.0,
           )
-        : _webExplorer.selectGoal(
+        : persistentGoal426 != null
+            ? StudyGoal426.next(_researchMemory)
+            : _webExplorer.selectGoal(
             _brain,
             _world,
             _researchMemory,
@@ -584,7 +697,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
       return;
     }
-    if (autonomous && !_researchMemory.canResearch(goal.query)) return;
+    if (autonomous && persistentGoal426 == null &&
+        !_researchMemory.canResearch(goal.query)) return;
     if (!autonomous && !_researchMemory.canResearchManual(goal.query)) return;
 
     final now = DateTime.now();
@@ -603,6 +717,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final studyClock = Stopwatch()..start();
       final draft = await _webExplorer.research(goal);
       _webExplorer.integrate(_brain, _world, _researchMemory, draft);
+      if (requestedTopic.isEmpty && persistentId426 != null) {
+        StudyGoal426.record(_researchMemory, persistentId426, goal, draft.documents,
+            error: draft.error, diagnostics: draft.diagnostics318);
+        progressRecorded426 = true;
+        StudyGoal426.expand(_researchMemory, persistentId426, draft);
+      }
       await _checkpoint319();
 
       // Reading is learning even when the rule-based extractor cannot turn a
@@ -664,6 +784,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
     } catch (e) {
       _researchMemory.lastError = e.toString();
+      if (requestedTopic.isEmpty && persistentId426 != null && !progressRecorded426) {
+        StudyGoal426.record(_researchMemory, persistentId426, goal, const [],
+            error: e.toString());
+      }
       _researchMemory.lastStatus = 'Errore ricerca Internet: $e';
       await _checkpoint319();
       if (mounted) setState(() => _status = _researchMemory.lastStatus);
@@ -767,6 +891,23 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     final text = _chat.text.trim();
     if (text.isEmpty) return;
+    final studyTopic426 = StudyGoal426.command(text);
+    if (studyTopic426 != null) {
+      if (studyTopic426.length > 240) {
+        setState(() => _status = 'Obiettivo troppo lungo: massimo 240 caratteri.');
+        return;
+      }
+      _chat.clear();
+      setState(() {
+        _messages.add(ChatMessage04(user: true, text: text));
+        _messages.add(ChatMessage04(user: false,
+            text: 'Avvio un piano persistente su “$studyTopic426”. '
+                'Cercherò fonti e riprenderò lo studio alla riapertura. '
+                'Potrai vedere letture e lacune nella scheda Mente.'));
+      });
+      await _startStudyGoal426(studyTopic426);
+      return;
+    }
     _chat.clear();
     setState(() {
       _busy = true;
@@ -777,14 +918,35 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      final logic429 = RuleReasoning429.answer(_researchMemory, text);
+      if (logic429 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: logic429.text, prompt: text));
+          _status = logic429.proof == null ? 'Informazioni mancanti o in conflitto'
+              : 'Conseguenza verificata dalle regole lette';
+        });
+        _scrollDown();
+        await _save('Ragionamento e cronologia salvati');
+        return;
+      }
       final queryOnly423 =
           KnowledgeChat423.queryOnly(text, _brain, _researchMemory);
+      final reading430 = ReadingQuery430.answer(_researchMemory, text);
+      if (queryOnly423 && reading430 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: reading430.text, prompt: text));
+          _status = 'Fatti recuperati dalle letture con le fonti';
+        });
+        _scrollDown();
+        await _save('Consultazione delle letture e cronologia salvate');
+        return;
+      }
       // Snapshot recall precedes any acquisition of the current utterance.
       final recalled423 = await ClsBridge340.quote(text);
       final mapReply423 = queryOnly423
-          ? (RelationalMemory324.answerIfKnown(_researchMemory, text) ??
-              KnowledgeChat423.answer(_brain, _researchMemory, text))
-          : null;
+          ? MemoryQuery428.map(_brain, _researchMemory, text) : null;
       if (mapReply423 != null) {
         await DialogueBridge410.processChat(text, queryOnly: true);
         _engineStats421 = await DialogueBridge410.stats();
@@ -888,12 +1050,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final grounded = (curiosityAnswer == null && sensoryGrounding == null)
           ? _world.groundedAnswer07(_brain, text)
           : null;
-      final sourced317 =
-          RelationalMemory324.answerIfKnown(_researchMemory, text) ??
-              Reasoning321.answer(text, _researchMemory) ??
-              ResearchSemantics317.answer(text, _researchMemory,
-                  realize: (s, r, o) => _language20.realizeFact320(s, r, o)) ??
-              SourceMemory323.answer(text, _researchMemory);
+      final sourced317 = MemoryQuery428.sourced(_researchMemory, text,
+          realize: (s, r, o) => _language20.realizeFact320(s, r, o));
       final episodic340 =
           sourced317 == null && grounded == null ? recalled423 : null;
       final semanticAnswer = sourced317 ??
@@ -1947,6 +2105,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           manualTopic: topic,
         ),
         onResearchEnabled: _setResearchEnabled10,
+        onStartGoal426: _startStudyGoal426,
+        onPauseGoal426: _pauseStudyGoal426,
+        onRetryGoal426: _retryStudyGoal426,
+        onVerify428: _openLearningVerification428,
         onEdit: _openEditor12,
         onSave: _save,
         onReset: _reset,
@@ -2541,6 +2703,10 @@ class _MindPage07 extends StatelessWidget {
   final Future<void> Function() onResearch;
   final Future<void> Function(String topic) onResearchTopic;
   final ValueChanged<bool> onResearchEnabled;
+  final Future<void> Function(String) onStartGoal426;
+  final Future<void> Function(bool) onPauseGoal426;
+  final Future<void> Function() onRetryGoal426;
+  final VoidCallback onVerify428;
   final Future<void> Function() onEdit;
   final Future<void> Function([String?]) onSave;
   final Future<void> Function() onReset;
@@ -2563,6 +2729,10 @@ class _MindPage07 extends StatelessWidget {
     required this.onResearch,
     required this.onResearchTopic,
     required this.onResearchEnabled,
+    required this.onStartGoal426,
+    required this.onPauseGoal426,
+    required this.onRetryGoal426,
+    required this.onVerify428,
     required this.onEdit,
     required this.onSave,
     required this.onReset,
@@ -2583,6 +2753,11 @@ class _MindPage07 extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       children: [
         Text('Mente', style: Theme.of(context).textTheme.titleLarge),
+        StudyGoalCard426(memory: research, busy: busy || researchBusy,
+            onStart: onStartGoal426, onPause: onPauseGoal426,
+            onRetry: onRetryGoal426),
+        LearningVerificationCard428(memory: research, busy: busy || researchBusy,
+            onOpen: onVerify428),
         OutlinedButton.icon(
           onPressed: () =>
               InspectorScope315.maybeOf(context)?.openCatalog(context),
