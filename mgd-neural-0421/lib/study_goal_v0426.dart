@@ -76,6 +76,40 @@ class StudyGoal426 {
   static int count(Map<String, dynamic> x, String key) =>
       (x[key] as num?)?.toInt() ?? 0;
 
+  /// Grow the plan from relevant extracted concepts, with source provenance.
+  /// These are research candidates, not accepted facts or proof of mastery.
+  static void expand(ResearchMemory11 memory, String goalId,
+      ResearchDraft11 draft) {
+    final g = state(memory);
+    if (g == null || g['id'] != goalId) return;
+    final all = items(g);
+    final seen = all.map((i) => norm('${i['label']}')).toSet();
+    final roots = norm('${g['topic']}').split(' ')
+        .where((s) => s.length >= 5)
+        .map((s) => s.length > 6 ? s.substring(0, 6) : s).toList();
+    var added = 0;
+    for (final claim in draft.claims) {
+      if (added >= 12) break; // Per-cycle work budget, not a knowledge ceiling.
+      final title = norm(claim.source.title);
+      final sentence = norm(claim.sentence);
+      if (claim.quality < .7 || claim.source.trust < .6 ||
+          !roots.any((r) => title.contains(r) || sentence.contains(r))) continue;
+      final subject = claim.subject.trim();
+      final n = norm(subject);
+      if (subject.length < 4 || subject.length > 80 || n == norm('${g['topic']}') ||
+          !seen.add(n)) continue;
+      all.add({
+        'label': subject, 'attempts': 0, 'failures': 0,
+        'documents': 0, 'novel': 0, 'families': <String>[],
+        'nextAt': '', 'parentQuery': draft.goal.query,
+        'discoveredFrom': claim.source.url,
+      });
+      added++;
+    }
+    g['items'] = all;
+    memory.state317[key] = g;
+  }
+
   static ResearchGoal11? next(ResearchMemory11 memory, {DateTime? now}) {
     final g = state(memory);
     if (g == null || g['paused'] == true || !memory.enabled) return null;
