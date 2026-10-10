@@ -128,7 +128,9 @@ class StudyGoal426 {
       'meccanismi': ['meccanism', 'funzion', 'princip', 'process'],
       'relazioni': ['relazion', 'interazion', 'collegament', 'associazion'],
       'evoluzione storica': ['storia', 'storic', 'evoluzion', 'svilupp', 'origine'],
-      'evidenze scientifiche': ['evidenz', 'ricerca', 'ricerche', 'studi', 'speriment'],
+      'evidenze scientifiche': ['evidenz', 'ricerca', 'ricerche', 'studi', 'speriment',
+        'evidence', 'research', 'study', 'studies', 'trial', 'random', 'systematic',
+        'method', 'result', 'conclusion', 'cohort', 'review'],
       'domande aperte': ['limiti', 'incertezz', 'controvers', 'irrisolt', 'domande aperte'],
     };
     return terms[label] ?? const [];
