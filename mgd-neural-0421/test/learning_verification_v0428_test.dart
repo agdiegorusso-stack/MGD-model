@@ -10,6 +10,41 @@ import '../lib/web_knowledge_explorer_v11.dart';
 
 void main() {
   sqfliteFfiInit();
+  test('source cases include a page subject from this goal session without merging subjects', () {
+    final m = ResearchMemory11();
+    final created = DateTime.utc(2026, 10, 10);
+    StudyGoal426.start(m, 'la dialisi', now: created);
+    for (final subject in ['Emodialisi', 'Pianeta', 'Fonte precedente']) {
+      m.claims[subject] = ResearchClaim11(key: subject, subject: subject,
+        relation: 'contiene', object: 'modulo di prova', confidence: .8,
+        conflict: false, status: 'documentata', lastSeenIso: '',
+        evidenceIds: {subject}, meta317: {'usable': true});
+      m.evidence.add(ResearchEvidence11(id: subject, subject: subject,
+        relation: 'contiene', object: 'modulo di prova', provider: 'Fixture',
+        sourceFamily: 'test', sourceTitle: subject, sourceUrl: 'local://shared',
+        excerpt: '$subject contiene modulo di prova.', trust: .8, retrievedAtIso: ''));
+    }
+    for (final subject in ['Emodialisi', 'Fonte precedente']) {
+      final s = ResearchSession11(topic: 'dialisi', query: 'la dialisi definizioni', reason: 'Fixture',
+        startedAtIso: created.add(Duration(minutes: subject == 'Emodialisi' ? 1 : -1)).toIso8601String());
+      s.audit315['decisions'] = [{'claimKey': subject}];
+      m.sessions.add(s);
+    }
+    final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(m.toJson())));
+    final cases = LearningVerification428.sourceCases(restored, 432);
+    expect(cases, hasLength(2));
+    expect(cases.every((c) => c.subject == 'Emodialisi'), isTrue);
+    expect(restored.claims['Emodialisi']!.subject, 'Emodialisi');
+    StudyGoal426.start(restored, 'la dialisi', now: created.add(const Duration(hours: 1)));
+    expect(LearningVerification428.sourceCases(restored, 432), isEmpty);
+  });
+  test('no generated cases means not assessed, rather than a passed empty verification', () async {
+    final report = await LearningVerification428.run(mode: 'sources', seed: 432,
+      cases: [], query: (_) async { fail('No question may be fabricated'); });
+    expect(report['status'], 'not_assessed');
+    expect(report['total'], 0);
+    expect(report['passed'], 0);
+  });
   final yes = LearningVerification428.worlds(17).expand((w) => w.cases)
       .firstWhere((c) => c.capability == 'application' && c.expected == 'si');
   test('quotes and associations cannot pass an application by containing answer words', () {
@@ -153,7 +188,7 @@ void main() {
       // hard-coded because evaluator correctness is distinct from competence.
       final output = Directory('tool/reports');
       await output.create(recursive: true);
-      await File('${output.path}/learning-verification-0.42.11.json')
+      await File('${output.path}/learning-verification-0.42.12.json')
           .writeAsString(const JsonEncoder.withIndent('  ').convert(report));
       expect(report['passed'], 28, reason: jsonEncode(LearningVerification428.rows(report).where((r) => r['passed'] != true).toList()));
     } finally {
