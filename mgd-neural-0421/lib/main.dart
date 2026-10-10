@@ -7,6 +7,8 @@ import 'knowledge_chat_v0423.dart';
 import 'study_goal_v0426.dart';
 import 'study_goal_page_v0426.dart';
 import 'learning_verification_v0428.dart';
+import 'rule_reasoning_v0429.dart';
+import 'transfer_verification_v0429.dart';
 import 'learning_verification_page_v0428.dart';
 import 'verification_reader_v0428.dart';
 // BOOK_CHAT_WIRING_0342
@@ -600,7 +602,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             } else {
               final reader = await VerificationReader428.open();
               try {
-                final worlds = LearningVerification428.worlds(seed);
+                final worlds = mode == 'transfer'
+                    ? TransferVerification429.worlds(seed) : LearningVerification428.worlds(seed);
                 report = await LearningVerification428.run(mode: mode, seed: seed,
                   cases: worlds.expand((w) => w.cases).toList(), query: reader.answer,
                   read: () => reader.read(worlds.map((w) => w.document).toList(), cancelled: cancelled),
@@ -881,6 +884,18 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     await Future<void>.delayed(Duration.zero);
     try {
+      final logic429 = RuleReasoning429.answer(_researchMemory, text);
+      if (logic429 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: logic429.text, prompt: text));
+          _status = logic429.proof == null ? 'Informazioni mancanti o in conflitto'
+              : 'Conseguenza verificata dalle regole lette';
+        });
+        _scrollDown();
+        await _save('Ragionamento e cronologia salvati');
+        return;
+      }
       final queryOnly423 =
           KnowledgeChat423.queryOnly(text, _brain, _researchMemory);
       // Snapshot recall precedes any acquisition of the current utterance.
