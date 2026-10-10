@@ -125,7 +125,7 @@ void main() {
           cases: world.cases, query: reader.answer, read: () => reader.read([world.document]));
       final output = Directory('tool/reports');
       await output.create(recursive: true);
-      await File('${output.path}/prose-verification-0.42.10.json')
+      await File('${output.path}/prose-verification-0.42.11.json')
           .writeAsString(const JsonEncoder.withIndent('  ').convert(report));
       expect(report['passed'], 12, reason: jsonEncode(LearningVerification428.rows(report)
           .where((r) => r['passed'] != true).toList()));
