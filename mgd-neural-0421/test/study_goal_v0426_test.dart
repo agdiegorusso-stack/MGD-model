@@ -66,4 +66,23 @@ void main() {
     expect(StudyGoal426.items(StudyGoal426.state(m)!).every((i) => i['attempts'] == 0), isTrue);
     expect(m.state317['studyGoalHistory426'], hasLength(1));
   });
+  test('new sourced concepts expand plan, duplicate and unrelated ones do not', () {
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'cellula', now: t);
+    final id = StudyGoal426.state(m)!['id'] as String;
+    final q = StudyGoal426.next(m, now: t)!;
+    ExtractedClaim11 claim(String subject, String sentence) =>
+        ExtractedClaim11(subject: subject, relation: 'ha', object: 'struttura',
+            sentence: sentence, source: doc(passage('A')), quality: .8);
+    final draft = ResearchDraft11(goal: q, documents: [doc(passage('A'))],
+      claims: [claim('ribosoma', 'Il ribosoma fa parte della cellula.')],
+      passages: const [], sentencesRead: 1);
+    StudyGoal426.expand(m, id, draft);
+    StudyGoal426.expand(m, id, draft);
+    expect(StudyGoal426.items(StudyGoal426.state(m)!), hasLength(11));
+    final item = StudyGoal426.items(StudyGoal426.state(m)!).last;
+    expect(item['label'], 'ribosoma');
+    expect(item['discoveredFrom'], 'https://example.org/cell');
+    expect(item['attempts'], 0);
+  });
 }
