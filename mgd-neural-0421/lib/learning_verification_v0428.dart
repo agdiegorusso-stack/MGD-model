@@ -168,11 +168,14 @@ class LearningVerification428 {
     final queries = goal == null ? <String>{} : StudyGoal426.items(goal)
         .map((i) => StudyGoal426.query(goal, i)).toSet();
     final created = DateTime.tryParse('${goal?['createdAt']}');
+    final resolved = ReadingQuery430.resolvedSources432(memory);
     final studied = memory.sessions.where((s) => queries.contains(s.query) &&
         created != null && DateTime.tryParse(s.startedAtIso)?.isBefore(created) == false)
         .expand((s) => (s.audit315['decisions'] as List? ?? []).whereType<Map>())
         .map((d) => '${d['claimKey']}').toSet();
     return memory.claims.values.where((c) => ReadingQuery430.usable(c) &&
+      !{'ha', 'sono'}.contains(ResearchSemantics317.relation(c.relation)) &&
+      ReadingQuery430.contextualSense432(c, resolved) &&
       memory.evidence.any((e) => c.evidenceIds.contains(e.id) &&
           e.sourceUrl.isNotEmpty && e.excerpt.trim().isNotEmpty) &&
       (subjects.isEmpty || subjects.any((s) =>
