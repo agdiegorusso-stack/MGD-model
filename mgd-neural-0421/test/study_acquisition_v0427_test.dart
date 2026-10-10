@@ -431,7 +431,9 @@ void main() {
     expect(draft.documents, isEmpty);
     expect(draft.claims, isEmpty);
     expect(draft.error, isNotNull);
-    expect(draft.diagnostics318.any((d) => d['status'] == 'area non trattata'), isTrue);
+    expect(draft.diagnostics318.any((d) =>
+        d['url'] == 'https://doi.org/10.example/fixture' &&
+        {'area non trattata', 'fuori argomento'}.contains(d['status'])), isTrue);
   });
 
   test('section selection applies to other roots and preserves discovered identity', () {
