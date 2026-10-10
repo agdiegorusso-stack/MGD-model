@@ -215,7 +215,8 @@ class StudyGoal426 {
           !roots.any((r) => title.contains(r) || sentence.contains(r))) continue;
       final subject = claim.subject.trim();
       final n = norm(subject);
-      if (subject.length < 4 || subject.length > 80 || n == norm('${g['topic']}') ||
+      if (subject.length < 4 || subject.length > 80 ||
+          ResearchSemantics317.sameSubject(subject, lookup('${g['topic']}', 'definizioni')) ||
           !seen.add(n)) continue;
       all.add({
         'label': subject, 'lookup': subject, 'attempts': 0, 'failures': 0,
