@@ -124,7 +124,8 @@ void main() {
     expect(cases.every((c) => c.subject == 'Cellula'), true);
   });
   test('production reader and responder run in isolated stores without answer leakage', () async {
-    final reader = await VerificationReader428.open(factory: databaseFactoryFfi);
+    final reader = await VerificationReader428.open(factory: databaseFactoryFfi,
+        temporaryRoot: Directory.systemTemp.path);
     final worlds = LearningVerification428.worlds(428);
     LearningBridge421.observe = (_, __) async { fail('Global memory bridge must not be used'); };
     try {
