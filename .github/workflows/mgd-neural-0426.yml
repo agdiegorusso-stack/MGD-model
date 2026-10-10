@@ -4,12 +4,17 @@ on:
     branches: ['codex/mgd-neural-0426-study-goal']
     paths: ['mgd-neural-0421/**', '.github/workflows/mgd-neural-0426.yml']
   workflow_dispatch:
+concurrency:
+  group: mgd-study-goal-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studygoal
     defaults:
       run:
         working-directory: mgd-neural-0421
@@ -24,13 +29,13 @@ jobs:
           flutter-version: '3.47.5'
           channel: stable
           cache: true
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.android/debug.keystore
-          key: mgd-neural-0420-android-gradle-9.3.1-v1
+          key: mgd-study-goal-android-signing-v1
       - name: Analyze, test and compile
         run: bash tool/build_android.sh
       - name: Record APK signature and identity
