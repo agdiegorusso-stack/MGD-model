@@ -100,6 +100,13 @@ void main() {
     SourceMemory323.forget33(m, (text) => text.contains('se e solo se'));
     expect(truth(m, 'chiave è presente. porta è aperta?'), 'unknown');
   });
+  test('quantitative questions distinguish a recorded value from a missing property', () {
+    final m = memory('alfa contiene modulo. alfa pesa 7.');
+    expect(truth(m, 'Quanto pesa alfa?'), 'fact');
+    expect(RuleReasoning429.answer(m, 'Quanto pesa alfa?')!.text, contains('alfa pesa 7'));
+    expect(truth(m, 'Quanto misura alfa?'), 'unknown');
+    expect(truth(m, 'alfa è verde?'), 'unknown');
+  });
   test('bounded inference abstains on exhaustion and terminates on cycles', () {
     final p = RuleReasoning429.parse(RuleReasoning429.sources(memory(
       'a è vero se e solo se b è vero. b è vero se e solo se c è vero.')));
