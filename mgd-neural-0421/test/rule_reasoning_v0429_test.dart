@@ -85,6 +85,7 @@ void main() {
     const rules = 'unità contiene canale. '
       'canale fa entrare liquido in ogni cellula che lo contiene se e solo se energia è presente.';
     expect(truth(memory(rules), 'energia è assente. liquido entra in unità?'), 'unknown');
+    expect(truth(memory(rules), 'liquido entra in unità. energia è presente?'), 'unknown');
     expect(truth(memory('$rules Tutte le cellule di questo modello hanno soltanto questo ingresso.'),
       'energia è assente. liquido entra in unità?'), 'false');
   });
@@ -106,6 +107,7 @@ void main() {
     expect(RuleReasoning429.answer(m, 'Quanto pesa alfa?')!.text, contains('alfa pesa 7'));
     expect(truth(m, 'Quanto misura alfa?'), 'unknown');
     expect(truth(m, 'alfa è verde?'), 'unknown');
+    expect(truth(memory('alfa pesa 7. alfa non pesa 7.'), 'Quanto pesa alfa?'), 'conflict');
   });
   test('bounded inference abstains on exhaustion and terminates on cycles', () {
     final p = RuleReasoning429.parse(RuleReasoning429.sources(memory(
