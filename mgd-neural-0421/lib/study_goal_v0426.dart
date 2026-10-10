@@ -5,7 +5,7 @@ import 'web_knowledge_explorer_v11.dart';
 /// Persistent research frontier. Reading coverage is never a mastery score.
 class StudyGoal426 {
   static const key = 'studyGoal426';
-  static const schema = 2;
+  static const schema = 3;
   static String norm(String s) => s.toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9àèéìòù ]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -110,14 +110,28 @@ class StudyGoal426 {
       };
       if (subjects[label] != null) return subjects[label]!;
     }
-    if (label == 'definizioni') {
-      return topic.replaceFirst(RegExp(
-          r"^(?:(?:il|lo|la|i|gli|le|un|uno|una)\s+|l[’'])",
-          caseSensitive: false), '');
-    }
-    // A concept discovered in a source has its own subject, rather than the
-    // root goal prepended to its name. Unresolved seed facets remain explicit.
-    return '$topic $label';
+    // Generic areas are questions about the root subject, not entity names.
+    // Discovered subjects have an explicit lookup and bypass this function.
+    return topic.replaceFirst(RegExp(
+        r"^(?:(?:il|lo|la|i|gli|le|un|uno|una)\s+|l[’'])",
+        caseSensitive: false), '');
+  }
+
+  static List<String> facetTerms431(String topic, String label) {
+    final n = norm(topic);
+    if (n.contains('cellul') || n.contains('microrgan') ||
+        n.contains('microbiolog')) return const [];
+    const terms = <String, List<String>>{
+      'classificazione': ['classific', 'tipi', 'tipolog', 'categorie', 'modalit'],
+      'struttura': ['struttur', 'component', 'composizion', 'apparat',
+        'apparecch', 'dispositiv', 'costituit', 'organizz', 'configur'],
+      'meccanismi': ['meccanism', 'funzion', 'princip', 'process'],
+      'relazioni': ['relazion', 'interazion', 'collegament', 'associazion'],
+      'evoluzione storica': ['storia', 'storic', 'evoluzion', 'svilupp', 'origine'],
+      'evidenze scientifiche': ['evidenz', 'ricerca', 'ricerche', 'studi', 'speriment'],
+      'domande aperte': ['limiti', 'incertezz', 'controvers', 'irrisolt', 'domande aperte'],
+    };
+    return terms[label] ?? const [];
   }
 
   static String query(Map<String, dynamic> g, Map<String, dynamic> item) =>
@@ -139,6 +153,7 @@ class StudyGoal426 {
     }
     g['items'] = all;
     g['schema'] = schema;
+    g['lastError'] = null;
     memory.state317[key] = g;
   }
 
@@ -241,6 +256,8 @@ class StudyGoal426 {
       final subject = '${item['lookup'] ?? lookup('${g['topic']}', '${item['label']}')}';
       return ResearchGoal11(query: q, topic: subject,
           reason: 'Obiettivo persistente: ${g['topic']}',
+          facetTerms431: item['discoveredFrom'] == null
+              ? facetTerms431('${g['topic']}', '${item['label']}') : const [],
           value: 1, contextTerms: ['${g['topic']}', '${item['label']}']);
     }
     return null;
@@ -287,6 +304,7 @@ class StudyGoal426 {
     g['items'] = all;
     g['lastError'] = i['lastError'];
     g['lastLookup'] = query.topic;
+    g['lastArea'] = i['label'];
     g['lastDocuments'] = readable;
     g['lastAt'] = t.toIso8601String();
     g['diagnostics'] = diagnostics;
