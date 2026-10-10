@@ -9,14 +9,26 @@ import '../lib/sensory_world_v06.dart';
 // Explicit network regression, run separately from reproducible offline tests.
 // Uses the production HTTP client, scheduler, acquisition, intake and storage.
 void main() {
-  test('real cell and microorganism goals acquire and persist sourced readings', () async {
+  test('real goals and migrated dialysis structure acquire and persist sourced readings', () async {
     HttpOverrides.global = null;
     final report = <Map<String, dynamic>>[];
     try {
-      for (final topic in ['la cellula', 'i microrganismi']) {
+      for (final scenario in ['la cellula', 'i microrganismi', 'la dialisi', 'dialisi-struttura-04210']) {
+        final migrated = scenario == 'dialisi-struttura-04210';
+        final topic = migrated ? 'la dialisi' : scenario;
         final m = ResearchMemory11();
         final b = PlasticLanguageBrain04(), w = MgdWorld06();
         StudyGoal426.start(m, topic);
+        if (migrated) {
+          final old = StudyGoal426.state(m)!;
+          old['schema'] = 2;
+          old['items'] = StudyGoal426.items(old)
+              .where((i) => i['label'] == 'struttura').map((i) => {
+                ...i, 'lookup': 'la dialisi struttura', 'attempts': 2, 'failures': 2,
+                'nextAt': DateTime.now().add(const Duration(hours: 8)).toIso8601String(),
+              }).toList();
+          m.state317[StudyGoal426.key] = old;
+        }
         final id = StudyGoal426.state(m)!['id'] as String;
         final goal = StudyGoal426.next(m)!;
         final explorer = WebKnowledgeExplorer11();
@@ -29,7 +41,7 @@ void main() {
             error: draft.error, diagnostics: draft.diagnostics318);
         final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(m.toJson())));
         final row = {
-          'goal': topic, 'query': goal.query, 'lookup': goal.topic,
+          'goal': topic, 'scenario': scenario, 'query': goal.query, 'lookup': goal.topic,
           'documents': draft.documents.map((d) => {
             'title': d.title, 'url': d.url, 'provider': d.provider,
             'characters': d.text.length,
@@ -46,13 +58,18 @@ void main() {
         expect(draft.error, isNull, reason: jsonEncode(row));
         expect(row['readings'] as int, greaterThan(0));
         expect(SourceMemory323.stats(restored)['passages'], greaterThan(0));
-        expect(m.claims, isNotEmpty);
+        if (!migrated) expect(m.claims, isNotEmpty);
         expect(ResearchSemantics317.getPending(m), 0);
+        if (migrated) {
+          expect(goal.query, 'la dialisi struttura');
+          expect(goal.topic, 'dialisi');
+          expect(draft.documents.every((d) => d.meta318['studyArea431'] == 'struttura'), isTrue);
+        }
       }
     } finally {
       final out = File('tool/reports/live-study-0.42.7.json');
       out.parent.createSync(recursive: true);
       out.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(report));
     }
-  }, timeout: const Timeout(Duration(minutes: 8)));
+  }, timeout: const Timeout(Duration(minutes: 12)));
 }
