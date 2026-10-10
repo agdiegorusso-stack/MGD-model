@@ -72,12 +72,15 @@ void main() {
         temporaryRoot: Directory.systemTemp.path,
         retained: reader.memory,
       );
+      // Restoration applies the existing budget/provenance migration. Query
+      // invariance starts after that migration; the answer must stay the same.
+      final restoredSnapshot = jsonEncode(restored.memory.toJson());
       expect((await restored.answer(prompt)).text, answer.text);
       expect(
         (await restored.answer('La quota vale 13. Quanto vale la spesa?')).text,
         startsWith('Non determinabile: manca tassa'),
       );
-      expect(jsonEncode(restored.memory.toJson()), snapshot);
+      expect(jsonEncode(restored.memory.toJson()), restoredSnapshot);
       expect(
         jsonEncode(reader.memory.toJson()),
         isNot(contains('Mostra il calcolo')),
