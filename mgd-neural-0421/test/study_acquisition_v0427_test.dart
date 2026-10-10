@@ -6,6 +6,64 @@ import '../lib/plastic_language_brain_v04.dart';
 import '../lib/sensory_world_v06.dart';
 
 void main() {
+  test('scientific area resolves English names and reads abstracts, excluding titles and unrelated bodies', () async {
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'la dialisi');
+    final g = StudyGoal426.state(m)!;
+    g['items'] = [StudyGoal426.items(g).firstWhere((i) => i['label'] == 'evidenze scientifiche')];
+    m.state317[StudyGoal426.key] = g;
+    final requests = <Uri>[];
+    final draft = await WebKnowledgeExplorer11(jsonLoader318: (u) async {
+      requests.add(u);
+      if (u.host == 'it.wikipedia.org') return {'query': {'pages': [{
+        'title': 'Emodialisi', 'extract': 'Introduzione fittizia usata solo come fixture per la risoluzione del nome. '
+            'Questo paragrafo non tratta l’area scientifica del piano.',
+        'fullurl': 'https://example.org/root', 'pageprops': {},
+        'langlinks': [{'lang': 'en', 'title': 'Hemodialysis'}],
+      }]}};
+      if (u.host == 'www.ebi.ac.uk' && u.queryParameters['query'] == 'Hemodialysis') {
+        return {'resultList': {'result': [
+          {'title': 'Fictional hemodialysis study', 'doi': 'fixture/related',
+            'abstractText': 'This study of hemodialysis evaluates a fictional dataset for a software fixture. '
+                'Methods and results are described in the abstract, with no medical claim.'},
+          {'title': 'Hemodialysis metadata only', 'doi': 'fixture/title-only'},
+          {'title': 'Hemodialysis unrelated title', 'doi': 'fixture/unrelated',
+            'abstractText': 'This study evaluates power systems and methods in an unrelated fictional dataset. '
+                'The results concern electrical circuits only.'},
+        ]}};
+      }
+      return <String, dynamic>{};
+    }).research(StudyGoal426.next(m)!);
+    expect(draft.error, isNull);
+    expect(requests.any((u) => u.host == 'www.ebi.ac.uk' &&
+        u.queryParameters['query'] == 'Hemodialysis'), isTrue);
+    expect(draft.documents, hasLength(1));
+    expect(draft.documents.single.provider, 'Europe PMC');
+    expect(draft.documents.single.text, contains('fictional dataset'));
+    expect(draft.documents.single.text, isNot(contains('Fictional hemodialysis study')));
+    expect(draft.documents.single.meta318['topicAliases432'], contains('Hemodialysis'));
+    expect(draft.diagnostics318.any((d) => d['url'] == 'https://doi.org/fixture/unrelated' &&
+        d['status'] == 'area non trattata'), isTrue);
+  });
+
+  test('scientific area does not guess a translation for ambiguous identities', () async {
+    final requests = <Uri>[];
+    final draft = await WebKnowledgeExplorer11(jsonLoader318: (u) async {
+      requests.add(u);
+      if (u.host == 'www.wikidata.org' && u.queryParameters['action'] == 'wbsearchentities') {
+        return {'search': [{'id': 'Q1', 'label': 'dialisi'}, {'id': 'Q2', 'label': 'dialisi'}]};
+      }
+      return <String, dynamic>{};
+    }).research(ResearchGoal11(query: 'la dialisi evidenze scientifiche', topic: 'dialisi',
+      reason: 'fixture', value: 1, contextTerms: ['la dialisi', 'evidenze scientifiche'],
+      facetTerms431: StudyGoal426.facetTerms431('la dialisi', 'evidenze scientifiche')));
+    expect(draft.documents, isEmpty);
+    expect(draft.error, contains('all’area “evidenze scientifiche”'));
+    expect(requests.any((u) => u.queryParameters['action'] == 'wbgetentities'), isFalse);
+    expect(requests.where((u) => u.host == 'www.ebi.ac.uk')
+        .every((u) => u.queryParameters['query'] == 'dialisi'), isTrue);
+  });
+
   final now = DateTime.utc(2026, 10, 10);
   final text = 'La cellula è l’unità fondamentale degli organismi viventi. '
       'La cellula ha una membrana che separa il citoplasma dall’ambiente esterno. '
