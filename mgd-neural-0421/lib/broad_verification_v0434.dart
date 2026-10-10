@@ -31,6 +31,15 @@ class BroadVerification434 {
   static ({bool passed, String reason}) grade(Map q, VerificationAnswer428 a) {
     final text = norm(a.text);
     final recall = q['capability'] == 'recall';
+    if (recall && a.route == 'passaggi') {
+      final quotes = RegExp(r'«([^»]+)»').allMatches(text).toList();
+      final retrieved = quotes.length == 1 && quotes.single[1]!.length < 240 &&
+          !quotes.single[1]!.contains('\n') &&
+          RegExp('${q['conclusion']}').hasMatch(quotes.single[1]!) && q['reason'] == null;
+      return (passed: retrieved, reason: retrieved
+          ? 'Ha recuperato il passaggio originale pertinente. Questo misura il recupero, non l’applicazione.'
+          : 'Non ha recuperato una risposta puntuale alla domanda.');
+    }
     if ({'associazioni', 'passaggi'}.contains(a.route) ||
         text.startsWith('le associazioni') || text.contains('«')) {
       return (passed: false, reason: 'Ha restituito associazioni o un passaggio, senza la risposta richiesta.');
@@ -45,7 +54,8 @@ class BroadVerification434 {
       return (passed: false, reason: 'Ha recuperato fatti; manca la soluzione del caso e la sua giustificazione.');
     }
     final lines = text.split(RegExp(r'\n+')).where((s) => s.trim().isNotEmpty &&
-        !s.startsWith('fatti documentati') && !s.startsWith('dal testo,')).toList();
+        !s.startsWith('fatti documentati') && !s.startsWith('dal testo,') &&
+        !s.startsWith('nella memoria di')).toList();
     final first = (lines.isEmpty ? text : lines.first)
         .split(RegExp(r'[.!?]\s+')).first;
     final conclusion = RegExp('${q['conclusion']}').hasMatch(first);
@@ -117,7 +127,7 @@ class BroadVerification434 {
     final determinate = rows.where((r) => r['determinate434'] == true).toList();
     final applied = determinate.where((r) => r['capability'] != 'recall').toList();
     final unknown = rows.where((r) => r['determinate434'] != true).toList();
-    return {'schema': 1, 'mode': 'broad', 'version': version, 'status': 'completed',
+    return {'schema': 1, 'mode': 'broad', 'version': version, 'status': 'completed', 'graderRevision434': 2,
       'at': DateTime.now().toIso8601String(), 'suite434': suite['id'], 'sha256434': frozenSha,
       'scope434': suite['description'], 'generalComprehension434': 'not_demonstrated',
       'memoryUnchanged434': true, 'results': rows, 'total': rows.length,

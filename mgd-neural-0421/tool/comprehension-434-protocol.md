@@ -21,7 +21,9 @@ L'app conserva il rapporto senza insegnare gli esercizi alla memoria dell'utente
 contate separatamente dalle astensioni. Dire soltanto «non determinabile»
 non basta: occorre individuare il dato mancante. Le applicazioni richiedono
 anche il calcolo o la giustificazione. Recuperare un passaggio non vale come
-soluzione. Non si modifica il risponditore per alzare il punteggio.
+soluzione di applicazione. Per il recupero è valida anche una frase originale
+pertinente citata singolarmente, oppure una relazione documentata. Non si
+modifica il risponditore per alzare il punteggio.
 
 Il controllo automatico usa criteri testuali dichiarati e viene calibrato
 su risposte di riferimento e non-risposte. Non equivale a un giudice semantico:
@@ -33,3 +35,11 @@ Il test software verifica integrità e funzionamento della misura, senza
 imporre un punteggio al motore. I suoi risultati restano distinti dai risultati
 di comprensione. Il superamento della suite non certifica comprensione
 generale. Il mancato superamento documenta limiti nei casi effettivamente provati.
+
+Revisione 2 del valutatore: l'ispezione delle risposte della prima esecuzione
+(commit `8a5e44a7ae0d9ae09c28b555f8cf726d8a73776b`, 0/32 automatico)
+ha identificato tre recuperi corretti che il valutatore non contava: due frasi
+citate e una relazione preceduta da un'intestazione. Sono riconosciuti come
+recuperi, senza cambiare testi, domande, riferimenti o risponditore. La prima
+esecuzione resta conservata separatamente nel rapporto di consegna. La misura
+di applicazione e identificazione dei dati mancanti non cambia.

@@ -41,6 +41,22 @@ void main() {
     expect(BroadVerification434.grade(q, VerificationAnswer428(
         '${q['reference']}', 'associazioni')).passed, false);
   });
+  test('pointed source quotes and relation headers count only as factual retrieval', () async {
+    final suite = await BroadVerification434.load();
+    final domains = (suite['domains'] as List).cast<Map>();
+    final bio = domains.firstWhere((d) => d['id'] == 'cellula');
+    final qs = (bio['questions'] as List).cast<Map>();
+    expect(BroadVerification434.grade(qs.first, const VerificationAnswer428(
+        'Passaggi pertinenti.\n«I ribosomi sintetizzano le proteine.»\nFonte: cellula', 'passaggi')).passed, true);
+    expect(BroadVerification434.grade(qs[2], const VerificationAnswer428(
+        '«No, la sintesi delle proteine richiede ribosomi funzionanti.»', 'passaggi')).passed, false);
+    final logic = domains.firstWhere((d) => d['id'] == 'logica');
+    final recall = (logic['questions'] as List).cast<Map>().first;
+    expect(BroadVerification434.grade(recall, const VerificationAnswer428(
+        'Nella memoria di “Mia”:\n• Mia — tipo di → balena.\nFonte: memoria documentata.', 'relazioni')).passed, true);
+    expect(BroadVerification434.grade(qs.first, const VerificationAnswer428(
+        '«Le proteine.»\n«Il nucleo contiene DNA.»', 'passaggi')).passed, false);
+  });
   test('production reader is measured in eight isolated domains without a required engine score', () async {
     // This validates the measurement pipeline. Passing this software test says
     // nothing about whether MGD passes the comprehension benchmark.
