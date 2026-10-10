@@ -75,6 +75,11 @@ void main() {
       'Se segnale è presente allora porta è aperta. '
       'Se segnale è presente allora porta è chiusa.');
     expect(truth(conflicting, 'porta è aperta?'), 'conflict');
+    final downstream = memory('segnale è presente. '
+      'Se segnale è presente allora rele è attivo. '
+      'Se segnale è presente allora rele è inattivo. '
+      'Se rele è attivo allora luce è visibile.');
+    expect(truth(downstream, 'luce è visibile?'), 'conflict');
   });
   test('an unrelated conflict does not poison a proof', () {
     final m = memory('rumore è presente. rumore è assente. '
