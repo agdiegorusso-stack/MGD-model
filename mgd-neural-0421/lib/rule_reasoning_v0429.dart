@@ -76,7 +76,8 @@ class RuleReasoning429 {
   static String _entity(String s) => norm(s)
       .replaceFirst(RegExp(r'^(il|lo|la|un|uno|una|l[’\x27])\s*'), '').trim();
   static bool _name(String s) => s == r'$x' ||
-      RegExp(r'^[a-z0-9][a-z0-9_ -]{0,90}$').hasMatch(s);
+      RegExp(r'^[a-z0-9][a-z0-9_ -]{0,90}$').hasMatch(s) &&
+      !RegExp(r'\b(e|o|se|quando|che|oppure|salvo|eccetto)\b').hasMatch(s);
   static String _clean(String s) => norm(s).replaceFirst(RegExp(r'[.!?;]+$'), '')
       .replaceFirst(RegExp(r'^(nel modello|in questo mondo simulato),?\s*'), '').trim();
 
@@ -126,14 +127,17 @@ class RuleReasoning429 {
   }
 
   static List<LogicAtom429>? _body(String text, {bool variable = false}) {
-    final parts = text.split(RegExp(r'\s+e\s+(?=[a-z0-9_$]+\s+(?:non\s+)?(?:e|contiene|entra|diventa|ha|possiede)\s)'));
-    final out = <LogicAtom429>[];
-    for (final part in parts) {
-      final a = atom(part, variable: variable);
-      if (a == null) return null;
-      out.add(a);
+    // The Italian "e" can be a conjunction or the normalized copula "è".
+    // Split only when both resulting clauses parse completely as atoms.
+    final whole = atom(text, variable: variable);
+    if (whole != null) return [whole];
+    for (final conjunction in RegExp(r'\s+e\s+').allMatches(text)) {
+      final left = atom(text.substring(0, conjunction.start), variable: variable);
+      if (left == null) continue;
+      final right = _body(text.substring(conjunction.end), variable: variable);
+      if (right != null) return [left, ...right];
     }
-    return out;
+    return null;
   }
 
   static void _conditional(LogicProgram429 p, LogicSource429 source,
