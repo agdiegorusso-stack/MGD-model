@@ -269,6 +269,66 @@ void main() {
     expect(draft.diagnostics318.any((d) => d['status'] == 'fuori argomento'), isTrue);
   });
 
+  test('throttled full extract falls back to parsed root content, not a paper title', () async {
+    final goal = StudyGoal426.next(structureGoal431(), now: now)!;
+    var parsed = 0;
+    final draft = await WebKnowledgeExplorer11(jsonLoader318: (uri) async {
+      if (uri.host == 'it.wikipedia.org') {
+        if (uri.queryParameters['action'] == 'parse') {
+          parsed++;
+          expect(uri.queryParameters['page'], 'dialisi');
+          expect(uri.queryParameters['redirects'], '1');
+          return {'parse': {'title': 'Emodialisi', 'properties': [],
+            'text': '<p>$intro431</p><h2>Struttura</h2><p>'
+              'Questo paragrafo di prova descrive le parti del sistema. '
+              'Il testo completo della sezione viene conservato con la fonte.</p>'}};
+        }
+        throw StateError('HTTP 429');
+      }
+      if (uri.host == 'api.crossref.org') return {'message': {'items': [{
+        'DOI': '10.example/fixture', 'title': ['La dialisi struttura'],
+        'abstract': '<p>Questo riassunto di prova presenta l’autore della scheda. '
+          'Non descrive alcuna delle parti del sistema citato nel titolo.</p>',
+      }]}};
+      return <String, dynamic>{};
+    }).research(goal);
+    expect(draft.error, isNull);
+    expect(parsed, 1);
+    expect(draft.documents, hasLength(1));
+    expect(draft.documents.single.provider, 'Wikipedia IT');
+    expect(draft.documents.single.title, 'Emodialisi');
+    expect(draft.documents.single.text, contains('parti del sistema'));
+    expect(draft.documents.single.text, isNot(contains('scheda introduttiva')));
+    expect(draft.documents.single.meta318['contentRoute431'], 'parse');
+    expect(draft.diagnostics318.any((d) =>
+        d['status'] == 'contenuto alternativo acquisito' && '${d['error']}'.contains('429')), isTrue);
+    final prose = WebKnowledgeExplorer11.wikiHtmlText431(
+        '<style>struttura nascosta</style><h2>Struttura</h2>'
+        '<p>Un apparecchio contiene componenti &#232; &#xE8; &amp; altri elementi.</p>'
+        '<h2>Bibliografia</h2><p>La dialisi struttura titolo bibliografico.</p>');
+    expect(prose, isNot(contains('nascosta')));
+    expect(prose, contains('è è &'));
+    expect(WebKnowledgeExplorer11.facetText431(prose, ['struttur', 'apparecch']),
+        isNot(contains('titolo bibliografico')));
+  });
+
+  test('paper titles alone cannot fill an area when all content routes fail', () async {
+    final goal = StudyGoal426.next(structureGoal431(), now: now)!;
+    final draft = await WebKnowledgeExplorer11(jsonLoader318: (uri) async {
+      if (uri.host == 'it.wikipedia.org') throw StateError('HTTP 429');
+      if (uri.host == 'api.crossref.org') return {'message': {'items': [{
+        'DOI': '10.example/fixture', 'title': ['La dialisi struttura'],
+        'abstract': '<p>Questo riassunto di prova presenta l’autore della scheda. '
+          'Non descrive alcuna delle parti del sistema citato nel titolo.</p>',
+      }]}};
+      return <String, dynamic>{};
+    }).research(goal);
+    expect(draft.documents, isEmpty);
+    expect(draft.claims, isEmpty);
+    expect(draft.error, isNotNull);
+    expect(draft.diagnostics318.any((d) => d['status'] == 'area non trattata'), isTrue);
+  });
+
   test('section selection applies to other roots and preserves discovered identity', () {
     final m = ResearchMemory11();
     StudyGoal426.start(m, 'i numeri complessi', now: now);
