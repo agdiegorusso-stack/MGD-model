@@ -6,6 +6,31 @@ import '../lib/plastic_language_brain_v04.dart';
 import '../lib/sensory_world_v06.dart';
 
 void main() {
+  test('resolved page identity excludes same-name Wikidata subjects from another context', () async {
+    final requests = <Uri>[];
+    final draft = await WebKnowledgeExplorer11(jsonLoader318: (u) async {
+      requests.add(u);
+      if (u.host == 'it.wikipedia.org') return {'query': {'pages': [{
+        'title': 'Emodialisi', 'extract': 'Scheda fittizia per verificare la risoluzione del soggetto. '
+            'Il testo non insegna conoscenze mediche: viene usato solo dal test del software.',
+        'fullurl': 'local://canonical', 'pageprops': {'wikibase_item': 'Q391744'},
+      }]}};
+      if (u.host == 'www.wikidata.org' && u.queryParameters['action'] == 'wbsearchentities') {
+        return {'search': [
+          {'id': 'Q3706663', 'label': 'Dialisi', 'description': 'figura retorica',
+            'concepturi': 'http://www.wikidata.org/entity/Q3706663'},
+          {'id': 'Q15043671', 'label': 'dialisi', 'description': 'processo di separazione',
+            'concepturi': 'http://www.wikidata.org/entity/Q15043671'},
+        ]};
+      }
+      return <String, dynamic>{};
+    }).research(const ResearchGoal11(topic: 'dialisi', query: 'la dialisi definizioni',
+        reason: 'Fixture', value: 1));
+    expect(draft.documents.any((d) => d.provider == 'Wikidata'), isFalse);
+    expect(requests.where((u) => u.queryParameters['props'] == 'claims|labels|descriptions|info')
+        .map((u) => u.queryParameters['ids']), ['Q391744']);
+    expect(draft.diagnostics318.where((d) => d['status'] == 'identità diversa esclusa'), hasLength(2));
+  });
   test('0.42.11 failed areas become due after upgrade while readings and pause persist', () {
     final now = DateTime.utc(2026, 10, 10);
     final m = ResearchMemory11();
