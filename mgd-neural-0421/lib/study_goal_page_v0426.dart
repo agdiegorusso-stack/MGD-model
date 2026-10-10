@@ -30,21 +30,20 @@ class StudyGoalCard426 extends StatelessWidget {
           )).toList()),
         Wrap(spacing: 8, children: [
           FilledButton.icon(onPressed: busy ? null : () async {
-            final c = TextEditingController();
+            var input = ''; 
             final topic = await showDialog<String>(context: context,
               builder: (ctx) => AlertDialog(
                 title: const Text('Dagli un obiettivo'),
-                content: TextField(controller: c, maxLength: 240,
+                content: TextField(maxLength: 240, onChanged: (value) => input = value,
                   decoration: const InputDecoration(
                     hintText: 'Studia tutto ciò che riguarda la cellula'),
                   onSubmitted: (s) => Navigator.of(ctx).pop(s)),
                 actions: [
                   TextButton(onPressed: () => Navigator.of(ctx).pop(),
                     child: const Text('Annulla')),
-                  FilledButton(onPressed: () => Navigator.of(ctx).pop(c.text),
+                  FilledButton(onPressed: () => Navigator.of(ctx).pop(input),
                     child: const Text('Avvia studio')),
                 ]));
-            c.dispose();
             if (topic != null && topic.trim().isNotEmpty) {
               await onStart(StudyGoal426.command(topic) ?? topic.trim());
             }
