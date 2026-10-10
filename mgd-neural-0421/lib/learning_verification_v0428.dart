@@ -311,7 +311,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.13'}) async {
+    String? goalId, String? topic, String version = '0.42.14'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;

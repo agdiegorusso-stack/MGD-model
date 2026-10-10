@@ -23,6 +23,7 @@ class LearningVerificationCard428 extends StatelessWidget {
     final transfer = reports.where((r) => r['mode'] == 'transfer').firstOrNull;
     final prose = reports.where((r) => r['mode'] == 'prose').firstOrNull;
     final application = reports.where((r) => r['mode'] == 'application').firstOrNull;
+    final broad = reports.where((r) => r['mode'] == 'broad').firstOrNull;
     final eligible = sources != null && sources['total'] == 0
         ? LearningVerification428.sourceClaims432(memory).length : 0;
     return Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
@@ -36,13 +37,17 @@ class LearningVerificationCard428 extends StatelessWidget {
       if (controls != null) ...[
         Text('Casi nuovi simulati: ${controls['passed']}/${controls['total']} prove superate.'),
         if (controls['version'] != null) Text('Misurati con la versione ${controls['version']}.'),
-        if (controls['version'] != null && controls['version'] != '0.42.13')
+        if (controls['version'] != null && controls['version'] != '0.42.14')
           const Text('Ripeti la verifica per misurare il motore aggiornato.'),
         const Text('Il risultato riguarda le capacità provate nel modello simulato.'),
       ],
       if (transfer != null) Text('Regole in contesti nuovi: ${transfer['passed']}/${transfer['total']} prove superate.'),
       if (prose != null) Text('Esempio sull’osmosi: ${prose['passed']}/${prose['total']} prove superate.'),
       if (application != null) Text('Diffusione dalle fonti: ${application['passed']}/${application['total']} casi verificati.'),
+      if (broad != null) ...[
+        Text('Lettura in otto ambiti: ${broad['passed']}/${broad['total']} criteri soddisfatti.'),
+        const Text('Comprensione generale: non dimostrata.'),
+      ],
       const Text('Recuperare fatti e applicare regole sono capacità diverse. Controlla le risposte e le fonti.'),
       const SizedBox(height: 8),
       FilledButton.icon(onPressed: busy ? null : onOpen,
@@ -135,6 +140,10 @@ class _Page428State extends State<LearningVerificationPage428> {
         _choice('Letture conservate',
             'Fino a 8 domande sui fatti documentati dell’obiettivo attuale. '
             'Verifica il recupero e la riformulazione rispetto alle fonti conservate.', 'sources'),
+        _choice('Lettura in otto ambiti',
+            '32 domande su racconti, contabilità, meccanica, elettricità, cellule, logica, orari e dati. '
+            'Testi originali e riferimenti fissi; mostra anche errori e giustificazioni. '
+            'Una prova finita non certifica comprensione generale.', 'broad'),
         _choice('Applica un principio letto',
             'Acquisisce un principio di diffusione da OpenStax e affronta 17 casi: '
             'concentrazioni nuove, verso invertito, unità diverse, dati mancanti e conflitti. '
@@ -173,16 +182,29 @@ class _Page428State extends State<LearningVerificationPage428> {
         if (error != null) Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         if (report != null) ...[
           const SizedBox(height: 16),
-          Text(report['mode'] == 'application' ? 'Applicazione del principio di diffusione'
+          Text(report['mode'] == 'broad' ? 'Risultati in otto ambiti' : report['mode'] == 'application' ? 'Applicazione del principio di diffusione'
               : report['mode'] == 'custom' ? 'Risposte al tuo testo' : report['mode'] == 'prose'
               ? 'Risultati sul testo didattico' : report['mode'] != 'sources'
               ? 'Risultati sui mondi simulati' : 'Risultati sulle letture conservate',
               style: Theme.of(context).textTheme.titleLarge),
-          Text(report['mode'] == 'custom' ? '${report['total']} risposte da valutare · versione ${report['version']}'
+          Text(report['mode'] == 'broad' ? '${report['passed']}/${report['total']} criteri soddisfatti · versione ${report['version']}'
+              : report['mode'] == 'custom' ? '${report['total']} risposte da valutare · versione ${report['version']}'
               : report['total'] == 0 ? 'Verifica non eseguita: nessuna prova generata.'
               : '${report['passed']}/${report['total']} prove superate · versione ${report['version']}'),
           if (report['beforePassed'] != null)
             Text('Prima della lettura: ${report['beforePassed']}/${report['total']}.'),
+          if (report['mode'] == 'broad') ...[
+            const Text('Comprensione generale: non dimostrata.'),
+            Text('Conclusioni ricavabili: ${(report['determinate434'] as Map?)?['passed']}/${(report['determinate434'] as Map?)?['total']}.'),
+            Text('Collegamento e applicazione: ${(report['applied434'] as Map?)?['passed']}/${(report['applied434'] as Map?)?['total']}.'),
+            Text('Dati mancanti identificati: ${(report['unknown434'] as Map?)?['passed']}/${(report['unknown434'] as Map?)?['total']}.'),
+            const Text('I criteri testuali sono limitati: controlla le risposte, i passaggi e i riferimenti. '
+                'Una riformulazione corretta può richiedere una valutazione manuale. '
+                'I risultati non vengono usati per insegnare al motore le risposte.'),
+            for (final d in (report['domains434'] as List? ?? []).whereType<Map>())
+              ListTile(contentPadding: EdgeInsets.zero, title: Text('${d['title']}'),
+                  trailing: Text('${d['passed']}/${d['total']}')),
+          ],
           if (report['mode'] == 'application') ...[
             Text('Previsioni determinate: ${rows.where((r) => r['expectedTransfer433'] != null && r['passed'] == true).length}'
                 '/${rows.where((r) => r['expectedTransfer433'] != null).length}.'),
@@ -231,7 +253,7 @@ class _Page428State extends State<LearningVerificationPage428> {
         if (history.length > 1) ExpansionTile(title: const Text('Esecuzioni precedenti'), children: [
           for (final r in history) ListTile(
             title: Text(r['mode'] == 'custom' ? 'Testo tuo · ${r['total']} risposte da valutare'
-                : '${r['mode'] == 'application' ? 'Diffusione dalle fonti' : r['mode'] == 'prose' ? 'Osmosi' : r['mode'] == 'transfer' ? 'Regole nuove' : r['mode'] == 'controlled' ? 'Mondi simulati' : 'Letture'} · ${r['passed']}/${r['total']}'),
+                : '${r['mode'] == 'broad' ? 'Otto ambiti' : r['mode'] == 'application' ? 'Diffusione dalle fonti' : r['mode'] == 'prose' ? 'Osmosi' : r['mode'] == 'transfer' ? 'Regole nuove' : r['mode'] == 'controlled' ? 'Mondi simulati' : 'Letture'} · ${r['passed']}/${r['total']}'),
             subtitle: Text('${r['at']}'),
             onTap: running ? null : () => setState(() { selected = r; filter = 'all'; })),
         ]),
@@ -293,13 +315,15 @@ class _Page428State extends State<LearningVerificationPage428> {
       childrenPadding: const EdgeInsets.all(12), expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (labels.containsKey(row['id'])) SelectableText('Caso e domanda: ${readable(row['prompt'])}'),
+        if (row['domain'] != null) Text('Ambito: ${row['domain']}'),
         Text('${row['reason']}'),
         SelectableText('Risposta di MGD: $fullAnswer'),
         if (before != null) SelectableText('Prima della lettura: ${readable(before['text'])}'),
         if (row['expected'] != null) SelectableText('Risposta attesa: $expected'),
         const SizedBox(height: 8),
         for (final source in (row['sources'] as List? ?? []).whereType<Map>())
-          SelectableText(readable('Fonte: ${source['title']}\n${source['text']}\n${source['url']}')),
+          SelectableText(readable('Testo e fonte: ${source['title']}\n${source['text']}\n${source['url']}'
+              '${source['reference'] == null ? '' : '\nRiferimento didattico: ${source['reference']}'}')),
       ]);
   }
 }

@@ -24,6 +24,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'application_verification_v0433.dart';
+import 'broad_verification_v0434.dart';
 import 'transport_reasoning_v0433.dart';
 import 'book_text_v0420.dart';
 import 'text_learning_v0421.dart';
@@ -603,6 +604,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                 query: (prompt) => MemoryQuery428.answer(_brain, _researchMemory, prompt, core),
                 cancelled: cancelled, progress: progress,
                 goalId: goal?['id']?.toString(), topic: goal?['topic']?.toString());
+            } else if (mode == 'broad') {
+              report = await BroadVerification434.run(cancelled: cancelled, progress: progress);
             } else if (mode == 'application') {
               progress(0, 1, 'Acquisizione del principio da OpenStax');
               final doc = await ApplicationVerification433.fetchDocument();

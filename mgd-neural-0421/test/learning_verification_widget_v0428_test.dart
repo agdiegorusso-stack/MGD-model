@@ -6,6 +6,24 @@ import '../lib/study_goal_v0426.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
 
 void main() {
+  testWidgets('broad report keeps general comprehension unproven and shows domain scores', (tester) async {
+    final memory = ResearchMemory11();
+    LearningVerification428.store(memory, {'mode': 'broad', 'passed': 2, 'total': 32,
+      'version': '0.42.14', 'results': [], 'determinate434': {'passed': 2, 'total': 24},
+      'applied434': {'passed': 0, 'total': 16}, 'unknown434': {'passed': 0, 'total': 8},
+      'domains434': [{'title': 'Forze e movimento', 'passed': 0, 'total': 4}]});
+    await tester.pumpWidget(MaterialApp(home: LearningVerificationPage428(memory: memory,
+      onRun: (_, __, ___) async => {}, onReview: (_) async {})));
+    await tester.scrollUntilVisible(find.text('Risultati in otto ambiti'), 300,
+      scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('Comprensione generale: non dimostrata.'), 250,
+      scrollable: find.byType(Scrollable).first);
+    expect(find.text('Comprensione generale: non dimostrata.'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Forze e movimento'), 250,
+      scrollable: find.byType(Scrollable).first);
+    expect(find.text('0/4'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('source application opens and displays predictions separately from abstentions', (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;

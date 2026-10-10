@@ -1,0 +1,359 @@
+{
+  "schema": 1,
+  "id": "lettura-otto-ambiti-1",
+  "description": "Esercizi originali, riferimenti fissati prima di interrogare il motore. Una prova finita non certifica comprensione generale.",
+  "domains": [
+    {
+      "id": "racconto",
+      "title": "Eventi e punti di vista",
+      "text": "Alle 9:00 Anna mette la chiave nel cassetto della cucina. Alle 9:30 Anna esce. Alle 10:00 Marco sposta la stessa chiave dal cassetto alla scatola blu in ingresso. Anna non vede questo spostamento e nessuno glielo racconta. Anna torna alle 11:00. Dopo Marco nessuno sposta la chiave. Anna ricorda soltanto dove l’aveva lasciata. Il racconto non specifica di quale materiale sia fatta la chiave.",
+      "reference": null,
+      "questions": [
+        {
+          "id": "posizione-iniziale",
+          "capability": "recall",
+          "prompt": "Dove mette Anna la chiave alle 9:00?",
+          "reference": "Nel cassetto della cucina.",
+          "conclusion": "\\bcassetto\\b",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "posizione-finale",
+          "capability": "composition",
+          "prompt": "Dove si trova la chiave alle 11:00? Spiega quale evento conta.",
+          "reference": "Nella scatola blu, perché Marco vi ha spostato la chiave e nessuno l’ha spostata dopo.",
+          "conclusion": "\\bscatola\\b",
+          "reason": "marco.*spostat|spostat.*marco",
+          "determinate": true
+        },
+        {
+          "id": "punto-di-vista",
+          "capability": "conditions",
+          "prompt": "Dove cercherà per prima Anna, basandosi solo su ciò che sa? Spiega perché.",
+          "reference": "Nel cassetto, perché Anna non ha visto lo spostamento e nessuno l’ha informata.",
+          "conclusion": "\\bcassetto\\b",
+          "reason": "non.*(?:vist|ved|inform|sa|sapp)|nessuno.*(?:raccont|inform)",
+          "determinate": true
+        },
+        {
+          "id": "materiale",
+          "capability": "unknown",
+          "prompt": "Di quale materiale è fatta la chiave? Se non si può sapere, indica il dato mancante.",
+          "reference": "Non determinabile: il materiale della chiave non è specificato.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "material",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "conto",
+      "title": "Contabilità e quantità",
+      "text": "Lucia ha 50 euro. Compra tre quaderni che costano 7 euro ciascuno, senza sconti. Poi riceve un rimborso di 5 euro. Non ci sono altre entrate o spese. Se restituisce un quaderno, il negozio restituisce esattamente i 7 euro pagati. Il prezzo delle penne non è indicato.",
+      "reference": null,
+      "questions": [
+        {
+          "id": "prezzo",
+          "capability": "recall",
+          "prompt": "Quanto costa un quaderno?",
+          "reference": "7 euro.",
+          "conclusion": "\\b7\\s*(?:euro|eur|€)",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "saldo",
+          "capability": "application",
+          "prompt": "Quanto denaro resta a Lucia dopo acquisto e rimborso? Mostra il calcolo.",
+          "reference": "34 euro: 50 - 3 × 7 + 5 = 34.",
+          "conclusion": "\\b34\\s*(?:euro|eur|€)",
+          "reason": "50.*(?:3.*7|21).*5",
+          "determinate": true
+        },
+        {
+          "id": "restituzione",
+          "capability": "conditions",
+          "prompt": "Dopo il rimborso Lucia restituisce anche un quaderno. Quanto ha ora? Mostra il calcolo.",
+          "reference": "41 euro: 34 + 7 = 41.",
+          "conclusion": "\\b41\\s*(?:euro|eur|€)",
+          "reason": "34.*7|50.*14.*5",
+          "determinate": true
+        },
+        {
+          "id": "penna",
+          "capability": "unknown",
+          "prompt": "Lucia compra anche una penna. Qual è il saldo finale? Indica che cosa manca.",
+          "reference": "Non determinabile: manca il prezzo della penna.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "prezzo|costo",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "meccanica",
+      "title": "Forze e movimento",
+      "text": "Per un corpo di massa costante la forza risultante è uguale alla massa moltiplicata per l’accelerazione: F = m × a. L’accelerazione ha la direzione della forza risultante. Forze nella stessa direzione si sommano; forze in direzioni opposte si sottraggono. Usando newton e chilogrammi si ottiene l’accelerazione in metri al secondo quadrato. Nei casi seguenti si considerano tutte le forze orizzontali indicate.",
+      "reference": "https://openstax.org/books/college-physics-2e/pages/4-3-newtons-second-law-of-motion-concept-of-a-system",
+      "questions": [
+        {
+          "id": "relazione",
+          "capability": "recall",
+          "prompt": "Quale relazione lega forza risultante, massa e accelerazione?",
+          "reference": "F = m × a: la forza risultante è massa per accelerazione.",
+          "conclusion": "f\\s*=\\s*m|forza.*massa.*accelerazione",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "carrello",
+          "capability": "application",
+          "prompt": "Un carrello ha massa 2 kg e forza risultante 6 N verso destra. Qual è l’accelerazione? Mostra il calcolo.",
+          "reference": "3 m/s² verso destra, perché 6 / 2 = 3.",
+          "conclusion": "\\b3\\s*m\\s*/\\s*s(?:2|²).*destra",
+          "reason": "6.*2.*3",
+          "determinate": true
+        },
+        {
+          "id": "opposizione",
+          "capability": "conditions",
+          "prompt": "Un carrello di 2 kg subisce 4 N verso destra e 2 N verso sinistra. Qual è l’accelerazione? Mostra i passaggi.",
+          "reference": "1 m/s² verso destra: la forza risultante è 4 - 2 = 2 N, poi 2 / 2 = 1.",
+          "conclusion": "\\b1\\s*m\\s*/\\s*s(?:2|²).*destra",
+          "reason": "4.*2.*2.*2.*1",
+          "determinate": true
+        },
+        {
+          "id": "massa-mancante",
+          "capability": "unknown",
+          "prompt": "La forza risultante su un nuovo carrello è 6 N. Quanto vale l’accelerazione? Indica che cosa manca.",
+          "reference": "Non determinabile: manca la massa del carrello.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "massa",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "circuiti",
+      "title": "Elettricità",
+      "text": "In un resistore ohmico, mantenuto alla stessa temperatura, la corrente è la tensione divisa per la resistenza: I = V / R. La corrente si misura in ampere, la tensione in volt e la resistenza in ohm. A tensione costante, raddoppiare la resistenza dimezza la corrente. Si considerano un generatore ideale e un solo resistore.",
+      "reference": "https://openstax.org/books/college-physics-2e/pages/20-2-ohms-law-resistance-and-simple-circuits",
+      "questions": [
+        {
+          "id": "unita",
+          "capability": "recall",
+          "prompt": "Quale grandezza si misura in ampere?",
+          "reference": "La corrente elettrica.",
+          "conclusion": "\\bcorrente\\b",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "corrente",
+          "capability": "application",
+          "prompt": "Ai capi di un resistore di 6 ohm ci sono 12 volt. Quanto vale la corrente? Mostra il calcolo.",
+          "reference": "2 ampere, perché 12 / 6 = 2.",
+          "conclusion": "\\b2\\s*(?:ampere|a)\\b",
+          "reason": "12.*6.*2",
+          "determinate": true
+        },
+        {
+          "id": "resistenza-doppia",
+          "capability": "conditions",
+          "prompt": "La resistenza passa da 6 a 12 ohm, mentre la tensione resta 12 volt. Quanto vale ora la corrente? Mostra il calcolo.",
+          "reference": "1 ampere, perché 12 / 12 = 1.",
+          "conclusion": "\\b1\\s*(?:ampere|a)\\b",
+          "reason": "12.*12.*1|dimezz",
+          "determinate": true
+        },
+        {
+          "id": "resistenza-mancante",
+          "capability": "unknown",
+          "prompt": "Conosciamo solo la tensione: 12 volt. Quanto vale la corrente? Indica che cosa manca.",
+          "reference": "Non determinabile: manca la resistenza.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "resistenza",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "cellula",
+      "title": "Biologia cellulare",
+      "text": "I ribosomi sintetizzano le proteine. Il nucleo di una cellula eucariotica ospita DNA. Anche i mitocondri contengono un proprio DNA. Perciò la presenza di DNA, da sola, non identifica il nucleo. Nel caso didattico qui descritto, una cellula X ha nucleo, mitocondri e ribosomi. Se tutti i suoi ribosomi smettono di funzionare, la cellula X non può sintetizzare nuove proteine mediante essi; non sono previste vie alternative. Il numero dei mitocondri di X non è indicato.",
+      "reference": "https://openstax.org/books/biology-2e/pages/4-3-eukaryotic-cells",
+      "questions": [
+        {
+          "id": "ribosomi",
+          "capability": "recall",
+          "prompt": "Che cosa sintetizzano i ribosomi?",
+          "reference": "Le proteine.",
+          "conclusion": "\\bproteine\\b",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "dna",
+          "capability": "composition",
+          "prompt": "Tutto il DNA di X è necessariamente nel nucleo? Rispondi e giustifica usando il testo.",
+          "reference": "No, perché anche i mitocondri di X contengono DNA.",
+          "conclusion": "^no\\b|non.*(?:tutto|necessariamente)",
+          "reason": "mitocondri.*dna|dna.*mitocondri",
+          "determinate": true
+        },
+        {
+          "id": "funzione",
+          "capability": "conditions",
+          "prompt": "Nel caso descritto, tutti i ribosomi di X smettono di funzionare. X può ancora sintetizzare nuove proteine mediante essi? Spiega.",
+          "reference": "No, perché la sintesi delle proteine richiede ribosomi funzionanti e non sono previste alternative.",
+          "conclusion": "^no\\b|non puo",
+          "reason": "ribosomi.*(?:funzion|sintesi)|sintesi.*ribosomi",
+          "determinate": true
+        },
+        {
+          "id": "numero",
+          "capability": "unknown",
+          "prompt": "Quanti mitocondri contiene X? Indica quale informazione manca.",
+          "reference": "Non determinabile: il numero dei mitocondri non è indicato.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "numero|quantita|conteggio",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "logica",
+      "title": "Classi e deduzioni",
+      "text": "Tutti i mammiferi sono vertebrati. Tutte le balene sono mammiferi. Mia è una balena. La classe dei vertebrati comprende anche animali che non sono mammiferi. Non sono date informazioni sulla massa di Mia. Queste affermazioni sono le premesse da usare: non bisogna dedurre l’inverso di una regola universale.",
+      "reference": null,
+      "questions": [
+        {
+          "id": "classe",
+          "capability": "recall",
+          "prompt": "Che tipo di animale è Mia nel testo?",
+          "reference": "Mia è una balena.",
+          "conclusion": "\\bbalena\\b",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "catena",
+          "capability": "composition",
+          "prompt": "Mia è un vertebrato? Spiega tutta la catena della deduzione.",
+          "reference": "Sì: Mia è una balena, ogni balena è un mammifero e ogni mammifero è un vertebrato.",
+          "conclusion": "^si\\b|mia e (?:un )?vertebrat",
+          "reason": "balen.*mammifer.*vertebrat",
+          "determinate": true
+        },
+        {
+          "id": "inversa",
+          "capability": "conditions",
+          "prompt": "Di Neri sappiamo soltanto che è un vertebrato. Possiamo concludere che è un mammifero? Giustifica.",
+          "reference": "No, la regola non vale al contrario: esistono vertebrati che non sono mammiferi.",
+          "conclusion": "^no\\b|non (?:possiamo|si puo)",
+          "reason": "contrario|invers|vertebrati.*non.*mammiferi",
+          "determinate": true
+        },
+        {
+          "id": "peso",
+          "capability": "unknown",
+          "prompt": "Qual è la massa di Mia? Indica il dato mancante.",
+          "reference": "Non determinabile: manca la massa di Mia.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "massa",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "orari",
+      "title": "Pianificazione e tempo",
+      "text": "Paolo esce di casa alle 8:57 e impiega esattamente otto minuti per raggiungere la fermata. Gli autobus partono alle 9:10 e alle 9:30, senza ritardi. Il viaggio dura venti minuti e termina davanti all’ufficio. L’appuntamento è alle 9:35. Per salire basta essere alla fermata entro l’orario di partenza. Il tempo di un eventuale viaggio in taxi non è noto.",
+      "reference": null,
+      "questions": [
+        {
+          "id": "partenza",
+          "capability": "recall",
+          "prompt": "A che ora parte il primo autobus indicato?",
+          "reference": "Alle 9:10.",
+          "conclusion": "9\\s*[:.]\\s*10",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "arrivo",
+          "capability": "application",
+          "prompt": "Seguendo gli orari descritti, a che ora Paolo arriva all’ufficio? Mostra i passaggi.",
+          "reference": "Alle 9:30: arriva alla fermata alle 9:05, prende il bus delle 9:10 e viaggia venti minuti.",
+          "conclusion": "9\\s*[:.]\\s*30",
+          "reason": "9\\s*[:.]\\s*05.*9\\s*[:.]\\s*10.*(?:venti|20)",
+          "determinate": true
+        },
+        {
+          "id": "ritardo",
+          "capability": "conditions",
+          "prompt": "Se Paolo esce invece alle 9:07, arriva entro le 9:35? Mostra i passaggi.",
+          "reference": "No: arriva alla fermata alle 9:15, prende il bus delle 9:30 e arriva alle 9:50.",
+          "conclusion": "^no\\b|non.*(?:tempo|entro)",
+          "reason": "9\\s*[:.]\\s*15.*9\\s*[:.]\\s*30.*9\\s*[:.]\\s*50",
+          "determinate": true
+        },
+        {
+          "id": "taxi",
+          "capability": "unknown",
+          "prompt": "Se Paolo esce alle 9:07 e prende un taxi, arriva entro le 9:35? Indica che cosa manca.",
+          "reference": "Non determinabile: manca la durata del viaggio in taxi.",
+          "conclusion": "non determinabile|non (?:si puo|e possibile)|non (?:so|sappiamo)",
+          "reason": "durata|tempo.*(?:taxi|viaggio)",
+          "determinate": false
+        }
+      ]
+    },
+    {
+      "id": "dati",
+      "title": "Dati e causalità",
+      "text": "Due classi seguono metodi diversi: A usa il metodo nuovo, B quello tradizionale. Gli studenti non sono stati assegnati alle classi a caso. I test iniziale e finale usano la stessa scala. La media di A passa da 5 a 7; quella di B da 8 a 9. Il miglioramento è la media finale meno quella iniziale. Non sappiamo se le classi differiscano anche per insegnante, tempo di studio o altre condizioni. Un confronto osservato, da solo, non dimostra quale metodo abbia causato il cambiamento.",
+      "reference": null,
+      "questions": [
+        {
+          "id": "finale",
+          "capability": "recall",
+          "prompt": "Quale classe ha la media finale più alta?",
+          "reference": "La classe B, con media 9.",
+          "conclusion": "\\b(?:classe )?b\\b",
+          "reason": null,
+          "determinate": true
+        },
+        {
+          "id": "miglioramento",
+          "capability": "application",
+          "prompt": "Quale classe migliora di più? Mostra il calcolo per entrambe.",
+          "reference": "La classe A: 7 - 5 = 2 punti; B: 9 - 8 = 1 punto.",
+          "conclusion": "\\b(?:classe )?a\\b",
+          "reason": "7.*5.*2.*9.*8.*1",
+          "determinate": true
+        },
+        {
+          "id": "iniziale-diversa",
+          "capability": "conditions",
+          "prompt": "Se la media iniziale di A fosse 6 e tutti gli altri dati restassero uguali, quale classe migliorerebbe di più? Mostra il calcolo.",
+          "reference": "Nessuna: migliorerebbero allo stesso modo; A: 7 - 6 = 1, B: 9 - 8 = 1.",
+          "conclusion": "nessuna|stesso|ugual|parit",
+          "reason": "7.*6.*1.*9.*8.*1",
+          "determinate": true
+        },
+        {
+          "id": "causa",
+          "capability": "unknown",
+          "prompt": "Possiamo attribuire con certezza il miglioramento al metodo nuovo? Indica che cosa impedisce di concluderlo.",
+          "reference": "Non si può concludere con certezza: manca un confronto che controlli le altre differenze fra le classi.",
+          "conclusion": "non (?:si puo|possiamo|e possibile)|^no\\b|non determinabile",
+          "reason": "differenz|controll|caso|assegnaz",
+          "determinate": false
+        }
+      ]
+    }
+  ]
+}
