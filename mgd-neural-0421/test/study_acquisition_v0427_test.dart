@@ -131,6 +131,16 @@ void main() {
       {List<Uri>? requests, String title = 'Dialisi'}) async {
     return WebKnowledgeExplorer11(jsonLoader318: (uri) async {
       requests?.add(uri);
+      if (uri.host == 'it.wikipedia.org') {
+        final chars = int.tryParse(uri.queryParameters['exchars'] ?? '');
+        if (chars != null && (chars < 1 || chars > 1200)) {
+          return {'error': {'code': 'badinteger', 'info': 'exchars must be 1–1200'}};
+        }
+        if (!uri.queryParameters.containsKey('exintro') &&
+            uri.queryParameters['exlimit'] != '1') {
+          return {'error': {'code': 'multifullextracts', 'info': 'full text requires exlimit=1'}};
+        }
+      }
       if (uri.host == 'it.wikipedia.org' && uri.queryParameters['titles'] != null &&
           uri.queryParameters['titles']!.split('|').any((s) => s.toLowerCase() == 'dialisi')) {
         return {'query': {'pages': [{
@@ -158,6 +168,10 @@ void main() {
     expect(requests.where((u) => u.host == 'it.wikipedia.org'), isNotEmpty);
     expect(requests.where((u) => u.host == 'it.wikipedia.org')
         .every((u) => !u.queryParameters.containsKey('exintro')), isTrue);
+    expect(requests.where((u) => u.host == 'it.wikipedia.org')
+        .every((u) => u.queryParameters['exlimit'] == '1' &&
+            u.queryParameters['exsectionformat'] == 'wiki' &&
+            !u.queryParameters.containsKey('exchars')), isTrue);
     expect(draft.documents.single.meta318['studyArea431'], 'struttura');
     StudyGoal426.record(m, StudyGoal426.state(m)!['id'], goal, draft.documents,
         error: draft.error, now: now);
