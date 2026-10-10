@@ -15,8 +15,9 @@ class LogicAtom429 {
       args.map((a) => a == r'$x' ? value : a).toList(), positive);
   bool get variable => args.contains(r'$x');
   String get label {
+    if (args.length == 1) return '${args.first} ${positive ? '' : 'non '}si $predicate';
     final verb = predicate == 'stato' ? 'è' : predicate == 'tipo' ? 'è un'
-        : predicate == 'entra' ? 'entra in' : predicate;
+        : predicate == 'entra' ? 'entra in' : predicate == 'esce' ? 'esce da' : predicate;
     return '${args.first} ${positive ? '' : 'non '}$verb ${args.skip(1).join(' ')}';
   }
 
@@ -110,6 +111,16 @@ class RuleReasoning429 {
       final a = _entity(m[1]!), b = _entity(m[4]!);
       if (_name(a) && _name(b)) return LogicAtom429('entra', [a, b], m[2] == null);
     }
+    m = RegExp(r'^(.+?) (non )?esce (?:da|dal|dalla|dallo) (.+)$').firstMatch(s);
+    if (m != null) {
+      final a = _entity(m[1]!), b = _entity(m[3]!);
+      if (_name(a) && _name(b)) return LogicAtom429('esce', [a, b], m[2] == null);
+    }
+    m = RegExp(r'^(.+?) (non )?si ([a-z]+)$').firstMatch(s);
+    if (m != null && !{'puo', 'potrebbe', 'deve', 'dice', 'sa'}.contains(m[3])) {
+      final a = _entity(m[1]!);
+      if (_name(a)) return LogicAtom429(m[3]!, [a], m[2] == null);
+    }
     m = RegExp(r'^(.+?) (non )?(e|diventa|rimane|risulta) ([a-z0-9_-]+)$').firstMatch(s);
     if (m != null) {
       final a = _entity(m[1]!);
@@ -171,9 +182,40 @@ class RuleReasoning429 {
     final exclusive = sources.where((s) => RegExp(
         r'^tutte le [a-z]+ di questo modello hanno soltanto questo ingresso$')
         .hasMatch(_clean(s.text))).map((s) => s.url).toSet();
+    // Semicolons delimit complete propositions, never a truncated condition.
+    final clauses = <LogicSource429>[];
     for (final source in sources) {
+      final parts = source.text.split(RegExp(r';\s*'));
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].trim().isNotEmpty) clauses.add(parts.length == 1 ? source :
+            LogicSource429('${source.id}/$i', parts[i].trim(), source.title, source.url));
+      }
+    }
+    for (final source in clauses) {
       final s = _clean(source.text);
       if (s.contains(RegExp(r'\b(puo|potrebbe|forse|generalmente|normalmente|probabilmente)\b'))) continue;
+      // Ordinary fronted conditionals retain both the condition and effects.
+      // No converse is inferred from "when" or "if".
+      var front = RegExp(r'^(?:quando|se) (.+?), (?:allora )?(.+)$').firstMatch(s);
+      if (front != null) {
+        final conditions = _body(front[1]!), effects = _body(front[2]!);
+        if (conditions != null && effects != null) {
+          for (final effect in effects) { _conditional(p, source, effect, conditions); }
+        }
+        continue;
+      }
+      // "Only if" specifies necessity, never sufficiency.
+      final necessary = RegExp(r'^(.+?) solo se (.+)$').firstMatch(s);
+      if (necessary != null) {
+        final effect = atom(necessary[1]!), conditions = _body(necessary[2]!);
+        if (effect != null && conditions != null) {
+          for (final condition in conditions) {
+            _conditional(p, source, condition, [effect]);
+            _conditional(p, source, effect.opposite, [condition.opposite]);
+          }
+        }
+        continue;
+      }
       var m = RegExp(r'^(.+?) fa entrare (.+?) in ogni ([a-z]+) che lo contiene se e solo se (.+)$').firstMatch(s);
       if (m != null) {
         final channel = _entity(m[1]!), cargo = _entity(m[2]!);
@@ -217,8 +259,8 @@ class RuleReasoning429 {
       // Reject an unparsed connective rather than extract an unconditional
       // fragment of a conditional, definition or negated quantifier.
       if (s.contains(RegExp(r'\b(se|quando|ogni|tutte|nessun|oppure|o|salvo|eccetto)\b'))) continue;
-      final a = atom(s);
-      if (a != null) p.fact(a, source);
+      final atoms = _body(s);
+      if (atoms != null) { for (final a in atoms) { p.fact(a, source); } }
     }
     return p;
   }
@@ -398,9 +440,46 @@ class RuleReasoning429 {
   static LogicAnswer429? answer(ResearchMemory11 memory, String prompt) {
     if (!prompt.trim().endsWith('?')) return null;
     final parts = prompt.trim().split(RegExp(r'(?<=[.!])\s+|\n+'));
-    final question = _clean(parts.last);
-    final target = atom(question);
+    var question = _clean(parts.last);
+    final scenario = parts.take(parts.length - 1).map(_clean).toList();
+    final hypothetical = RegExp(r'^se (.+?), (?:allora )?(.+)$').firstMatch(question);
+    if (hypothetical != null) {
+      scenario.add(hypothetical[1]!);
+      question = hypothetical[2]!;
+    }
+    final why = question.startsWith('perche ');
+    if (why) question = question.substring('perche '.length);
+    var target = atom(question);
     final program = parse(sources(memory));
+    final prediction = RegExp(r'^(?:che cosa|cosa) (?:succede|accade) (?:a|al|alla|allo) (.+?) (?:quando|se) (.+)$')
+        .firstMatch(question);
+    if (prediction != null) scenario.add(prediction[2]!);
+    final assumptions = <LogicAtom429>[];
+    for (final part in scenario) {
+      final parsed = _body(part);
+      if (parsed == null) return const LogicAnswer429('unknown',
+          'Non determinabile: una condizione della domanda non è interpretabile in modo preciso.');
+      assumptions.addAll(parsed);
+    }
+    if (prediction != null) {
+      final subject = _entity(prediction[1]!);
+      final candidates = <String, LogicAtom429>{};
+      for (final rule in program.rules) {
+        final head = rule.head.variable ? rule.head.bind(subject) : rule.head;
+        if (head.args.first == subject && head.positive) candidates[head.key] = head;
+      }
+      final conclusions = <LogicAnswer429>[];
+      for (final head in candidates.values.take(24)) {
+        final result = solve(program, head, assumptions);
+        if (result.truth == 'conflict') return result;
+        if (result.truth == 'true') conclusions.add(result);
+      }
+      if (conclusions.isEmpty) return const LogicAnswer429('unknown',
+          'Non determinabile: non ho ricavato una conseguenza per questo soggetto dalle condizioni e dalle regole lette.');
+      final first = conclusions.first;
+      return LogicAnswer429('true', 'Dal testo, nelle condizioni indicate:\n'
+          '${conclusions.map((a) => a.text.replaceFirst(RegExp(r"^Sì\. "), "")).join("\n\n")}', first.proof);
+    }
     if (target == null) {
       // A requested unrecorded property of a known entity must not become a
       // list of associations presented as an answer.
@@ -424,19 +503,15 @@ class RuleReasoning429 {
       }
       return null;
     }
-    final assumptions = <LogicAtom429>[];
-    for (final part in parts.take(parts.length - 1)) {
-      final parsed = _body(_clean(part));
-      // Unsupported scenario clauses invalidate the attempted prediction,
-      // rather than silently discarding an exception or qualification.
-      if (parsed == null) return const LogicAnswer429('unknown',
-          'Non determinabile: una condizione della domanda non è interpretabile in modo preciso.');
-      assumptions.addAll(parsed);
-    }
     final related = program.facts.any((p) => p.conclusion.key == target.key) ||
         program.rules.any((r) => r.head.predicate == target.predicate &&
           (r.head.variable || r.head.key == target.key));
     if (!related && assumptions.isEmpty && !program.entities.contains(target.args.first)) return null;
-    return solve(program, target, assumptions);
+    final result = solve(program, target, assumptions);
+    if (why && result.proof != null && result.proof!.rule == null) {
+      return const LogicAnswer429('unknown',
+          'Il testo riporta il fatto, ma non specifica una regola che ne spieghi la causa.');
+    }
+    return result;
   }
 }
