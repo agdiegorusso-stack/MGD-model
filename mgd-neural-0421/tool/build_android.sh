@@ -10,7 +10,7 @@ mgd_build_stage='prerequisites'
 trap 'mgd_build_code=$?; python3 - "$mgd_build_stage" "$mgd_build_code" <<'"'"'PY'"'"'
 import json, pathlib, sys, time
 pathlib.Path("tool/reports/build_status.json").write_text(json.dumps({
-  "version": "0.42.6", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+  "version": "0.42.7", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
   "stage": sys.argv[1], "exit_code": int(sys.argv[2]),
   "apk_built": sys.argv[1] == "complete" and sys.argv[2] == "0"
 }, indent=2))
@@ -36,6 +36,8 @@ mgd_build_stage='analyze'
 flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee tool/reports/analyze.log
 mgd_build_stage='tests'
 flutter test --machine 2>&1 | tee tool/reports/flutter_tests.jsonl
+mgd_build_stage='live-study'
+flutter test tool/live_study_v0427_test.dart --reporter expanded 2>&1 | tee tool/reports/live-study.log
 mgd_build_stage='apk'
 flutter build apk --release 2>&1 | tee tool/reports/build.log
 python3 - <<'PY'
