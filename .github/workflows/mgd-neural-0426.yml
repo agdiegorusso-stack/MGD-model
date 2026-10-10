@@ -1,4 +1,4 @@
-name: MGD 0.42.6 persistent study goal
+name: MGD 0.42.7 persistent study goal
 on:
   push:
     branches: ['codex/mgd-neural-0426-study-goal']
@@ -47,11 +47,11 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neural-0.42.6-APK
+          name: MGD-Neural-0.42.7-APK
           path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Neural-0.42.6-verification
+          name: MGD-Neural-0.42.7-verification
           path: mgd-neural-0421/tool/reports
