@@ -28,6 +28,8 @@ void main() {
     final q = LearningVerification428.worlds(17).first.cases.first;
     expect(LearningVerification428.grade(q, VerificationAnswer428(
         '• ${q.subject} — con fonte: ${q.relation} → ${q.object}.', 'relazioni')).passed, true);
+    expect(LearningVerification428.grade(q, VerificationAnswer428(
+        '• ${q.subject} — ha parte → ${q.object}.', 'fonti')).passed, true);
     for (final text in [
       '• altro — ${q.relation} → ${q.object}.',
       '• ${q.subject} — non ${q.relation} → ${q.object}.',
