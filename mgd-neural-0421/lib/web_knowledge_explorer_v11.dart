@@ -1118,6 +1118,19 @@ class WebKnowledgeExplorer11 {
       }
       // A resolved title/redirect is stronger than incidental context words.
       // Record every rejection so acquisition and usable documents are distinct.
+      final resolvedIds432 = docs.where((d) => d.provider == 'Wikipedia IT' &&
+          d.meta318['resolvedTopic'] == true &&
+          ResearchSemantics317.sameSubject('${d.meta318['requestedTopic']}', topic))
+          .map((d) => '${d.meta318['wikidataId'] ?? ''}')
+          .where((id) => RegExp(r'^Q[1-9][0-9]*$').hasMatch(id)).toSet();
+      docs.removeWhere((d) {
+        if (d.provider != 'Wikidata' || resolvedIds432.isEmpty) return false;
+        final id = RegExp(r'Q[1-9][0-9]*$').firstMatch(d.url)?.group(0);
+        if (id != null && resolvedIds432.contains(id)) return false;
+        diagnostics.add({'provider': d.provider, 'status': 'identità diversa esclusa',
+          'title': d.title, 'url': d.url, 'reason': 'La pagina risolta identifica un altro soggetto.'});
+        return true;
+      });
       final rejected = docs.where((d) => !documentMatches320(goal, d)).toList();
       for (final d in rejected) {
         diagnostics.add({
@@ -1931,14 +1944,19 @@ class WebKnowledgeExplorer11 {
       'origin': '*'
     }));
     final byId = <String, Map>{};
+    final resolvedIds432 = documents.where((d) => d.provider == 'Wikipedia IT' &&
+        d.meta318['resolvedTopic'] == true)
+        .map((d) => '${d.meta318['wikidataId'] ?? ''}')
+        .where((id) => RegExp(r'^Q[1-9][0-9]*$').hasMatch(id)).toSet();
     for (final r in ((search['search'] as List?) ?? []).whereType<Map>()) {
       final aliases = <String>[
         '${r['label'] ?? ''}',
         if (r['match'] is Map) '${(r['match'] as Map)['text'] ?? ''}',
         ...((r['aliases'] as List?) ?? []).map((v) => '$v')
       ];
-      if (aliases.any((v) => ResearchSemantics317.sameSubject(v, topic)) ||
-          r['id'] == topic) byId['${r['id']}'] = r;
+      if ((resolvedIds432.isEmpty || resolvedIds432.contains('${r['id']}')) &&
+          (aliases.any((v) => ResearchSemantics317.sameSubject(v, topic)) ||
+          r['id'] == topic)) byId['${r['id']}'] = r;
     }
     for (final d in documents) {
       final id = '${d.meta318['wikidataId'] ?? ''}';
