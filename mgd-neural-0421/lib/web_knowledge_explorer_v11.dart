@@ -1689,7 +1689,8 @@ class WebKnowledgeExplorer11 {
       'prop': 'extracts|info|pageprops',
       'ppprop': 'wikibase_item|disambiguation',
       if (!fullText431) 'exintro': '1',
-      if (fullText431) 'exchars': '24000',
+      if (fullText431) 'exlimit': '1',
+      if (fullText431) 'exsectionformat': 'wiki',
       'explaintext': '1',
       'inprop': 'url',
       'format': 'json',
@@ -1706,7 +1707,8 @@ class WebKnowledgeExplorer11 {
       'prop': 'extracts|info|pageprops',
       'ppprop': 'wikibase_item|disambiguation',
       if (!fullText431) 'exintro': '1',
-      if (fullText431) 'exchars': '24000',
+      if (fullText431) 'exlimit': '1',
+      if (fullText431) 'exsectionformat': 'wiki',
       'explaintext': '1',
       'inprop': 'url',
       'format': 'json',
@@ -1724,7 +1726,8 @@ class WebKnowledgeExplorer11 {
       if (j.containsKey('missing')) continue;
       final pp = j['pageprops'] is Map ? j['pageprops'] as Map : const {};
       if (pp.containsKey('disambiguation')) continue;
-      final text = '${j['extract'] ?? ''}'.trim(),
+      final extract = '${j['extract'] ?? ''}'.trim();
+      final text = extract.length > 60000 ? extract.substring(0, 60000) : extract,
           title = '${j['title'] ?? ''}'.trim();
       if (text.length < 20 || title.isEmpty) continue;
       out.add(WebDocument11(
@@ -1736,6 +1739,7 @@ class WebKnowledgeExplorer11 {
           trust: 0.84,
           meta318: {
             'wikidataId': pp['wikibase_item'],
+            if (extract.length > 60000) 'truncated431': true,
             'requestedTopic': q,
             'resolvedTopic':
                 resolved || ResearchSemantics317.sameSubject(title, q),
