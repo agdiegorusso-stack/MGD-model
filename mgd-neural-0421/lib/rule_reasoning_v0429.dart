@@ -77,7 +77,7 @@ class RuleReasoning429 {
       .replaceAll('ò', 'o').replaceAll('ù', 'u')
       .replaceAll(RegExp(r'\s+'), ' ').trim();
   static String _entity(String s) => norm(s)
-      .replaceFirst(RegExp(r'^(il|lo|la|un|uno|una|l[’\x27])\s*'), '').trim();
+      .replaceFirst(RegExp(r'^(?:(?:il|lo|la|un|uno|una)\s+|l[’\x27])'), '').trim();
   static bool _name(String s) => s == r'$x' ||
       RegExp(r'^[a-z0-9][a-z0-9_ -]{0,90}$').hasMatch(s) &&
       !RegExp(r'\b(e|o|se|quando|che|oppure|salvo|eccetto)\b').hasMatch(s);
