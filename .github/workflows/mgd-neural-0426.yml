@@ -2,7 +2,7 @@ name: MGD 0.42.6 persistent study goal
 on:
   push:
     branches: ['codex/mgd-neural-0426-study-goal']
-    paths: ['.github/workflows/mgd-neural-0426.yml']
+    paths: ['mgd-neural-0421/**', '.github/workflows/mgd-neural-0426.yml']
   workflow_dispatch:
 permissions:
   contents: read
