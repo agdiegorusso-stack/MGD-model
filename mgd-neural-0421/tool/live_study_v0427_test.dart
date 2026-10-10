@@ -64,6 +64,9 @@ void main() {
           expect(goal.query, 'la dialisi struttura');
           expect(goal.topic, 'dialisi');
           expect(draft.documents.every((d) => d.meta318['studyArea431'] == 'struttura'), isTrue);
+          expect(draft.documents.any((d) => d.provider == 'Wikipedia IT' &&
+              d.meta318['resolvedTopic'] == true), isTrue,
+              reason: 'The root article content must be read; bibliographic title matches are insufficient.');
         }
       }
     } finally {
