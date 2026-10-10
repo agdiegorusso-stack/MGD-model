@@ -758,7 +758,8 @@ class ResearchSemantics317 {
     if (draft.error != null) {
       session.status = 'errore';
       memory.lastError = draft.error;
-      memory.lastStatus = 'Ricerca fallita: ${draft.error}';
+      memory.lastStatus = draft.goal.facetTerms431.isNotEmpty
+          ? 'Area in attesa di fonti: ${draft.error}' : 'Ricerca fallita: ${draft.error}';
       return ResearchOutcome11(memory.lastStatus, 0, 0, 0);
     }
     for (final p in draft.passages) {
