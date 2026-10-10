@@ -206,7 +206,7 @@ class RuleReasoning429 {
       }
       // "Only if" specifies necessity, never sufficiency.
       final necessary = RegExp(r'^(.+?) solo se (.+)$').firstMatch(s);
-      if (necessary != null) {
+      if (necessary != null && !s.contains(' se e solo se ')) {
         final effect = atom(necessary[1]!), conditions = _body(necessary[2]!);
         if (effect != null && conditions != null) {
           for (final condition in conditions) {
