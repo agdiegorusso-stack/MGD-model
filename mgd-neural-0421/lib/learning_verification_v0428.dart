@@ -174,12 +174,30 @@ class LearningVerification428 {
         .expand((s) => (s.audit315['decisions'] as List? ?? []).whereType<Map>())
         .map((d) => '${d['claimKey']}').toSet();
     return memory.claims.values.where((c) => ReadingQuery430.usable(c) &&
-      !{'ha', 'sono'}.contains(ResearchSemantics317.relation(c.relation)) &&
+      assessableFact432(c) &&
       ReadingQuery430.contextualSense432(c, resolved) &&
       memory.evidence.any((e) => c.evidenceIds.contains(e.id) &&
           e.sourceUrl.isNotEmpty && e.excerpt.trim().isNotEmpty) &&
       (subjects.isEmpty || subjects.any((s) =>
           ResearchSemantics317.sameSubject(s, c.subject)) || studied.contains(c.key))).toList();
+  }
+
+  static bool assessableFact432(ResearchClaim11 c) {
+    final relation = ResearchSemantics317.relation(c.relation);
+    if ({'ha', 'sono'}.contains(relation)) return false;
+    if (c.meta317['extractor'] == 'wikidata317') return true;
+    // A quoted opinion, possibility or population-specific estimate must not
+    // become an unconditional taxonomy fact or an automatic quiz reference.
+    // Its original text remains available in source memory for inspection.
+    final object = ResearchSemantics317.norm(c.object);
+    if (RegExp(r'\b(?:possibil\w*|ottim\w*|miglior\w*|peggior\w*|prefer\w*|'
+        r'impressive|optimal|excellent|best|better|could|may|might)\b|senza dubbio|\d+\s*%')
+        .hasMatch(c.object.toLowerCase())) return false;
+    if ({'tipo di', 'sottoclasse di', 'istanza di'}.contains(relation) &&
+        (object.split(' ').length > 10 ||
+         RegExp(r'\b(?:se|quando|qualora|pazienti|soggetti|patients|subjects|if|when)\b')
+             .hasMatch(object))) return false;
+    return true;
   }
 
   static List<VerificationCase428> sourceCases(ResearchMemory11 memory, int seed) {
