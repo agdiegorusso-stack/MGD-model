@@ -181,12 +181,15 @@ class LearningVerification428 {
     }
     if (question.object.isNotEmpty) {
       final exact = clean == norm(question.object);
-      final expectedTriple = norm('${question.subject} ${question.relation} ${question.object}');
       final triple = answer.text.split('\n').any((line) {
         final row = line.replaceFirst(RegExp(r'^\s*[•*-]\s*'), '')
             .replaceAll(RegExp(r'(insegnata|con fonte|corroborata):\s*'), '')
             .replaceFirst(RegExp(r'\.$'), '');
-        return norm(row) == expectedTriple;
+        final parsed = RegExp(r'^(.+?)\s*—\s*(.+?)\s*→\s*(.+)$').firstMatch(row.trim());
+        return parsed != null && !norm(parsed[2]!).startsWith('non ') &&
+            ResearchSemantics317.sameSubject(parsed[1]!, question.subject) &&
+            ResearchSemantics317.relation(parsed[2]!) == ResearchSemantics317.relation(question.relation) &&
+            ResearchSemantics317.sameObject(parsed[3]!, question.object);
       });
       final passed = answer.route != 'passaggi' && (exact || triple);
       return (passed: passed, reason: passed
