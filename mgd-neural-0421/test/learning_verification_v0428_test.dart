@@ -10,8 +10,8 @@ import '../lib/web_knowledge_explorer_v11.dart';
 
 void main() {
   sqfliteFfiInit();
-  final yes = LearningVerification428.worlds(17).first.cases
-      .firstWhere((c) => c.capability == 'application');
+  final yes = LearningVerification428.worlds(17).expand((w) => w.cases)
+      .firstWhere((c) => c.capability == 'application' && c.expected == 'si');
   test('quotes and associations cannot pass an application by containing answer words', () {
     for (final route in ['passaggi', 'associazioni']) {
       expect(LearningVerification428.grade(yes,
@@ -49,6 +49,10 @@ void main() {
     final all = LearningVerification428.worlds(17);
     expect(all.expand((w) => w.cases).length, 28);
     expect(all.expand((w) => w.cases).map((c) => c.id).toSet().length, 28);
+    for (final type in ['composition', 'application']) {
+      expect(all.expand((w) => w.cases).where((c) => c.capability == type)
+          .map((c) => c.expected).toSet(), {'si', 'no'});
+    }
     expect(all.first.document.text, isNot(LearningVerification428.worlds(18).first.document.text));
     for (final world in all) {
       final cases = world.cases.where((c) => c.capability == 'conditions').toList();
