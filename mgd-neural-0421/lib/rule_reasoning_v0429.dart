@@ -331,6 +331,9 @@ class RuleReasoning429 {
     }
     if (limited) return const LogicAnswer429('unknown',
         'Non determinabile: il ragionamento ha raggiunto il limite di calcolo.');
+    if (known.values.any((p) => known.containsKey(p.conclusion.opposite.signedKey))) {
+      return const LogicAnswer429('conflict', 'Non determinabile: le regole producono premesse IN CONFLITTO.');
+    }
     final yes = known[target.signedKey], no = known[target.opposite.signedKey];
     if (yes != null && no != null) return const LogicAnswer429('conflict',
         'Non determinabile: le premesse o le regole sono IN CONFLITTO.');
