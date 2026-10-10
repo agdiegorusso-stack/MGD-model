@@ -4,6 +4,8 @@ import 'cognitive_core_v0400.dart';
 import 'cognitive_core_page_v0400.dart';
 import 'dialogue_engine_v0410.dart';
 import 'knowledge_chat_v0423.dart';
+import 'study_goal_v0426.dart';
+import 'study_goal_page_v0426.dart';
 // BOOK_CHAT_WIRING_0342
 // BOOK_IMPORT_REPAIR_0341
 import 'dart:async';
@@ -330,6 +332,11 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             setState(() => _status = 'Consolidamento CLS sospeso: $e');
         }
       }
+      if (_lifecycle319 == AppLifecycleState.resumed &&
+          !_busy && !_researchBusy && !_maintenance317 &&
+          _chat.text.isEmpty && StudyGoal426.state(_researchMemory) != null) {
+        await _researchOnce10(autonomous: true);
+      }
       if (_world.eventDriven33) {
         _world.runtime319['state'] =
             'MGD su evento; consolidamento CLS secondo le impostazioni';
@@ -551,6 +558,20 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _startStudyGoal426(String topic) async {
+    StudyGoal426.start(_researchMemory, topic);
+    _researchMemory.enabled = true;
+    await _checkpoint319();
+    if (mounted) setState(() => _status = StudyGoal426.summary(_researchMemory));
+    await _researchOnce10(autonomous: true);
+  }
+
+  Future<void> _pauseStudyGoal426(bool paused) async {
+    StudyGoal426.pause(_researchMemory, paused);
+    await _checkpoint319();
+    if (mounted) setState(() => _status = StudyGoal426.summary(_researchMemory));
+  }
+
   Future<void> _researchOnce10({
     bool autonomous = false,
     bool allowWhileBusy = false,
@@ -564,6 +585,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (_busy && !allowWhileBusy) return;
 
     final requestedTopic = manualTopic?.trim() ?? '';
+    final persistentGoal426 = StudyGoal426.state(_researchMemory);
+    final persistentId426 = persistentGoal426?['id']?.toString();
     final goal = requestedTopic.isNotEmpty
         ? ResearchGoal11(
             query: requestedTopic,
@@ -571,7 +594,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
             reason: 'argomento scelto manualmente dall’utente',
             value: 1.0,
           )
-        : _webExplorer.selectGoal(
+        : persistentGoal426 != null
+            ? StudyGoal426.next(_researchMemory)
+            : _webExplorer.selectGoal(
             _brain,
             _world,
             _researchMemory,
@@ -655,6 +680,9 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         _researchMemory.recordTopicStudy321(
             goal.topic, session.audit315['newEvidence321'] as int? ?? 0);
       }
+      if (requestedTopic.isEmpty && persistentId426 != null) {
+        StudyGoal426.record(_researchMemory, persistentId426, goal, draft.documents);
+      }
       // All readings and updated metrics are persisted together.
       await _checkpoint319();
       if (mounted) {
@@ -664,6 +692,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
     } catch (e) {
       _researchMemory.lastError = e.toString();
+      if (requestedTopic.isEmpty && persistentId426 != null) {
+        StudyGoal426.record(_researchMemory, persistentId426, goal, const [],
+            error: e.toString());
+      }
       _researchMemory.lastStatus = 'Errore ricerca Internet: $e';
       await _checkpoint319();
       if (mounted) setState(() => _status = _researchMemory.lastStatus);
@@ -767,6 +799,23 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (_busy || _researchBusy || _maintenance317 || !_ready) return;
     final text = _chat.text.trim();
     if (text.isEmpty) return;
+    final studyTopic426 = StudyGoal426.command(text);
+    if (studyTopic426 != null) {
+      if (studyTopic426.length > 240) {
+        setState(() => _status = 'Obiettivo troppo lungo: massimo 240 caratteri.');
+        return;
+      }
+      _chat.clear();
+      setState(() {
+        _messages.add(ChatMessage04(user: true, text: text));
+        _messages.add(ChatMessage04(user: false,
+            text: 'Avvio un piano persistente su “$studyTopic426”. '
+                'Cercherò fonti e riprenderò lo studio alla riapertura. '
+                'Potrai vedere letture e lacune nella scheda Mente.'));
+      });
+      await _startStudyGoal426(studyTopic426);
+      return;
+    }
     _chat.clear();
     setState(() {
       _busy = true;
@@ -1947,6 +1996,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           manualTopic: topic,
         ),
         onResearchEnabled: _setResearchEnabled10,
+        onStartGoal426: _startStudyGoal426,
+        onPauseGoal426: _pauseStudyGoal426,
         onEdit: _openEditor12,
         onSave: _save,
         onReset: _reset,
@@ -2541,6 +2592,8 @@ class _MindPage07 extends StatelessWidget {
   final Future<void> Function() onResearch;
   final Future<void> Function(String topic) onResearchTopic;
   final ValueChanged<bool> onResearchEnabled;
+  final Future<void> Function(String) onStartGoal426;
+  final Future<void> Function(bool) onPauseGoal426;
   final Future<void> Function() onEdit;
   final Future<void> Function([String?]) onSave;
   final Future<void> Function() onReset;
@@ -2563,6 +2616,8 @@ class _MindPage07 extends StatelessWidget {
     required this.onResearch,
     required this.onResearchTopic,
     required this.onResearchEnabled,
+    required this.onStartGoal426,
+    required this.onPauseGoal426,
     required this.onEdit,
     required this.onSave,
     required this.onReset,
@@ -2583,6 +2638,8 @@ class _MindPage07 extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       children: [
         Text('Mente', style: Theme.of(context).textTheme.titleLarge),
+        StudyGoalCard426(memory: research, busy: busy || researchBusy,
+            onStart: onStartGoal426, onPause: onPauseGoal426),
         OutlinedButton.icon(
           onPressed: () =>
               InspectorScope315.maybeOf(context)?.openCatalog(context),
