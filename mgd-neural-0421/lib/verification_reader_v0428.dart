@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'cognitive_core_v0400.dart';
 import 'cognitive_induction_v024.dart';
@@ -21,8 +22,9 @@ class VerificationReader428 {
   final Directory directory;
   VerificationReader428._(this.core, this.directory);
 
-  static Future<VerificationReader428> open({DatabaseFactory? factory}) async {
-    final directory = await Directory.systemTemp.createTemp('mgd-verification-');
+  static Future<VerificationReader428> open({DatabaseFactory? factory, String? temporaryRoot}) async {
+    final root = temporaryRoot == null ? await getTemporaryDirectory() : Directory(temporaryRoot);
+    final directory = await root.createTemp('mgd-verification-');
     try {
       final store = await CognitiveStore400.openAt('${directory.path}/core.db', factory: factory);
       return VerificationReader428._(CognitiveCore400(store), directory);
