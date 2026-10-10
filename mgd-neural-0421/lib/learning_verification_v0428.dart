@@ -89,16 +89,22 @@ class LearningVerification428 {
   static List<VerificationWorld428> worlds(int seed) {
     final random = Random(seed);
     final nonce = seed.toRadixString(36);
+    final compositionAnswers = [true, true, false, false]..shuffle(random);
+    final applicationAnswers = [true, true, false, false]..shuffle(random);
     return List.generate(4, (index) {
       final cell = 'cel$nonce${index}a', other = 'cel$nonce${index}b';
       final channel = 'can$nonce$index', substance = 'sos$nonce$index';
       final resource = 'ris$nonce$index';
       final activeWhenPresent = random.nextBool();
       final trigger = activeWhenPresent ? 'presente' : 'assente';
+      final opposite = activeWhenPresent ? 'assente' : 'presente';
+      final compositionCondition = compositionAnswers[index] ? trigger : opposite;
+      final applicationCondition = applicationAnswers[index] ? trigger : opposite;
       final text = '$cell contiene $channel. '
           'In questo mondo simulato, $channel fa entrare $substance in ogni cellula '
           'che lo contiene se e solo se $resource è $trigger. '
-          'Quando $substance entra in una cellula, quella cellula diventa luminosa. '
+          'Ogni cellula di questo modello diventa luminosa se e solo se '
+          '$substance entra al suo interno. '
           'Tutte le cellule di questo modello hanno soltanto questo ingresso.';
       final doc = WebDocument11(provider: 'Mondo simulato',
           family: 'locale:verifica', title: 'Mondo ${index + 1}',
@@ -115,9 +121,11 @@ class LearningVerification428 {
         question('paraphrase', 'Quale canale è presente in $cell?', channel,
             relation: 'contiene', object: channel),
         question('composition', 'Nel modello, $cell contiene $channel e '
-            '$resource è $trigger. $cell diventa luminosa?', 'si'),
+            '$resource è $compositionCondition. $cell diventa luminosa?',
+            compositionAnswers[index] ? 'si' : 'no'),
         question('application', 'Una cellula nuova, $other, contiene $channel. '
-            '$resource è $trigger. $substance entra in $other?', 'si'),
+            '$resource è $applicationCondition. $substance entra in $other?',
+            applicationAnswers[index] ? 'si' : 'no'),
         question('conditions-positive', '$cell contiene $channel. '
             '$resource è presente. $substance entra in $cell?',
             activeWhenPresent ? 'si' : 'no'),
