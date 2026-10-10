@@ -263,6 +263,15 @@ void main() {
     m.state317[StudyGoal426.key] = g;
     expect(StudyGoal426.next(m, now: now)!.topic, 'numeri complessi');
     expect(StudyGoal426.next(m, now: now)!.facetTerms431, contains('struttur'));
+    const rootDoc = WebDocument11(provider: 'test', family: 'test',
+      title: 'Numeri complessi', url: 'https://example.org/numbers',
+      text: 'I numeri complessi sono l’argomento di questa scheda di prova.', trust: .8);
+    StudyGoal426.expand(m, g['id'], ResearchDraft11(
+      goal: StudyGoal426.next(m, now: now)!, documents: [rootDoc],
+      claims: [const ExtractedClaim11(subject: 'Numeri complessi', relation: 'è',
+        object: 'argomento', sentence: 'I numeri complessi sono l’argomento.',
+        source: rootDoc, quality: .9)], passages: const [], sentencesRead: 1));
+    expect(StudyGoal426.items(StudyGoal426.state(m)!), hasLength(1));
     g['items'] = [{...StudyGoal426.items(g).single,
       'label': 'Piano complesso', 'lookup': 'Piano complesso', 'discoveredFrom': 'https://example.org'}];
     m.state317[StudyGoal426.key] = g;
