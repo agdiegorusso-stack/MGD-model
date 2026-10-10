@@ -14,9 +14,12 @@ class LogicAtom429 {
   LogicAtom429 bind(String value) => LogicAtom429(predicate,
       args.map((a) => a == r'$x' ? value : a).toList(), positive);
   bool get variable => args.contains(r'$x');
-  String get label => '${positive ? '' : 'non '}'
-      '${args.first} ${predicate == 'stato' ? 'è' : predicate} '
-      '${args.skip(1).join(' ')}';
+  String get label {
+    final verb = predicate == 'stato' ? 'è' : predicate == 'tipo' ? 'è un'
+        : predicate == 'entra' ? 'entra in' : predicate;
+    return '${args.first} ${positive ? '' : 'non '}$verb ${args.skip(1).join(' ')}';
+  }
+
 }
 
 class LogicSource429 {
@@ -339,8 +342,18 @@ class RuleReasoning429 {
         'Non determinabile: le premesse o le regole sono IN CONFLITTO.');
     final proof = yes ?? no;
     if (proof == null) {
-      final missing = program.rules.where((r) => _binding(r.head, target) != null)
-          .expand((r) => r.body).map((a) => a.label).toSet().take(4).join('; ');
+      final absent = <String>{};
+      for (final rule in program.rules) {
+        final binding = _binding(rule.head, target);
+        if (binding == null) continue;
+        for (final a in rule.body) {
+          final bound = a.bind(binding);
+          if (!known.containsKey(bound.signedKey) && !known.containsKey(bound.opposite.signedKey)) {
+            absent.add(bound.label);
+          }
+        }
+      }
+      final missing = absent.take(4).join('; ');
       return LogicAnswer429('unknown', 'Non determinabile dalle informazioni disponibili.'
           '${missing.isEmpty ? '' : ' Occorrono premesse verificate: $missing.'}');
     }
@@ -348,10 +361,11 @@ class RuleReasoning429 {
       return const LogicAnswer429('conflict', 'Non determinabile: una premessa è IN CONFLITTO.');
     }
     final lines = <String>[], used = <String>{}, sourceIds = <String>{};
+    var step = 0;
     void explain(LogicProof429 p) {
       if (!used.add(p.conclusion.signedKey)) return;
       for (final parent in p.premises) { explain(parent); }
-      lines.add('${lines.length + 1}. ${p.conclusion.label}'
+      lines.add('${++step}. ${p.conclusion.label}'
           '${p.assumption ? ' (ipotesi della domanda)' : p.rule == null ? ' (premessa letta)' : ' (conseguenza della regola)'}');
       final s = p.rule?.source ?? p.source;
       if (s != null && sourceIds.add(s.id)) {
