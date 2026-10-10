@@ -94,6 +94,9 @@ class _Page428State extends State<LearningVerificationPage428> {
         _choice('Comprensione su casi nuovi',
             '28 prove in 4 mondi simulati, con nomi e condizioni nuovi a ogni esecuzione. '
             'Confronta le risposte prima e dopo la lettura. I testi simulati restano separati dalla tua memoria.', 'controlled'),
+        _choice('Regole in contesti nuovi',
+            '24 prove su dispositivi simulati: catene di regole, condizioni mancanti, '
+            'negazioni e conflitti. Le risposte mostrano le premesse usate.', 'transfer'),
         if (running) ...[
           const SizedBox(height: 12),
           LinearProgressIndicator(value: total == 0 ? null : done / total),
@@ -103,7 +106,7 @@ class _Page428State extends State<LearningVerificationPage428> {
         if (error != null) Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         if (report != null) ...[
           const SizedBox(height: 16),
-          Text(report['mode'] == 'controlled' ? 'Risultati sui mondi simulati' : 'Risultati sulle letture conservate',
+          Text(report['mode'] != 'sources' ? 'Risultati sui mondi simulati' : 'Risultati sulle letture conservate',
               style: Theme.of(context).textTheme.titleLarge),
           Text('${report['passed']}/${report['total']} prove superate · versione ${report['version']}'),
           if (report['beforePassed'] != null)
@@ -115,7 +118,7 @@ class _Page428State extends State<LearningVerificationPage428> {
           if (report['mode'] == 'sources' && rows.isNotEmpty)
             const Text('La risposta attesa deriva dalla proposizione estratta: controlla anche il passaggio originale. '
                 'Il punteggio misura il recupero delle fonti, non certifica la loro correttezza scientifica.'),
-          if (report['mode'] == 'controlled')
+          if (report['mode'] != 'sources')
             const Text('Un punteggio alto nel recupero dei fatti non compensa gli errori di applicazione. '
                 'Il modello descritto è inventato; queste prove non certificano competenza biologica generale.'),
           const SizedBox(height: 8),
@@ -142,7 +145,7 @@ class _Page428State extends State<LearningVerificationPage428> {
         ],
         if (history.length > 1) ExpansionTile(title: const Text('Esecuzioni precedenti'), children: [
           for (final r in history) ListTile(
-            title: Text('${r['mode'] == 'controlled' ? 'Mondi simulati' : 'Letture'} · ${r['passed']}/${r['total']}'),
+            title: Text('${r['mode'] == 'transfer' ? 'Regole nuove' : r['mode'] == 'controlled' ? 'Mondi simulati' : 'Letture'} · ${r['passed']}/${r['total']}'),
             subtitle: Text('${r['at']}'),
             onTap: running ? null : () => setState(() { selected = r; filter = 'all'; })),
         ]),
