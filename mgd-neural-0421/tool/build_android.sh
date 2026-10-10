@@ -10,7 +10,7 @@ mgd_build_stage='prerequisites'
 trap 'mgd_build_code=$?; python3 - "$mgd_build_stage" "$mgd_build_code" <<'"'"'PY'"'"'
 import json, pathlib, sys, time
 pathlib.Path("tool/reports/build_status.json").write_text(json.dumps({
-  "version": "0.42.8", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+  "version": "0.42.9", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
   "stage": sys.argv[1], "exit_code": int(sys.argv[2]),
   "apk_built": sys.argv[1] == "complete" and sys.argv[2] == "0"
 }, indent=2))
