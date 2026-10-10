@@ -7,9 +7,22 @@ import '../lib/learning_verification_v0428.dart';
 import '../lib/study_goal_v0426.dart';
 import '../lib/verification_reader_v0428.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
+import '../lib/relational_memory_v0324.dart';
+import '../lib/plastic_language_brain_v04.dart';
 
 void main() {
   sqfliteFfiInit();
+  test('assessment fallback reads empty and taught relational memory without initializing or recording queries', () {
+    final m = ResearchMemory11();
+    final empty = jsonEncode(m.toJson());
+    MemoryQuery428.map(PlasticLanguageBrain04(), m, 'Cosa contiene Alfa?', readOnly: true);
+    MemoryQuery428.sourced(m, 'Cosa contiene Alfa?', readOnly: true);
+    expect(jsonEncode(m.toJson()), empty);
+    RelationalMemory324.learn(m, 'Alfa contiene modulo.');
+    final taught = jsonEncode(m.toJson());
+    expect(MemoryQuery428.sourced(m, 'Cosa contiene Alfa?', readOnly: true), contains('modulo'));
+    expect(jsonEncode(m.toJson()), taught);
+  });
   test('source cases include a page subject from this goal session without merging subjects', () {
     final m = ResearchMemory11();
     final created = DateTime.utc(2026, 10, 10);
