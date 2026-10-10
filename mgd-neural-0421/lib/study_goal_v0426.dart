@@ -5,7 +5,7 @@ import 'web_knowledge_explorer_v11.dart';
 /// Persistent research frontier. Reading coverage is never a mastery score.
 class StudyGoal426 {
   static const key = 'studyGoal426';
-  static const schema = 3;
+  static const schema = 4;
   static String norm(String s) => s.toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9àèéìòù ]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -131,7 +131,8 @@ class StudyGoal426 {
       'evidenze scientifiche': ['evidenz', 'ricerca', 'ricerche', 'studi', 'speriment',
         'evidence', 'research', 'study', 'studies', 'trial', 'random', 'systematic',
         'method', 'result', 'conclusion', 'cohort', 'review'],
-      'domande aperte': ['limiti', 'incertezz', 'controvers', 'irrisolt', 'domande aperte'],
+      'domande aperte': ['limiti', 'incertezz', 'controvers', 'irrisolt', 'domande aperte',
+        'limit', 'uncertain', 'unclear', 'unknown', 'challenge', 'unresolved', 'further', 'future'],
     };
     return terms[label] ?? const [];
   }
