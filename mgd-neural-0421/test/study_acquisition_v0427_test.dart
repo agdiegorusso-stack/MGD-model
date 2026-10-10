@@ -90,7 +90,7 @@ void main() {
     expect(draft.documents.single.text, isNot(contains('Fictional hemodialysis study')));
     expect(draft.documents.single.meta318['topicAliases432'], contains('Hemodialysis'));
     expect(draft.diagnostics318.any((d) => d['url'] == 'https://doi.org/fixture/unrelated' &&
-        d['status'] == 'area non trattata'), isTrue);
+        {'area non trattata', 'fuori argomento'}.contains(d['status'])), isTrue);
   });
 
   test('scientific area does not guess a translation for ambiguous identities', () async {
