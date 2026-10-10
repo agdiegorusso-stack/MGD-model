@@ -106,6 +106,9 @@ void main() {
       final cases = LearningVerification428.sourceCases(restored, 432);
       expect(cases.every((c) => c.object != 'figura retorica' &&
           c.relation != 'ha'), isTrue, reason: 'Homonyms and generic verb fragments are not clinical study questions.');
+      expect(cases.every((c) => !RegExp(r'possibile|ottima|impressive|senza dubbio|\d+\s*%',
+          caseSensitive: false).hasMatch(c.object)), isTrue,
+          reason: 'Copied opinions and unqualified estimates must not become quiz answer keys.');
       final coreReader = await VerificationReader428.open(factory: databaseFactoryFfi,
           temporaryRoot: Directory.systemTemp.path);
       late Map<String, dynamic> assessment;
