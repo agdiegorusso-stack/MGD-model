@@ -5,6 +5,7 @@ import 'cognitive_core_v0400.dart';
 import 'knowledge_chat_v0423.dart';
 import 'plastic_language_brain_v04.dart';
 import 'reasoning_v0321.dart';
+import 'rule_reasoning_v0429.dart';
 import 'relational_memory_v0324.dart';
 import 'study_goal_v0426.dart';
 import 'web_knowledge_explorer_v11.dart';
@@ -26,6 +27,10 @@ class MemoryQuery428 {
 
   static Future<VerificationAnswer428> answer(PlasticLanguageBrain04 brain,
       ResearchMemory11 memory, String prompt, CognitiveCore400 core) async {
+    final logic = RuleReasoning429.answer(memory, prompt);
+    if (logic != null) return VerificationAnswer428(logic.text,
+        logic.truth == 'unknown' || logic.truth == 'conflict' ? 'astensione' : 'inferenza',
+        proof: logic.proof?.toJson());
     final mapped = map(brain, memory, prompt);
     if (mapped != null) return VerificationAnswer428(mapped, 'relazioni');
     final sourcedText = sourced(memory, prompt, readOnly: true);
@@ -44,8 +49,10 @@ class MemoryQuery428 {
 
 class VerificationAnswer428 {
   final String text, route;
-  const VerificationAnswer428(this.text, this.route);
-  Map<String, dynamic> toJson() => {'text': text, 'route': route};
+  final Map<String, dynamic>? proof;
+  const VerificationAnswer428(this.text, this.route, {this.proof});
+  Map<String, dynamic> toJson() => {'text': text, 'route': route,
+    if (proof != null) 'proof': proof};
 }
 
 /// The answer key belongs to the examiner, never to the reader or responder.
@@ -78,6 +85,7 @@ class LearningVerification428 {
     'application': 'Applicazione a casi nuovi',
     'conditions': 'Cambio delle condizioni',
     'unknown': 'Informazioni mancanti',
+    'conflict': 'Premesse in conflitto',
   };
 
   static String norm(String text) => ResearchSemantics317.norm(text)
@@ -176,6 +184,12 @@ class LearningVerification428 {
   static ({bool passed, String reason}) grade(
       VerificationCase428 question, VerificationAnswer428 answer) {
     final clean = norm(answer.text);
+    if (question.expected == 'conflict') {
+      final passed = clean.startsWith('non determinabile') &&
+          answer.text.toUpperCase().contains('IN CONFLITTO');
+      return (passed: passed, reason: passed ? 'Ha riconosciuto le premesse incompatibili.'
+          : 'Non ha dichiarato il conflitto tra le premesse.');
+    }
     if (answer.text.toUpperCase().contains('IN CONFLITTO')) {
       return (passed: false, reason: 'La risposta segnala un conflitto: non è una conclusione determinata.');
     }
@@ -223,7 +237,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.8'}) async {
+    String? goalId, String? topic, String version = '0.42.9'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;
