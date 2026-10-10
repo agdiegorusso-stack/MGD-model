@@ -153,7 +153,7 @@ void main() {
       // hard-coded because evaluator correctness is distinct from competence.
       final output = Directory('tool/reports');
       await output.create(recursive: true);
-      await File('${output.path}/learning-verification-0.42.10.json')
+      await File('${output.path}/learning-verification-0.42.11.json')
           .writeAsString(const JsonEncoder.withIndent('  ').convert(report));
       expect(report['passed'], 28, reason: jsonEncode(LearningVerification428.rows(report).where((r) => r['passed'] != true).toList()));
     } finally {
