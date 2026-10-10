@@ -13,6 +13,9 @@ class TransferVerification429 {
       final unit = 'unita${nonce}x$i', other = 'nuova${nonce}x$i';
       final module = 'modulo${nonce}x$i', resource = 'energia${nonce}x$i';
       final type = types[i];
+      final names = {unit: '${type[0].toUpperCase()}${type.substring(1)} ${i + 1}A',
+        other: '${type[0].toUpperCase()}${type.substring(1)} ${i + 1}B',
+        module: 'Modulo ${i + 1}', resource: 'Energia ${i + 1}'};
       final doc = WebDocument11(provider: 'Modello didattico', family: 'locale:verifica',
           title: '${types[i]} simulato', url: 'local://transfer/$nonce/$i', trust: .8,
           text: '$unit è un $type. $unit contiene $module. '
@@ -21,7 +24,7 @@ class TransferVerification429 {
               'Ogni $type diventa visibile se e solo se esso è attivo.');
       VerificationCase428 q(String id, String capability, String prompt, String expected) =>
           VerificationCase428(id: 'transfer-$i-$id', capability: capability,
-            prompt: prompt, expected: expected, subject: unit,
+            prompt: prompt, expected: expected, subject: unit, names: names,
             sources: [{'title': doc.title, 'url': doc.url, 'text': doc.text}]);
       return VerificationWorld428(doc, [
         q('new', 'application', '$other è un $type. $other contiene $module. $resource è presente. $other diventa attivo?', 'si'),
