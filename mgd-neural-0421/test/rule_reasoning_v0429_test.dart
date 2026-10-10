@@ -112,6 +112,9 @@ void main() {
     expect(RuleReasoning429.answer(m, 'Quanto pesa alfa?')!.text, contains('alfa pesa 7'));
     expect(truth(m, 'Quanto misura alfa?'), 'unknown');
     expect(truth(m, 'alfa è verde?'), 'unknown');
+    final distinct = memory('lampada è accesa.');
+    expect(RuleReasoning429.answer(distinct, 'lampada è accesa?')!.text, contains('lampada'));
+    expect(truth(distinct, 'contesto è vero. mpada è accesa?'), 'unknown');
     expect(truth(memory('alfa pesa 7. alfa non pesa 7.'), 'Quanto pesa alfa?'), 'conflict');
   });
   test('bounded inference abstains on exhaustion and terminates on cycles', () {
