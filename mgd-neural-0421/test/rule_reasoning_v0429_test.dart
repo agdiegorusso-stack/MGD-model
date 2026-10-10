@@ -148,7 +148,7 @@ void main() {
       final rows = LearningVerification428.rows(report);
       final out = Directory('tool/reports');
       await out.create(recursive: true);
-      await File('${out.path}/transfer-verification-0.42.9.json')
+      await File('${out.path}/transfer-verification-0.42.10.json')
           .writeAsString(const JsonEncoder.withIndent('  ').convert(report));
       expect(report['passed'], report['total'], reason: jsonEncode(rows.where((r) => r['passed'] != true).toList()));
       expect(rows.where((r) => {'si', 'no'}.contains(r['expected']))
