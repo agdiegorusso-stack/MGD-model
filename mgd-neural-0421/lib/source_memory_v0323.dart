@@ -207,9 +207,33 @@ class SourceMemory323 {
 
   static List<SourceHit323> search(String question, ResearchMemory11 m,
       {int limit = 3, bool recordDiagnostics = true}) {
-    recover(m);
     final clock = Stopwatch()..start();
     final query = terms(question).toSet();
+    if (!recordDiagnostics) {
+      // Lazy recovery is useful in normal use, but an assessment must not
+      // initialize persistent source state. Recover into a temporary view;
+      // the index is only a disposable cache, invalidated by normal intake.
+      if (_cache[m] == null) {
+        final raw = m.state317['sourceMemory323'];
+        final state = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+        final stored = state['rows'];
+        if (state['recovered'] == true && stored is Map) {
+          _cache[m] = _SourceIndex323(stored.values.whereType<Map>()
+              .map((r) => Map<String, dynamic>.from(r)).toList());
+        } else {
+          final view = ResearchMemory11(enabled: false);
+          view.state317.addAll(m.state317);
+          view.state317['sourceMemory323'] = {...state,
+            'rows': stored is Map ? Map<String, dynamic>.from(stored) : <String, dynamic>{}};
+          view.sessions.addAll(m.sessions);
+          view.passages.addAll(m.passages);
+          view.evidence.addAll(m.evidence);
+          _cache[m] = _SourceIndex323(rows(view));
+        }
+      }
+      return _cache[m]!.search(query, limit);
+    }
+    recover(m);
     final state = _state(m);
     final index = _cache[m] ??= _SourceIndex323(rows(m));
     final matches = index.search(query, limit);
