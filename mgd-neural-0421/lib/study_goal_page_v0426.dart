@@ -7,8 +7,10 @@ class StudyGoalCard426 extends StatelessWidget {
   final bool busy;
   final Future<void> Function(String) onStart;
   final Future<void> Function(bool) onPause;
+  final Future<void> Function() onRetry;
   const StudyGoalCard426({super.key, required this.memory,
-    required this.busy, required this.onStart, required this.onPause});
+    required this.busy, required this.onStart, required this.onPause,
+    required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +19,17 @@ class StudyGoalCard426 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Obiettivo di studio', style: Theme.of(context).textTheme.titleMedium),
         Text(StudyGoal426.summary(memory)),
+        if (busy) ...[
+          const LinearProgressIndicator(),
+          const Text('Ricerca e lettura in corso…'),
+        ],
+        if (g?['lastLookup'] != null)
+          Text('Ultima ricerca: ${g!['lastLookup']} · '
+              '${g['lastDocuments']} documenti leggibili.'),
+        if (g != null && (g['lastError'] ?? memory.lastError) != null)
+          Text('Studio in attesa di un nuovo tentativo: '
+              '${g['lastError'] ?? memory.lastError}',
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
         const Text('Studia mentre l’app è aperta. Salva il piano e riprende '
           'alla riapertura. Le letture non certificano di sapere tutto.'),
         if (g != null) ExpansionTile(title: const Text('Piano e lacune'),
@@ -28,6 +41,13 @@ class StudyGoalCard426 extends StatelessWidget {
               'Comprensione da verificare.'
               '${i['lastError'] == null ? '' : '\nUltimo errore: ${i['lastError']}'}'),
           )).toList()),
+        if (g?['diagnostics'] is List)
+          ExpansionTile(title: const Text('Esito delle fonti'), children:
+            (g!['diagnostics'] as List).whereType<Map>().map((d) => ListTile(
+              title: Text('${d['provider']}: ${d['status']}'),
+              subtitle: d['error'] == null && d['title'] == null ? null
+                  : Text('${d['error'] ?? d['title']}'),
+            )).toList()),
         Wrap(spacing: 8, children: [
           FilledButton.icon(onPressed: busy ? null : () async {
             var input = ''; 
@@ -51,6 +71,9 @@ class StudyGoalCard426 extends StatelessWidget {
           if (g != null) OutlinedButton(
             onPressed: busy ? null : () => onPause(g['paused'] != true),
             child: Text(g['paused'] == true ? 'Riprendi' : 'Pausa')),
+          if (g != null && (g['lastError'] ?? memory.lastError) != null)
+            OutlinedButton(onPressed: busy || g['paused'] == true ? null : onRetry,
+              child: const Text('Riprova ora')),
         ]),
       ])));
   }
