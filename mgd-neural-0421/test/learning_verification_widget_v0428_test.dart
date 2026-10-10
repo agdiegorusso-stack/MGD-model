@@ -71,4 +71,28 @@ void main() {
     expect(find.text('Studia le lacune rilevate'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('new transfer assessment is available on a small screen', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    String? selectedMode;
+    await tester.pumpWidget(MaterialApp(home: LearningVerificationPage428(
+      memory: ResearchMemory11(), onRun: (mode, _, __) async {
+        selectedMode = mode;
+        return {'mode': mode, 'version': '0.42.9', 'passed': 0, 'total': 0, 'results': []};
+      }, onReview: (_) async {})));
+    await tester.scrollUntilVisible(find.text('Regole in contesti nuovi'), 250,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    final card = find.ancestor(of: find.text('Regole in contesti nuovi'), matching: find.byType(Card));
+    final button = find.descendant(of: card, matching: find.byType(FilledButton));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(selectedMode, 'transfer');
+    expect(tester.takeException(), isNull);
+  });
+
 }
