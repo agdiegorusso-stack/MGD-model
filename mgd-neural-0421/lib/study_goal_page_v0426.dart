@@ -26,10 +26,13 @@ class StudyGoalCard426 extends StatelessWidget {
         if (g?['lastLookup'] != null)
           Text('Ultima ricerca: ${g!['lastLookup']} · '
               '${g['lastDocuments']} documenti leggibili.'),
+        if (g?['lastArea'] != null) Text('Area: ${g!['lastArea']}'),
         if (g != null && (g['lastError'] ?? memory.lastError) != null)
-          Text('Studio in attesa di un nuovo tentativo: '
+          Text('Ultimo tentativo senza letture: '
               '${g['lastError'] ?? memory.lastError}',
               style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        if (g != null && g['lastError'] != null && g['paused'] != true)
+          const Text('Il piano prosegue con le altre aree disponibili e riprova quelle mancanti.'),
         const Text('Studia mentre l’app è aperta. Salva il piano e riprende '
           'alla riapertura. Le letture non certificano di sapere tutto.'),
         if (g != null) ExpansionTile(title: const Text('Piano e lacune'),
