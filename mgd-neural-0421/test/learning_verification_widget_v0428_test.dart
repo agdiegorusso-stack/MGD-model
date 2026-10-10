@@ -6,6 +6,16 @@ import '../lib/study_goal_v0426.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
 
 void main() {
+  testWidgets('empty source verification is displayed as unassessed without a zero-over-zero score', (tester) async {
+    final memory = ResearchMemory11();
+    StudyGoal426.start(memory, 'la dialisi');
+    LearningVerification428.store(memory, {'mode': 'sources',
+      'goalId': StudyGoal426.state(memory)!['id'], 'passed': 0, 'total': 0, 'results': []});
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: LearningVerificationCard428(
+      memory: memory, busy: false, onOpen: () {}))));
+    expect(find.textContaining('0/0'), findsNothing);
+    expect(find.textContaining('Letture non verificate'), findsOneWidget);
+  });
   testWidgets('assessment card opens and preserves scope of source and control scores', (tester) async {
     final memory = ResearchMemory11();
     StudyGoal426.start(memory, 'la cellula');
