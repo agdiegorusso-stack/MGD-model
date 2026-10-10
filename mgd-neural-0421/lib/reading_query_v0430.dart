@@ -1,4 +1,5 @@
 import 'web_knowledge_explorer_v11.dart';
+import 'study_goal_v0426.dart';
 
 class ReadingAnswer430 {
   final String text;
@@ -11,6 +12,30 @@ class ReadingAnswer430 {
 /// than requiring the user to specify an internal graph edge label. This is
 /// source recall, not a mechanism explanation or an inference.
 class ReadingQuery430 {
+  /// Context retained by the active study, including old saved sessions. A
+  /// lexical match alone cannot make two Wikidata entities the same subject.
+  static List<Map> resolvedSources432(ResearchMemory11 memory) {
+    final g = StudyGoal426.state(memory);
+    if (g == null) return [];
+    final created = DateTime.tryParse('${g['createdAt']}');
+    final queries = StudyGoal426.items(g).map((i) => StudyGoal426.query(g, i)).toSet();
+    return memory.sessions.where((s) => queries.contains(s.query) && created != null &&
+        DateTime.tryParse(s.startedAtIso)?.isBefore(created) == false)
+        .expand((s) => (s.audit315['documents'] as List? ?? []).whereType<Map>())
+        .where((d) => d['provider'] == 'Wikipedia IT' && d['meta318'] is Map &&
+            d['meta318']['resolvedTopic'] == true &&
+            RegExp(r'^Q[1-9][0-9]*$').hasMatch('${d['meta318']['wikidataId'] ?? ''}')).toList();
+  }
+
+  static bool contextualSense432(ResearchClaim11 c, List<Map> documents) {
+    final relevant = documents.where((d) => key('${d['title']}') == key(c.subject) ||
+        key('${d['meta318']['requestedTopic']}') == key(c.subject)).toList();
+    if (relevant.isEmpty) return true;
+    if (c.subjectSenseKey == null) return relevant.any((d) => key('${d['title']}') == key(c.subject));
+    if (!c.subjectSenseKey!.startsWith('wikidata:')) return true;
+    return relevant.any((d) => c.subjectSenseKey == 'wikidata:${d['meta318']['wikidataId']}');
+  }
+
   static String key(String text) => ResearchSemantics317.norm(text)
       .replaceAll(RegExp(r'[?!.]+$'), '')
       .replaceFirst(RegExp(r'^(il|lo|la|un|uno|una)\s+'), '').trim();
@@ -48,8 +73,13 @@ class ReadingQuery430 {
   static ReadingAnswer430? answer(ResearchMemory11 memory, String prompt) {
     final asked = topic(prompt);
     if (asked == null) return null;
+    final sources = resolvedSources432(memory);
+    final resolved = sources.where((d) => key('${d['title']}') == asked ||
+        key('${d['meta318']['requestedTopic']}') == asked).toList();
     final candidates = memory.claims.values.where((c) => usable(c) &&
-        key(c.subject) == asked).toList()
+        (resolved.isEmpty ? key(c.subject) == asked : resolved.any((d) =>
+          c.subjectSenseKey == 'wikidata:${d['meta318']['wikidataId']}' ||
+          (c.subjectSenseKey == null && key(c.subject) == key('${d['title']}'))))).toList()
       ..sort((a, b) => b.confidence.compareTo(a.confidence));
     if (candidates.isEmpty) return null;
     final rows = <Map<String, String>>[], lines = <String>[], seen = <String>{};
