@@ -109,4 +109,157 @@ void main() {
     StudyGoal426.start(m, 'i numeri complessi', now: now);
     expect(StudyGoal426.next(m, now: now)!.topic, 'numeri complessi');
   });
+
+  // Provider fixtures test acquisition and scheduling, not medical knowledge.
+  const intro431 = 'La dialisi è il soggetto di questa scheda introduttiva di prova. '
+      'Il testo iniziale identifica l’argomento e non descrive le altre aree del piano.';
+  const structure431 = '== Struttura ==\n'
+      'Questa sezione della scheda di prova descrive le parti del sistema. '
+      'Il paragrafo completo viene conservato insieme alla fonte e al suo titolo.';
+  const mechanism431 = '== Principio di funzionamento ==\n'
+      'Questa sezione distinta della scheda di prova descrive un principio. '
+      'Il suo contenuto è diverso dall’introduzione e dalla sezione precedente.';
+  ResearchMemory11 structureGoal431() {
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'la dialisi', now: now);
+    final g = StudyGoal426.state(m)!;
+    g['items'] = [StudyGoal426.items(g).firstWhere((i) => i['label'] == 'struttura')];
+    m.state317[StudyGoal426.key] = g;
+    return m;
+  }
+  Future<ResearchDraft11> acquire431(ResearchGoal11 goal, String article,
+      {List<Uri>? requests, String title = 'Dialisi'}) async {
+    return WebKnowledgeExplorer11(jsonLoader318: (uri) async {
+      requests?.add(uri);
+      if (uri.host == 'it.wikipedia.org' && uri.queryParameters['titles'] != null &&
+          uri.queryParameters['titles']!.split('|').any((s) => s.toLowerCase() == 'dialisi')) {
+        return {'query': {'pages': [{
+          'title': title, 'extract': article, 'fullurl': 'https://example.org/fixture431',
+          'pageprops': <String, dynamic>{},
+        }]}};
+      }
+      return <String, dynamic>{};
+    }).research(goal);
+  }
+
+  test('dialysis structure uses root identity and reads its full section', () async {
+    final m = structureGoal431();
+    final goal = StudyGoal426.next(m, now: now)!;
+    final requests = <Uri>[];
+    expect(goal.query, 'la dialisi struttura');
+    expect(goal.topic, 'dialisi');
+    final draft = await acquire431(goal, '$intro431\n\n$structure431\n\n$mechanism431',
+        requests: requests);
+    expect(draft.error, isNull);
+    expect(draft.documents, hasLength(1));
+    expect(draft.documents.single.text, contains('parti del sistema'));
+    expect(draft.documents.single.text, isNot(contains('scheda introduttiva')));
+    expect(draft.documents.single.text, isNot(contains('sezione distinta')));
+    expect(requests.where((u) => u.host == 'it.wikipedia.org'), isNotEmpty);
+    expect(requests.where((u) => u.host == 'it.wikipedia.org')
+        .every((u) => !u.queryParameters.containsKey('exintro')), isTrue);
+    expect(draft.documents.single.meta318['studyArea431'], 'struttura');
+    StudyGoal426.record(m, StudyGoal426.state(m)!['id'], goal, draft.documents,
+        error: draft.error, now: now);
+    final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(m.toJson())));
+    expect(StudyGoal426.items(StudyGoal426.state(restored)!).single['documents'], 1);
+    expect(StudyGoal426.state(restored)!['lastArea'], 'struttura');
+  });
+
+  test('generic areas cannot be filled by the same root introduction', () async {
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'la dialisi', now: now);
+    final id = StudyGoal426.state(m)!['id'];
+    for (var j = 0; j < 8; j++) {
+      final goal = StudyGoal426.next(m, now: now)!;
+      final draft = await acquire431(goal, intro431);
+      StudyGoal426.record(m, id, goal, draft.documents, error: draft.error, now: now);
+    }
+    final read = StudyGoal426.items(StudyGoal426.state(m)!)
+        .where((i) => StudyGoal426.count(i, 'documents') > 0).toList();
+    expect(read, hasLength(1));
+    expect(read.single['label'], 'definizioni');
+  });
+
+  test('missing generic area keeps zero readings and the next area advances', () async {
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'la dialisi', now: now);
+    final g = StudyGoal426.state(m)!;
+    g['items'] = StudyGoal426.items(g)
+        .where((i) => ['struttura', 'meccanismi'].contains(i['label'])).toList();
+    m.state317[StudyGoal426.key] = g;
+    final first = StudyGoal426.next(m, now: now)!;
+    final missing = await acquire431(first, '$intro431\n\n$mechanism431');
+    expect(missing.documents, isEmpty);
+    expect(missing.claims, isEmpty);
+    expect(missing.error, isNotNull);
+    expect(missing.diagnostics318.any((d) => d['status'] == 'area non trattata'), isTrue);
+    m.begin(first.query, now);
+    StudyGoal426.record(m, g['id'], first, missing.documents, error: missing.error, now: now);
+    final next = StudyGoal426.next(m, now: now)!;
+    expect(next.query, 'la dialisi meccanismi');
+    final found = await acquire431(next, '$intro431\n\n$mechanism431');
+    expect(found.error, isNull);
+    StudyGoal426.record(m, g['id'], next, found.documents, error: found.error, now: now);
+    expect(StudyGoal426.items(StudyGoal426.state(m)!).first['documents'], 0);
+    expect(StudyGoal426.next(m, now: now.add(const Duration(minutes: 1)))!.query, first.query);
+  });
+
+  test('0.42.10 blocked generic goal migrates retaining acquired readings and id', () {
+    final m = structureGoal431();
+    final g = StudyGoal426.state(m)!;
+    g['schema'] = 2;
+    g['paused'] = true;
+    g['lastError'] = 'Nessun documento pertinente';
+    g['hashes'] = ['retained'];
+    final all = StudyGoal426.items(g);
+    all.single.addAll({'lookup': 'la dialisi struttura', 'attempts': 4, 'failures': 4,
+      'nextAt': now.add(const Duration(hours: 8)).toIso8601String()});
+    g['items'] = all;
+    m.state317[StudyGoal426.key] = g;
+    m.begin('la dialisi struttura', now);
+    m.state317['unrelatedMemory'] = 'preserved';
+    StudyGoal426.upgrade(m);
+    expect(StudyGoal426.next(m, now: now), isNull);
+    StudyGoal426.pause(m, false);
+    final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(m.toJson())));
+    expect(StudyGoal426.next(restored, now: now)!.topic, 'dialisi');
+    expect(StudyGoal426.state(restored)!['id'], g['id']);
+    expect(StudyGoal426.state(restored)!['hashes'], ['retained']);
+    expect(StudyGoal426.items(StudyGoal426.state(restored)!).single['attempts'], 4);
+    expect(restored.state317['unrelatedMemory'], 'preserved');
+  });
+
+  test('generic fallback still rejects unrelated resolved search results', () async {
+    final goal = StudyGoal426.next(structureGoal431(), now: now)!;
+    // A search result must not be marked as an exact resolution of the root.
+    final draft = await WebKnowledgeExplorer11(jsonLoader318: (uri) async {
+      if (uri.host == 'it.wikipedia.org' && uri.queryParameters['generator'] == 'search') {
+        return {'query': {'pages': [{
+          'title': 'Orologio', 'extract': structure431,
+          'fullurl': 'https://example.org/clock', 'pageprops': <String, dynamic>{},
+        }]}};
+      }
+      return <String, dynamic>{};
+    }).research(goal);
+    expect(draft.documents, isEmpty);
+    expect(draft.error, isNotNull);
+    expect(draft.diagnostics318.any((d) => d['status'] == 'fuori argomento'), isTrue);
+  });
+
+  test('section selection applies to other roots and preserves discovered identity', () {
+    final m = ResearchMemory11();
+    StudyGoal426.start(m, 'i numeri complessi', now: now);
+    final g = StudyGoal426.state(m)!;
+    g['items'] = StudyGoal426.items(g).where((i) => i['label'] == 'struttura').toList();
+    m.state317[StudyGoal426.key] = g;
+    expect(StudyGoal426.next(m, now: now)!.topic, 'numeri complessi');
+    expect(StudyGoal426.next(m, now: now)!.facetTerms431, contains('struttur'));
+    g['items'] = [{...StudyGoal426.items(g).single,
+      'label': 'Piano complesso', 'lookup': 'Piano complesso', 'discoveredFrom': 'https://example.org'}];
+    m.state317[StudyGoal426.key] = g;
+    expect(StudyGoal426.next(m, now: now)!.topic, 'Piano complesso');
+    expect(StudyGoal426.next(m, now: now)!.facetTerms431, isEmpty);
+    expect(WebKnowledgeExplorer11.facetText431(intro431, ['struttur']), isEmpty);
+  });
 }
