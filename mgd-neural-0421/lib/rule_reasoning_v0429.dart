@@ -85,6 +85,7 @@ class RuleReasoning429 {
   /// explicit lexical opposites are collapsed onto the same property.
   static LogicAtom429? atom(String input, {bool variable = false}) {
     var s = _clean(input);
+    if (RegExp(r'^(quanto|quale|quali|chi|che cosa|come|dove|perche|qual e) ').hasMatch(s)) return null;
     if (variable) {
       s = s.replaceAll(RegExp(r'\b(al suo interno|in essa|in esso)\b'), r'in $x')
           .replaceAll(RegExp(r'\b(essa|esso)\b'), r'$x');
@@ -111,6 +112,10 @@ class RuleReasoning429 {
       final a = _entity(m[1]!);
       if (!_name(a)) return null;
       var value = m[4]!, positive = m[2] == null;
+      const gender = {'aperta': 'aperto', 'chiusa': 'chiuso', 'accesa': 'acceso',
+        'spenta': 'spento', 'attiva': 'attivo', 'inattiva': 'inattivo',
+        'pronta': 'pronto', 'luminosa': 'luminoso'};
+      value = gender[value] ?? value;
       const opposites = {'assente': 'presente', 'spento': 'acceso',
         'chiuso': 'aperto', 'inattivo': 'attivo', 'falso': 'vero'};
       if (opposites.containsKey(value)) { value = opposites[value]!; positive = !positive; }
@@ -246,9 +251,11 @@ class RuleReasoning429 {
     if (!path.add(proof)) return false;
     bool valid;
     if (proof.assumption) {
-      valid = assumptions.any((a) => a.signedKey == proof.conclusion.signedKey);
+      valid = proof.source == null && proof.rule == null && proof.premises.isEmpty &&
+          assumptions.any((a) => a.signedKey == proof.conclusion.signedKey);
     } else if (proof.rule == null) {
-      valid = program.facts.any((p) => p.source?.id == proof.source?.id &&
+      valid = proof.premises.isEmpty && program.facts.any((p) => p.source?.id == proof.source?.id &&
+          p.source?.text == proof.source?.text && p.source?.url == proof.source?.url &&
           p.conclusion.signedKey == proof.conclusion.signedKey);
     } else {
       final rule = proof.rule!;
@@ -380,8 +387,20 @@ class RuleReasoning429 {
     if (target == null) {
       // A requested unrecorded property of a known entity must not become a
       // list of associations presented as an answer.
-      final subject = RegExp(r'^(?:quanto pesa|quanto misura|qual e la massa di|qual e il peso di) (.+)$').firstMatch(question)?[1];
-      if (subject != null && program.entities.contains(_entity(subject))) {
+      final quantity = RegExp(r'^(quanto pesa|quanto misura|qual e la massa di|qual e il peso di) (.+)$').firstMatch(question);
+      if (quantity != null) {
+        final subject = _entity(quantity[2]!);
+        final predicate = quantity[1] == 'quanto misura' ? 'misura' : 'pesa';
+        final known = program.facts.where((p) => p.conclusion.positive &&
+            p.conclusion.predicate == predicate && p.conclusion.args.first == subject).toList();
+        if (known.map((p) => p.conclusion.key).toSet().length > 1) {
+          return const LogicAnswer429('conflict', 'Non determinabile: i valori letti sono IN CONFLITTO.');
+        }
+        if (known.isNotEmpty) {
+          final fact = known.first;
+          return LogicAnswer429('fact', '${fact.conclusion.label}.\n'
+              'Fonte: ${fact.source!.title} · ${fact.source!.url}', fact);
+        }
         return const LogicAnswer429('unknown', 'Non determinabile: questa proprietà non è specificata nelle letture.');
       }
       return null;
@@ -398,7 +417,7 @@ class RuleReasoning429 {
     final related = program.facts.any((p) => p.conclusion.key == target.key) ||
         program.rules.any((r) => r.head.predicate == target.predicate &&
           (r.head.variable || r.head.key == target.key));
-    if (!related && assumptions.isEmpty) return null;
+    if (!related && assumptions.isEmpty && !program.entities.contains(target.args.first)) return null;
     return solve(program, target, assumptions);
   }
 }
