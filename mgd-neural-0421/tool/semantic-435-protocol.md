@@ -1,8 +1,11 @@
 # Operazioni sulle letture — 0.42.15
 
 La chat e MemoryQuery428 chiamano lo stesso ReadingReasoning435. L'adattatore
-legge esclusivamente le righe originali conservate in sourceMemory323, con il
-filtro delle fonti bloccate già applicato da RuleReasoning429.sources. Non legge
+legge esclusivamente le righe originali conservate in sourceMemory323. Le fonti
+ritirate o rifiutate restano escluse; i conflitti bloccano gli specifici passaggi
+di evidenza. Una singola estrazione in quarantena non esclude tutte le altre
+frasi del documento: l'interprete valuta le frasi originali, mantenendo
+negazioni, condizioni e proprietà mancanti. Non legge
 report, criteri o risposte di riferimento e non interroga un modello esterno.
 
 SemanticReasoning435 interpreta grammatiche italiane esplicite: equazioni

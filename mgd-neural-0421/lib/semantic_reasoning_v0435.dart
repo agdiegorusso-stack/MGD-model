@@ -1194,9 +1194,12 @@ class SemanticReasoning435 {
           facts.add((fact[1]!, s));
       }
       if (facts.length == 1)
-        return _answer('${facts.single.$1}.', 'relation-projection', [
-          facts.single.$2,
-        ], []);
+        return _answer(
+          '${facts.single.$1}.',
+          'relation-projection',
+          [facts.single.$2],
+          ['$subject — ${m[1]} → ${_noun435(facts.single.$1)}'],
+        );
     }
     // Measurement definitions can be read without any calculation or equation.
     final unit = RegExp(r'^quale grandezza si misura in ([a-z]+)$')

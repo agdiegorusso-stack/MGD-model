@@ -52,7 +52,17 @@ void main() {
       ]);
       final snapshot = jsonEncode(reader.memory.toJson());
       final answer = await reader.answer(prompt);
-      expect(answer.route, 'inferenza');
+      expect(
+        answer.route,
+        'inferenza',
+        reason: jsonEncode({
+          'answer': answer.toJson(),
+          'sources': ReadingReasoning435.sources(reader.memory)
+              .map((s) => s.toJson())
+              .toList(),
+          'claims': reader.memory.claims.values.map((c) => c.toJson()).toList(),
+        }),
+      );
       expect(answer.text, startsWith('21'));
       expect(answer.proof?['kind'], 'semantic435');
       expect(answer.text, contains('local://transfer435/production'));
@@ -76,5 +86,46 @@ void main() {
       await restored?.close();
       await reader.close();
     }
+  });
+  test('a doubtful extraction does not erase other sentences; withdrawal and conflict remain effective', () {
+    final memory = ResearchMemory11();
+    const url = 'local://transfer435/filter';
+    const equation = 'La spesa è la quota piu la tassa: S = q + t.';
+    const property = 'La temperatura del serbatoio non è nota.';
+    SourceMemory323.retain(
+      memory,
+      WebDocument11(
+        provider: 'Test',
+        family: 'locale:test',
+        title: 'Regola e proprietà',
+        url: url,
+        text: '$equation $property',
+        trust: .8,
+      ),
+    );
+    final evidence = ResearchEvidence11.fromJson({
+      'id': 'e',
+      'sourceUrl': url,
+      'excerpt': property,
+    });
+    final claim = ResearchClaim11.fromJson({
+      'key': 'c',
+      'status': 'quarantena',
+      'evidenceIds': ['e'],
+    });
+    memory.evidence.add(evidence);
+    memory.claims[claim.key] = claim;
+    const prompt = 'La quota vale 9 e la tassa vale 5. Quanto vale la spesa?';
+    final snapshot = jsonEncode(memory.toJson());
+    expect(ReadingReasoning435.answer(memory, prompt)?.text, startsWith('14'));
+    expect(jsonEncode(memory.toJson()), snapshot);
+    claim.conflict = true;
+    expect(ReadingReasoning435.answer(memory, prompt)?.text, startsWith('14'));
+    expect(
+      ReadingReasoning435.sources(memory).any((s) => s.text == property),
+      false,
+    );
+    claim.status = 'ritirata';
+    expect(ReadingReasoning435.answer(memory, prompt), isNull);
   });
 }
