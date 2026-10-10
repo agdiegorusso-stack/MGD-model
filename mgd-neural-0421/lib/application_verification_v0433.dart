@@ -74,7 +74,9 @@ class ApplicationVerification433 {
       q('missing-barrier', 'unknown', [scope, c('sangue', high), c('bagno', low)], expected: 'unknown'),
       q('unit-mismatch', 'unknown', [scope, membrane, c('sangue', high, 'mg/L'), c('bagno', low)], expected: 'unknown'),
       q('time', 'unknown', [scope, membrane, c('sangue', high), c('bagno', low)], expected: 'unknown', question: 'Quanto tempo impiega tracciante ad attraversare la membrana?'),
-      q('unsupported-condition', 'unknown', [scope, membrane, c('sangue', high), c('bagno', low), 'È presente trasporto attivo.'], expected: 'unknown'),
+      q('unsupported-condition', 'unknown', [
+        'In un sistema con diffusione e trasporto attivo, consideriamo il soluto neutro tracciante.',
+        membrane, c('sangue', high), c('bagno', low)], expected: 'unknown'),
       q('conflicting-values', 'conflict', [scope, membrane, c('sangue', high), c('sangue', low), c('bagno', low)], expected: 'conflict'),
       q('conflicting-barrier', 'conflict', [scope, membrane, 'La membrana è impermeabile a tracciante.', c('sangue', high), c('bagno', low)], expected: 'conflict'),
     ];
