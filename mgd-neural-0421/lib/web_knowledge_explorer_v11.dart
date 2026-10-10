@@ -1682,7 +1682,7 @@ class WebKnowledgeExplorer11 {
         family: _paperFamily031(doi, pmid.isEmpty ? title : pmid),
         title: title,
         url: url,
-        text: '$title. $abstractText',
+        text: abstractText,
         trust: 0.93,
         meta318: {'contentText431': abstractText},
       ));
@@ -1714,7 +1714,7 @@ class WebKnowledgeExplorer11 {
         family: _paperFamily031(doi, title),
         title: title,
         url: url,
-        text: '$title. $abstractText',
+        text: abstractText,
         trust: 0.86,
         meta318: {'contentText431': abstractText},
       ));
@@ -2191,6 +2191,7 @@ class WebKnowledgeExplorer11 {
   }
 
   static bool documentMatches320(ResearchGoal11 goal, WebDocument11 doc) {
+    final scholarly432 = {'Europe PMC', 'Crossref'}.contains(doc.provider);
     final partial = doc.meta318['partialTopic322'];
     if (partial is String &&
         alternativeTopics322(goal.topic).contains(partial)) {
@@ -2200,8 +2201,10 @@ class WebKnowledgeExplorer11 {
         ResearchSemantics317.sameSubject(
             '${doc.meta318['requestedTopic'] ?? goal.topic}', goal.topic))
       return true;
-    if (ResearchSemantics317.sameSubject(doc.title, goal.topic)) return true;
-    final hay = ' ${ResearchSemantics317.concept('${doc.title} ${doc.text}')} ';
+    if (!scholarly432 && ResearchSemantics317.sameSubject(doc.title, goal.topic)) return true;
+    final content = scholarly432 ? '${doc.meta318['contentText431'] ?? doc.text}'
+        : '${doc.title} ${doc.text}';
+    final hay = ' ${ResearchSemantics317.concept(content)} ';
     final aliases = [goal.topic, ...((doc.meta318['topicAliases432'] as List?) ?? [])
         .map((a) => '$a')];
     // Context alone (e.g. "tassonomia" in clinical registries) is insufficient.
