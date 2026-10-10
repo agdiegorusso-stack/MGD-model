@@ -128,7 +128,7 @@ class _Page428State extends State<LearningVerificationPage428> {
         _choice('Letture conservate',
             'Fino a 8 domande sui fatti documentati dell’obiettivo attuale. '
             'Verifica il recupero e la riformulazione rispetto alle fonti conservate.', 'sources'),
-        _choice('Comprensione su casi nuovi',
+        _choice('Regole su cellule simulate',
             '28 prove in 4 mondi simulati, con nomi e condizioni nuovi a ogni esecuzione. '
             'Confronta le risposte prima e dopo la lettura. I testi simulati restano separati dalla tua memoria.', 'controlled'),
         _choice('Regole in contesti nuovi',
@@ -171,7 +171,8 @@ class _Page428State extends State<LearningVerificationPage428> {
           if (report['beforePassed'] != null)
             Text('Prima della lettura: ${report['beforePassed']}/${report['total']}.'),
           Text('Esecuzione: ${report['at']}'),
-          if (report['topic'] != null) Text('Obiettivo al momento della prova: ${report['topic']}'),
+          if (report['mode'] == 'sources' && report['topic'] != null)
+            Text('Obiettivo al momento della prova: ${report['topic']}'),
           if (rows.isEmpty) const Text('Non ci sono ancora fatti documentati idonei per questo obiettivo. '
               'Continua lo studio oppure esegui la prova sui mondi simulati.'),
           if (report['mode'] == 'sources' && rows.isNotEmpty)
@@ -186,7 +187,8 @@ class _Page428State extends State<LearningVerificationPage428> {
           const SizedBox(height: 8),
           for (final entry in LearningVerification428.capabilities.entries)
             if (rows.any((r) => r['capability'] == entry.key))
-              ListTile(contentPadding: EdgeInsets.zero, title: Text(entry.value),
+              ListTile(contentPadding: EdgeInsets.zero, title: Text(report['mode'] == 'sources' &&
+                  entry.key == 'paraphrase' ? 'Recupero con domanda specifica' : entry.value),
                 trailing: Text('${rows.where((r) => r['capability'] == entry.key && r['passed'] == true).length}'
                     '/${rows.where((r) => r['capability'] == entry.key).length}')),
           if (failures.isNotEmpty && report['goalId'] != null &&
