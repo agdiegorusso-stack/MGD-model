@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studygoal
+      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.7
     defaults:
       run:
         working-directory: mgd-neural-0421
@@ -45,6 +46,7 @@ jobs:
           "$mgd_tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk > tool/reports/signature.txt
           "$mgd_tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > tool/reports/apk-identity.txt
           printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
+          cp "$mgd_tools/lib/apksigner.jar" tool/reports/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
           name: MGD-Neural-0.42.7-APK
