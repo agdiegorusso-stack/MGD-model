@@ -333,7 +333,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         }
       }
       if (_lifecycle319 == AppLifecycleState.resumed &&
-          !_busy && !_researchBusy && !_maintenance317 &&
+          !_busy && !_researchBusy && !_maintenance317 && !_bookImportBusy341 &&
           _chat.text.isEmpty && StudyGoal426.state(_researchMemory) != null) {
         await _researchOnce10(autonomous: true);
       }
@@ -572,6 +572,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     if (mounted) setState(() => _status = StudyGoal426.summary(_researchMemory));
   }
 
+  Future<void> _retryStudyGoal426() async {
+    StudyGoal426.retry(_researchMemory);
+    await _checkpoint319();
+    await _researchOnce10(autonomous: true);
+  }
+
   Future<void> _researchOnce10({
     bool autonomous = false,
     bool allowWhileBusy = false,
@@ -610,7 +616,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       }
       return;
     }
-    if (autonomous && !_researchMemory.canResearch(goal.query)) return;
+    if (autonomous && persistentGoal426 == null &&
+        !_researchMemory.canResearch(goal.query)) return;
     if (!autonomous && !_researchMemory.canResearchManual(goal.query)) return;
 
     final now = DateTime.now();
@@ -629,6 +636,12 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       final studyClock = Stopwatch()..start();
       final draft = await _webExplorer.research(goal);
       _webExplorer.integrate(_brain, _world, _researchMemory, draft);
+      if (requestedTopic.isEmpty && persistentId426 != null) {
+        StudyGoal426.record(_researchMemory, persistentId426, goal, draft.documents,
+            error: draft.error, diagnostics: draft.diagnostics318);
+        progressRecorded426 = true;
+        StudyGoal426.expand(_researchMemory, persistentId426, draft);
+      }
       await _checkpoint319();
 
       // Reading is learning even when the rule-based extractor cannot turn a
@@ -680,12 +693,6 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         session.completedAtIso = DateTime.now().toIso8601String();
         _researchMemory.recordTopicStudy321(
             goal.topic, session.audit315['newEvidence321'] as int? ?? 0);
-      }
-      if (requestedTopic.isEmpty && persistentId426 != null) {
-        StudyGoal426.record(_researchMemory, persistentId426, goal, draft.documents,
-            error: draft.error);
-        progressRecorded426 = true;
-        StudyGoal426.expand(_researchMemory, persistentId426, draft);
       }
       // All readings and updated metrics are persisted together.
       await _checkpoint319();
@@ -2002,6 +2009,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         onResearchEnabled: _setResearchEnabled10,
         onStartGoal426: _startStudyGoal426,
         onPauseGoal426: _pauseStudyGoal426,
+        onRetryGoal426: _retryStudyGoal426,
         onEdit: _openEditor12,
         onSave: _save,
         onReset: _reset,
@@ -2598,6 +2606,7 @@ class _MindPage07 extends StatelessWidget {
   final ValueChanged<bool> onResearchEnabled;
   final Future<void> Function(String) onStartGoal426;
   final Future<void> Function(bool) onPauseGoal426;
+  final Future<void> Function() onRetryGoal426;
   final Future<void> Function() onEdit;
   final Future<void> Function([String?]) onSave;
   final Future<void> Function() onReset;
@@ -2622,6 +2631,7 @@ class _MindPage07 extends StatelessWidget {
     required this.onResearchEnabled,
     required this.onStartGoal426,
     required this.onPauseGoal426,
+    required this.onRetryGoal426,
     required this.onEdit,
     required this.onSave,
     required this.onReset,
@@ -2643,7 +2653,8 @@ class _MindPage07 extends StatelessWidget {
       children: [
         Text('Mente', style: Theme.of(context).textTheme.titleLarge),
         StudyGoalCard426(memory: research, busy: busy || researchBusy,
-            onStart: onStartGoal426, onPause: onPauseGoal426),
+            onStart: onStartGoal426, onPause: onPauseGoal426,
+            onRetry: onRetryGoal426),
         OutlinedButton.icon(
           onPressed: () =>
               InspectorScope315.maybeOf(context)?.openCatalog(context),
