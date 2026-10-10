@@ -1,4 +1,4 @@
-name: MGD 0.42.8 persistent study goal
+name: MGD 0.42.9 conditional reasoning
 on:
   push:
     branches: ['codex/mgd-neural-0426-study-goal']
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 45
     env:
       MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
-      MGD_APPLICATION_LABEL: MGD Studio 0.42.8
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.9
     defaults:
       run:
         working-directory: mgd-neural-0421
@@ -49,11 +49,11 @@ jobs:
           cp "$mgd_tools/lib/apksigner.jar" tool/reports/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neural-0.42.8-APK
+          name: MGD-Neural-0.42.9-APK
           path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Neural-0.42.8-verification
+          name: MGD-Neural-0.42.9-verification
           path: mgd-neural-0421/tool/reports
