@@ -110,7 +110,11 @@ class StudyGoal426 {
       };
       if (subjects[label] != null) return subjects[label]!;
     }
-    if (label == 'definizioni') return topic;
+    if (label == 'definizioni') {
+      return topic.replaceFirst(RegExp(
+          r"^(?:(?:il|lo|la|i|gli|le|un|uno|una)\s+|l[’'])",
+          caseSensitive: false), '');
+    }
     // A concept discovered in a source has its own subject, rather than the
     // root goal prepended to its name. Unresolved seed facets remain explicit.
     return '$topic $label';
