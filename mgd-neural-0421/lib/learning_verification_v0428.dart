@@ -15,13 +15,13 @@ import 'web_knowledge_explorer_v11.dart';
 /// questions never enter an observation/learning path.
 class MemoryQuery428 {
   static String? map(PlasticLanguageBrain04 brain, ResearchMemory11 memory,
-          String prompt) =>
-      RelationalMemory324.answerIfKnown(memory, prompt) ??
+          String prompt, {bool readOnly = false}) =>
+      RelationalMemory324.answerIfKnown(memory, prompt, recordDiagnostics: !readOnly) ??
       KnowledgeChat423.answer(brain, memory, prompt);
 
   static String? sourced(ResearchMemory11 memory, String prompt,
           {String? Function(String, String, String)? realize, bool readOnly = false}) =>
-      RelationalMemory324.answerIfKnown(memory, prompt) ??
+      RelationalMemory324.answerIfKnown(memory, prompt, recordDiagnostics: !readOnly) ??
       Reasoning321.answer(prompt, memory) ??
       ResearchSemantics317.answer(prompt, memory, realize: realize) ??
       SourceMemory323.answer(prompt, memory, recordDiagnostics: !readOnly);
@@ -34,7 +34,7 @@ class MemoryQuery428 {
         proof: logic.proof?.toJson());
     final reading = ReadingQuery430.answer(memory, prompt);
     if (reading != null) return VerificationAnswer428(reading.text, 'letture', proof: reading.proof);
-    final mapped = map(brain, memory, prompt);
+    final mapped = map(brain, memory, prompt, readOnly: true);
     if (mapped != null) return VerificationAnswer428(mapped, 'relazioni');
     final sourcedText = sourced(memory, prompt, readOnly: true);
     if (sourcedText != null) {
