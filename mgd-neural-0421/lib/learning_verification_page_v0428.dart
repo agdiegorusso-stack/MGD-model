@@ -22,15 +22,20 @@ class LearningVerificationCard428 extends StatelessWidget {
     final controls = reports.where((r) => r['mode'] == 'controlled').firstOrNull;
     final transfer = reports.where((r) => r['mode'] == 'transfer').firstOrNull;
     final prose = reports.where((r) => r['mode'] == 'prose').firstOrNull;
+    final eligible = sources != null && sources['total'] == 0
+        ? LearningVerification428.sourceClaims432(memory).length : 0;
     return Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
         crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Verifica dell’apprendimento', style: Theme.of(context).textTheme.titleMedium),
       Text(sources == null ? 'Letture conservate: ancora da verificare.'
+          : sources['total'] == 0 ? eligible > 0
+              ? 'Verifica da ripetere: $eligible fatti documentati disponibili.'
+              : 'Letture non verificate: nessun fatto documentato idoneo per generare prove.'
           : 'Recupero delle letture: ${sources['passed']}/${sources['total']} prove superate.'),
       if (controls != null) ...[
         Text('Casi nuovi simulati: ${controls['passed']}/${controls['total']} prove superate.'),
         if (controls['version'] != null) Text('Misurati con la versione ${controls['version']}.'),
-        if (controls['version'] != null && controls['version'] != '0.42.11')
+        if (controls['version'] != null && controls['version'] != '0.42.12')
           const Text('Ripeti la verifica per misurare il motore aggiornato.'),
         const Text('Il risultato riguarda le capacità provate nel modello simulato.'),
       ],
@@ -167,14 +172,15 @@ class _Page428State extends State<LearningVerificationPage428> {
               ? 'Risultati sui mondi simulati' : 'Risultati sulle letture conservate',
               style: Theme.of(context).textTheme.titleLarge),
           Text(report['mode'] == 'custom' ? '${report['total']} risposte da valutare · versione ${report['version']}'
+              : report['total'] == 0 ? 'Verifica non eseguita: nessuna prova generata.'
               : '${report['passed']}/${report['total']} prove superate · versione ${report['version']}'),
           if (report['beforePassed'] != null)
             Text('Prima della lettura: ${report['beforePassed']}/${report['total']}.'),
           Text('Esecuzione: ${report['at']}'),
           if (report['mode'] == 'sources' && report['topic'] != null)
             Text('Obiettivo al momento della prova: ${report['topic']}'),
-          if (rows.isEmpty) const Text('Non ci sono ancora fatti documentati idonei per questo obiettivo. '
-              'Continua lo studio oppure esegui la prova sui mondi simulati.'),
+          if (rows.isEmpty) const Text('Nessuna risposta è stata valutata. Ripeti la verifica dopo lo studio: '
+              'occorrono fatti documentati con un passaggio e una fonte conservati.'),
           if (report['mode'] == 'sources' && rows.isNotEmpty)
             const Text('La risposta attesa deriva dalla proposizione estratta: controlla anche il passaggio originale. '
                 'Il punteggio misura il recupero delle fonti, non certifica la loro correttezza scientifica.'),
