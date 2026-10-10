@@ -9,9 +9,44 @@ import '../lib/verification_reader_v0428.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
 import '../lib/relational_memory_v0324.dart';
 import '../lib/plastic_language_brain_v04.dart';
+import '../lib/reading_query_v0430.dart';
 
 void main() {
   sqfliteFfiInit();
+  test('persisted homonyms and generic verb fragments cannot become clinical source questions', () {
+    final m = ResearchMemory11();
+    final created = DateTime.utc(2026, 10, 10);
+    StudyGoal426.start(m, 'la dialisi', now: created);
+    final s = ResearchSession11(topic: 'dialisi', query: 'la dialisi definizioni', reason: 'Fixture',
+        startedAtIso: created.add(const Duration(minutes: 1)).toIso8601String());
+    s.audit315['documents'] = [{'provider': 'Wikipedia IT', 'title': 'Emodialisi',
+      'meta318': {'resolvedTopic': true, 'requestedTopic': 'dialisi', 'wikidataId': 'Q391744'}}];
+    s.audit315['decisions'] = [];
+    m.sessions.add(s);
+    for (final item in [
+      ('clinical', 'Emodialisi', 'sottoclasse di', 'dialisi', 'wikidata:Q391744'),
+      ('homonym', 'Dialisi', 'istanza di', 'figura retorica', 'wikidata:Q3706663'),
+      ('fragment', 'Successivamente l’evoluzione tecnica', 'ha', 'consentito la produzione', null),
+    ]) {
+      m.claims[item.$1] = ResearchClaim11(key: item.$1, subject: item.$2, relation: item.$3,
+        object: item.$4, confidence: .9, conflict: false, status: 'documentata', lastSeenIso: '',
+        subjectSenseKey: item.$5, evidenceIds: {item.$1}, meta317: {'usable': true});
+      m.evidence.add(ResearchEvidence11(id: item.$1, subject: item.$2, relation: item.$3,
+        object: item.$4, provider: 'Fixture', sourceFamily: 'fixture', sourceTitle: item.$2,
+        sourceUrl: 'local://${item.$1}', excerpt: 'Fixture: ${item.$2} ${item.$3} ${item.$4}.',
+        trust: .9, retrievedAtIso: ''));
+      (s.audit315['decisions'] as List).add({'claimKey': item.$1});
+    }
+    final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(m.toJson())));
+    final cases = LearningVerification428.sourceCases(restored, 432);
+    expect(cases, hasLength(2));
+    expect(cases.every((c) => c.subject == 'Emodialisi'), isTrue);
+    final answer = ReadingQuery430.answer(restored, 'Spiegami la dialisi')!;
+    expect(answer.text, contains('Emodialisi'));
+    expect(answer.text, isNot(contains('figura retorica')));
+    expect(restored.claims.containsKey('homonym'), isTrue,
+        reason: 'The old distinct meaning stays in memory without contaminating this study.');
+  });
   test('assessment fallback reads empty and taught relational memory without initializing or recording queries', () {
     final m = ResearchMemory11();
     final empty = jsonEncode(m.toJson());
