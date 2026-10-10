@@ -47,10 +47,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text(q.prompt), 300,
         scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text(q.prompt));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.textContaining('Risposta attesa:'), 200,
         scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.textContaining('Alfa — contiene → canale'), findsOneWidget);
     expect(find.textContaining('Documento originale'), findsOneWidget);
     expect(tester.takeException(), isNull);
