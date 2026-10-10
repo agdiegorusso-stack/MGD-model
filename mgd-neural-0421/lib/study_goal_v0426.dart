@@ -157,6 +157,29 @@ class StudyGoal426 {
     memory.state317[key] = g;
   }
 
+  /// Prioritize real subjects whose retained evidence could not be retrieved.
+  /// Review changes scheduling only, never evidence counts or mastery labels.
+  static void review(ResearchMemory11 memory, List<String> subjects) {
+    final g = state(memory);
+    if (g == null) return;
+    final all = items(g);
+    for (final subject in subjects) {
+      final index = all.indexWhere((i) => ResearchSemantics317.sameSubject(
+          '${i['lookup'] ?? i['label']}', subject));
+      final item = index >= 0 ? all[index] : <String, dynamic>{
+        'label': subject, 'lookup': subject, 'attempts': 0, 'failures': 0,
+        'documents': 0, 'novel': 0, 'families': <String>[],
+        'discoveredFrom': 'verifica delle letture',
+      };
+      item['review428'] = true;
+      item['nextAt'] = '';
+      memory.queryLastIso.removeWhere((k, _) => norm(k) == norm(query(g, item)));
+      if (index < 0) all.add(item);
+    }
+    g['items'] = all;
+    memory.state317[key] = g;
+  }
+
   /// Grow the plan from relevant extracted concepts, with source provenance.
   /// These are research candidates, not accepted facts or proof of mastery.
   static void expand(ResearchMemory11 memory, String goalId,
@@ -203,6 +226,9 @@ class StudyGoal426 {
       return due == null || !due.isAfter(t);
     }).toList()
       ..sort((a, b) {
+        final byReview = (b['review428'] == true ? 1 : 0)
+            .compareTo(a['review428'] == true ? 1 : 0);
+        if (byReview != 0) return byReview;
         final byAttempts = count(a, 'attempts').compareTo(count(b, 'attempts'));
         return byAttempts != 0 ? byAttempts :
             order['${a['label']}']!.compareTo(order['${b['label']}']!);
@@ -231,6 +257,7 @@ class StudyGoal426 {
     final i = all[index];
     final t = now ?? DateTime.now();
     i['attempts'] = count(i, 'attempts') + 1;
+    i.remove('review428');
     // A source identifier alone is not novelty; changed text is.
     final hashes = Set<String>.from(g['hashes'] as List? ?? []);
     final families = Set<String>.from(i['families'] as List? ?? []);
