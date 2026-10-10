@@ -15,10 +15,11 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: LearningVerificationPage428(memory: ResearchMemory11(),
       onRun: (m, _, __) async { mode = m; return {'mode': m, 'version': '0.42.13',
         'passed': 1, 'total': 1, 'beforePassed': 0, 'results': [{
-          'prompt': 'In quale direzione si muove il flusso?', 'expected': 'transfer',
-          'expectedTransfer433': {'from': 'sangue', 'to': 'bagno', 'netZero': false},
+          'id': 'application-reverse',
+          'prompt': 'Sangue: 2 mmol/L; bagno: 8 mmol/L. In quale direzione si muove il flusso?', 'expected': 'transfer',
+          'expectedTransfer433': {'from': 'bagno', 'to': 'sangue', 'netZero': false},
           'passed': true, 'beforePassed': false, 'capability': 'application',
-          'answer': {'text': 'Il flusso va da sangue a bagno.'},
+          'answer': {'text': 'Il flusso va da bagno a sangue.'},
         }]}; }, onReview: (_) async {})));
     await tester.scrollUntilVisible(find.text('Applica un principio letto'), 250,
         scrollable: find.byType(Scrollable).first);
@@ -30,6 +31,10 @@ void main() {
     await tester.scrollUntilVisible(find.textContaining('Previsioni determinate: 1/1'), 250,
         scrollable: find.byType(Scrollable).first);
     expect(find.textContaining('Previsioni determinate: 1/1'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Concentrazioni invertite'), 250,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Concentrazioni invertite')); await tester.pumpAndSettle();
+    expect(find.textContaining('Caso e domanda: Sangue: 2 mmol/L'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets('empty source verification is displayed as unassessed without a zero-over-zero score', (tester) async {

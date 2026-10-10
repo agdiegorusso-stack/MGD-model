@@ -248,6 +248,25 @@ class _Page428State extends State<LearningVerificationPage428> {
     ])));
 
   Widget _result(Map<String, dynamic> row) {
+    const labels = {
+      'application-blood-to-bath': 'Verso del flusso tra sangue e bagno',
+      'application-reverse': 'Concentrazioni invertite',
+      'application-new-labels': 'Compartimenti con nomi nuovi',
+      'application-order': 'Stessi dati in ordine diverso',
+      'application-rephrased': 'Domanda riformulata',
+      'application-units': 'Unità di misura diverse',
+      'application-decimal': 'Concentrazioni decimali',
+      'application-equilibrium': 'Concentrazioni uguali',
+      'application-blocked': 'Membrana impermeabile',
+      'application-other-solute': 'Un altro soluto presente',
+      'application-missing-value': 'Una concentrazione mancante',
+      'application-missing-barrier': 'Permeabilità non specificata',
+      'application-unit-mismatch': 'Unità non convertibili dai dati',
+      'application-time': 'Tempo richiesto senza parametri',
+      'application-unsupported-condition': 'Trasporto attivo presente',
+      'application-conflicting-values': 'Concentrazioni incompatibili',
+      'application-conflicting-barrier': 'Permeabilità in conflitto',
+    };
     final answer = row['answer'] as Map? ?? {};
     final before = row['before'] as Map?;
     final names = (row['names'] as Map? ?? {}).map((k, v) => MapEntry('$k', '$v'));
@@ -270,9 +289,10 @@ class _Page428State extends State<LearningVerificationPage428> {
     return ExpansionTile(
       leading: Icon(row['passed'] == null ? Icons.rate_review_outlined
           : row['passed'] == true ? Icons.check_circle_outline : Icons.error_outline),
-      title: Text(readable(row['prompt'])), subtitle: Text('MGD: $preview'),
+      title: Text(labels[row['id']] ?? readable(row['prompt'])), subtitle: Text('MGD: $preview'),
       childrenPadding: const EdgeInsets.all(12), expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (labels.containsKey(row['id'])) SelectableText('Caso e domanda: ${readable(row['prompt'])}'),
         Text('${row['reason']}'),
         SelectableText('Risposta di MGD: $fullAnswer'),
         if (before != null) SelectableText('Prima della lettura: ${readable(before['text'])}'),
