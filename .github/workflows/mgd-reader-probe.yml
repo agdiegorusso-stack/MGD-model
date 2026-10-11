@@ -17,8 +17,8 @@ jobs:
           python-version: '3.12'
       - run: pip install litert-lm==0.18.0 huggingface_hub
       - run: python mgd_reader_probe439.py
-      - run: python mgd_reader_public439.py
       - run: python mgd_reader_candidate439.py
+      - run: python mgd_reader_public439.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

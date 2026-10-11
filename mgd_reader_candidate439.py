@@ -3,9 +3,10 @@ from huggingface_hub import HfApi, hf_hub_download
 import litert_lm
 
 out = pathlib.Path('mgd-reader-probe-results'); out.mkdir(exist_ok=True)
-repo, filename = 'litert-community/Qwen3.5-0.8B', 'Qwen3.5-0.8B_int8.litertlm'
+repo, filename = 'litert-community/Qwen3-0.6B', 'Qwen3-0.6B.litertlm'
 info = HfApi().model_info(repo, files_metadata=True)
 entry = next(x for x in info.siblings if x.rfilename == filename)
+print('AVAILABLE QWEN MODELS', [x.id for x in HfApi().list_models(author='litert-community',search='Qwen')],flush=True)
 manifest = dict(repo=repo, filename=filename, revision=info.sha, bytes=entry.size, sha256=entry.lfs.sha256)
 path = hf_hub_download(repo, filename, revision=info.sha)
 with open(path, 'rb') as f: assert hashlib.file_digest(f, 'sha256').hexdigest() == manifest['sha256']
@@ -45,5 +46,5 @@ report=dict(manifest=manifest,total=len(results),passed=sum(r['passed'] for r in
     exact_choices_correct=sum(r.get('exact_choice_correct',False) for r in results),
     results=results,readings=readings,model_selection_used_development_suite=True,
     universal_comprehension_proven=False)
-(out/'candidate-comprehension-439.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+(out/'candidate-int8-comprehension-439.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
 print('CANDIDATE RESULT',json.dumps({k:v for k,v in report.items() if k not in ['results','readings']}),flush=True)
