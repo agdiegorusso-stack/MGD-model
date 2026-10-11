@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'neural_reading_v0439.dart';
 import 'web_knowledge_explorer_v11.dart';
@@ -13,8 +14,23 @@ class NeuralReadingPage439 extends StatefulWidget {
 }
 class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
   bool working = false;
+  Timer? _refresh;
+  String _seenStatus = '';
+  bool _seenBusy = false;
+  @override
+  void initState() {
+    super.initState();
+    _refresh = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && (_seenStatus != NeuralReading439.status || _seenBusy != NeuralReading439.busy)) {
+        setState(() { _seenStatus = NeuralReading439.status; _seenBusy = NeuralReading439.busy; });
+      }
+    });
+  }
+  @override
+  void dispose() { _refresh?.cancel(); super.dispose(); }
   @override
   Widget build(BuildContext context) {
+    final active = working || NeuralReading439.busy;
     final s = NeuralReading439.stats(widget.memory);
     final notes = NeuralReading439.notes(widget.memory).expand((r) =>
       (r['notes'] as List? ?? []).whereType<Map>()).toList();
@@ -30,14 +46,14 @@ class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
         const Text('Il riesame riprende dalle letture salvate mentre l’app è aperta. '
           'Puoi chiedere in Vivi spiegazioni e confronti sui testi acquisiti.'),
         const SizedBox(height: 12),
-        FilledButton.icon(onPressed: working ? null : () async {
+        FilledButton.icon(onPressed: active ? null : () async {
           setState(() => working = true);
           try { await widget.onProcess(); }
           finally { if (mounted) setState(() => working = false); }
         }, icon: const Icon(Icons.psychology_outlined),
-          label: Text(working ? 'Riesame in corso…' : 'Esamina il prossimo gruppo')),
-        if (working) TextButton(onPressed: () => NeuralReading439.cancel(), child: const Text('Interrompi')),
-        OutlinedButton(onPressed: working ? null : () async {
+          label: Text(active ? 'Riesame in corso…' : 'Esamina il prossimo gruppo')),
+        if (active) TextButton(onPressed: () => NeuralReading439.cancel(), child: const Text('Interrompi')),
+        OutlinedButton(onPressed: active ? null : () async {
           NeuralReading439.retry(widget.memory); await widget.onSave();
           if (mounted) setState(() {});
         }, child: const Text('Riprova i gruppi senza note')),
