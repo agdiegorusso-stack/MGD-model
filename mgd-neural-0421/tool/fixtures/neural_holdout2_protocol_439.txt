@@ -1,0 +1,1 @@
+Fissata il 2026-10-11 prima del nuovo confronto. I precedenti casi H sono ora diagnostici: hanno guidato il rifiuto del QA vincolato. I nuovi casi J restano esclusi dalla scelta del modello. Soluzioni separate dall’input.

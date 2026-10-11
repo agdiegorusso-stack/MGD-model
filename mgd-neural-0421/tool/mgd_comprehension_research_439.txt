@@ -136,3 +136,14 @@ mancava il provider LLGuidance esplicito. Il suo zero non è un punteggio semant
 Il task CB pubblico, sul solo modello 0.6B INT4, dà 5/56 (8,9%) dopo la
 correzione del parser delle etichette: le prime misure zero erano invalide per
 valutare la comprensione. I punteggi della versione finale sono nei JSON.
+
+Esito della configurazione QA vincolata, rifiutata:
+11/24 esiti completi sullo sviluppo, 3/12 sulla prima suite indipendente,
+17/36 scelte corrette totali. Le note hanno riferimenti validi in 9/9 gruppi.
+Il formato vincolato si è dimostrato utile per l'estrazione, ma la combinazione
+di prompt e vincoli adottata per le domande ha peggiorato la comprensione.
+È rifiutata per QA. La versione successiva ripristina il prompt e la modalità
+di ragionamento del miglior confronto precedente, lasciando l'estrazione
+vincolata. I primi casi H diventano diagnostici, poiché il loro esito ha
+orientato questa scelta. La nuova suite J viene fissata prima della prova
+successiva; non si presenta il precedente test come ancora cieco.

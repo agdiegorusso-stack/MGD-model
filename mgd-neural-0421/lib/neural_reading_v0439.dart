@@ -20,7 +20,7 @@ class NeuralReading439 {
   static String status = 'Lettore locale incluso: Qwen3 1.7B';
   static int _epoch = 0;
   static DateTime? _retryAfter;
-  static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4 / JSON v2';
+  static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4 / reading JSON v2 / QA reasoning v1';
 
   static Future<String> generate(String prompt, {bool reasoning = false, Map<String, dynamic>? schema}) async {
     if (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false)) {
@@ -288,9 +288,9 @@ class NeuralReading439 {
     'Collega gli eventi e risolvi i riferimenti solo quando il testo lo permette. '
     'Se manca il dato rispondi unknown=true e non inventare. '
     'Mantieni negazioni, condizioni e differenze fra fonti. '
-    'Restituisci solo JSON con answer (risposta breve in italiano), '
-    'evidence (lista ID) e unknown (booleano). '
-    'Ogni risposta richiede gli ID di brani pertinenti; per unknown usa [].\n'
+    'Restituisci solo JSON: {"answer":"risposta breve in italiano",'
+    '"evidence":["P0"],"unknown":false}. '
+    'Ogni risposta richiede gli ID di brani pertinenti; per unknown usa []. \n'
     'DOMANDA: ${query.substring(0, query.length.clamp(0, 1300))}\nDATI:\n' +
     jsonEncode([for (var i = 0; i < rows.length; i++)
       {'id': 'P$i', 'title': rows[i]['title'], 'text': rows[i]['text']}]);
@@ -303,7 +303,7 @@ class NeuralReading439 {
     final rows = context(m, query);
     if (rows.isEmpty) return null;
     try {
-      final data = parse(await (run ?? ((p) => generate(p, reasoning: true, schema: answerSchema(rows))))(answerPrompt(query, rows)));
+      final data = parse(await (run ?? ((p) => generate(p, reasoning: true)))(answerPrompt(query, rows)));
       if (data == null || data['answer'] is! String || data['unknown'] is! bool) return null;
       final answer = (data['answer'] as String).trim();
       if (answer.isEmpty || answer.length > 2600) return null;

@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
       MGD_APPLICATION_LABEL: MGD Studio 0.42.19

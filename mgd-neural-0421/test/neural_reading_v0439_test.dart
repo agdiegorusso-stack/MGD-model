@@ -134,7 +134,7 @@ void main() {
     }
   });
   test('emit production prompts for an independent real-model assessment', () {
-    final public = [...jsonDecode(File('tool/fixtures/neural_comprehension_439.json').readAsStringSync()) as List, ...jsonDecode(File('tool/fixtures/neural_holdout_439.json').readAsStringSync()) as List];
+    final public = [...jsonDecode(File('tool/fixtures/neural_comprehension_439.json').readAsStringSync()) as List, ...jsonDecode(File('tool/fixtures/neural_holdout2_439.json').readAsStringSync()) as List];
     final prompts = <Map<String, dynamic>>[];
     for (final c in public.whereType<Map>()) {
       final m = ResearchMemory11(); add(m, '${c['text']}', url: 'local://assessment/${c['id']}');
