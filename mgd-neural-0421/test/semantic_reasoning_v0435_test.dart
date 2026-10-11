@@ -16,12 +16,12 @@ void main() {
     final rows = semanticTransfer435();
     final report = {
       'scope': 'Casi sviluppati dopo il motore; grammatiche limitate, non valutazione cieca.',
-      'version': '0.42.15',
+      'version': '0.42.16',
       'total': rows.length,
       'passed': rows.where((r) => r['passed'] == true).length,
       'results': rows,
     };
-    File('tool/reports/semantic-transfer-0.42.15.json')
+    File('tool/reports/semantic-transfer-0.42.16.json')
         .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(report));
     print(
       'TRANSFER435 ${jsonEncode({'passed': report['passed'], 'total': report['total']})}',

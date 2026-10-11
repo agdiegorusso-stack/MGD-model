@@ -72,7 +72,7 @@ class BroadVerification434 {
     Future<VerificationReader428> Function()? openReader,
     bool Function()? cancelled,
     void Function(int, int, String)? progress,
-    String version = '0.42.15',
+    String version = '0.42.16',
   }) async {
     final suite = await load();
     final domains = (suite['domains'] as List).cast<Map>();

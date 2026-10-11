@@ -1,6 +1,8 @@
 /// Source-grounded, deterministic operations on a small Italian text grammar.
 /// This module has no examiner, answer-key, network or mutable memory access.
 /// Unsupported clauses remain text: parsing a fragment never makes it a rule.
+part 'quantitative_network_v0436.dart';
+
 class ReadingSource435 {
   final String id, text, title, url;
   const ReadingSource435(this.id, this.text, this.title, this.url);
@@ -316,6 +318,7 @@ class SemanticReasoning435 {
       // Source sentences retain their identity; adjacency is only within one
       // document, never across independent providers.
       final answer =
+          _QuantitativeNetwork436.answer(group, q) ??
           _formula(group, q) ??
           _locations(group, q) ??
           _ledger(group, q) ??
