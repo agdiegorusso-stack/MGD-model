@@ -1,0 +1,66 @@
+{
+  "K01": {
+    "answer": "B",
+    "unknown": true
+  },
+  "K02": {
+    "answer": "C",
+    "unknown": false
+  },
+  "K03": {
+    "answer": "A",
+    "unknown": false
+  },
+  "K04": {
+    "answer": "D",
+    "unknown": false
+  },
+  "K05": {
+    "answer": "B",
+    "unknown": false
+  },
+  "K06": {
+    "answer": "C",
+    "unknown": true
+  },
+  "K07": {
+    "answer": "A",
+    "unknown": false
+  },
+  "K08": {
+    "answer": "D",
+    "unknown": false
+  },
+  "K09": {
+    "answer": "B",
+    "unknown": true
+  },
+  "K10": {
+    "answer": "C",
+    "unknown": false
+  },
+  "K11": {
+    "answer": "A",
+    "unknown": false
+  },
+  "K12": {
+    "answer": "D",
+    "unknown": false
+  },
+  "K13": {
+    "answer": "A",
+    "unknown": false
+  },
+  "K14": {
+    "answer": "C",
+    "unknown": false
+  },
+  "K15": {
+    "answer": "B",
+    "unknown": false
+  },
+  "K16": {
+    "answer": "D",
+    "unknown": true
+  }
+}
