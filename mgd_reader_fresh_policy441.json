@@ -1,0 +1,6 @@
+{
+ "development_selection":"Require fixed corrected-4B policy to qualify before running this workflow.",
+ "fresh_adoption":"Require all 16 cases evaluated on both engines, candidate exact choices and complete protocol no lower than baseline; require improvement in at least one. No reconfiguration or new candidate selection based on fresh outputs. Android execution must succeed before delivery.",
+ "fixture_commit":"023fc031438dce1abc77738cbfe0301273fd472a",
+ "scope":"16 finite multiple-choice questions with actual MGD retrieval and prompt; no total comprehension claim."
+}

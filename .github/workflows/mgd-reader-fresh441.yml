@@ -1,0 +1,43 @@
+name: MGD selected reader fresh441 comparison
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd_reader_fresh_selected441.json']
+permissions:
+  contents: read
+jobs:
+  assessment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        role: [baseline, candidate]
+    env:
+      MGD_FRESH_ROLE: ${{ matrix.role }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Emit real application prompts
+        working-directory: mgd-neural-0421
+        run: |
+          set -euo pipefail
+          cp ../mgd_reader_fresh_prompts441.dart test/neural_fresh441_test.dart
+          flutter pub get
+          mkdir -p tool/reports
+          flutter test test/neural_fresh441_test.dart --reporter expanded 2>&1 | tee tool/reports/fresh441-prompts.log
+      - run: pip install litert-lm==0.18.0 huggingface_hub
+      - run: python mgd_reader_fresh_evaluate441.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-reader-fresh441-${{ matrix.role }}
+          path: |
+            mgd-reader-fresh-results-${{ matrix.role }}
+            mgd-neural-0421/tool/reports
