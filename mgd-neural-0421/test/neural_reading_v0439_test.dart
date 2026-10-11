@@ -105,7 +105,7 @@ void main() {
     expect(NeuralReading439.answerPrompt('Come funziona?', ctx), isNot(contains('Un accumulatore conserva')));
   });
   test('emit production prompts for an independent real-model assessment', () {
-    final public = jsonDecode(File('tool/fixtures/neural_comprehension_439.json').readAsStringSync()) as List;
+    final public = [...jsonDecode(File('tool/fixtures/neural_comprehension_439.json').readAsStringSync()) as List, ...jsonDecode(File('tool/fixtures/neural_holdout_439.json').readAsStringSync()) as List];
     final prompts = <Map<String, dynamic>>[];
     for (final c in public.whereType<Map>()) {
       final m = ResearchMemory11(); add(m, '${c['text']}', url: 'local://assessment/${c['id']}');
@@ -113,12 +113,12 @@ void main() {
         (c['options'] as Map).entries.map((e) => '${e.key}: ${e.value}').join('\n');
       final ctx = NeuralReading439.context(m, q);
       prompts.add({'id': c['id'], 'domain': c['domain'], 'capability': c['capability'],
-        'prompt': NeuralReading439.answerPrompt(q, ctx), 'context_rows': ctx.length,
+        'prompt': NeuralReading439.answerPrompt(q, ctx), 'context_rows': ctx.length, 'split': c['split'] ?? 'development',
         'reading_prompt': NeuralReading439.readingPrompt(NeuralReading439.batches(m).first)});
     }
     Directory('tool/reports').createSync(recursive: true);
     File('tool/reports/neural-prompts-439.json').writeAsStringSync(jsonEncode(prompts));
-    expect(prompts.length, 24);
+    expect(prompts.length, 36);
     expect(prompts.every((p) => p['context_rows'] > 0), true);
   });
 }

@@ -17,25 +17,31 @@ class NeuralReading439 {
   static const channel = MethodChannel('mgd/neural-reader439');
   static bool enabled = false;
   static bool busy = false;
-  static String status = 'Lettore locale incluso: Qwen3 0.6B';
+  static String status = 'Lettore locale incluso: Qwen3 1.7B';
   static int _epoch = 0;
-  static const model = 'Qwen3-0.6B / LiteRT-LM 0.18.0 / INT4';
+  static DateTime? _retryAfter;
+  static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4';
 
-  static Future<String> generate(String prompt) async {
-    if (!enabled || busy) throw StateError('Lettore locale non disponibile');
+  static Future<String> generate(String prompt, {bool reasoning = false}) async {
+    if (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false)) {
+      throw StateError('Lettore locale non disponibile');
+    }
     busy = true;
     final epoch = _epoch;
     try {
       status = 'Interpretazione locale in corso';
-      final raw = await channel.invokeMethod<String>('generate', {'prompt': prompt})
-          .timeout(const Duration(seconds: 120), onTimeout: () {
+      final raw = await channel.invokeMethod<String>('generate', {'prompt': prompt, 'reasoning': reasoning})
+          .timeout(const Duration(seconds: 180), onTimeout: () {
         cancel(); throw StateError('Il lettore ha superato il tempo disponibile');
       });
       if (epoch != _epoch) throw StateError('Interpretazione interrotta');
       status = 'Lettore locale pronto';
       return raw ?? '';
     } catch (e) {
-      status = 'Lettore sospeso: $e';
+      _retryAfter = DateTime.now().add(const Duration(minutes: 5));
+      status = e is PlatformException
+        ? 'Lettore sospeso: ${e.message ?? 'non disponibile sul dispositivo'}'
+        : 'Lettore sospeso; puoi riprovare dalla scheda Mente';
       rethrow;
     } finally { busy = false; }
   }
@@ -91,7 +97,7 @@ class NeuralReading439 {
   }
 
   static String batchId(List<Map<String, dynamic>> rows) =>
-      ResearchSemantics317.digest(['reader439-v1', ...rows.map((r) => r['rid439'])]);
+      ResearchSemantics317.digest(['reader439-v1', model, ...rows.map((r) => r['rid439'])]);
   static Map<String, dynamic> _state(ResearchMemory11 m, {bool create = false}) {
     final raw = m.state317['neuralReading439'];
     if (raw is Map<String, dynamic>) return raw;
@@ -106,7 +112,7 @@ class NeuralReading439 {
   static List<Map<String, dynamic>> notes(ResearchMemory11 m) {
     final live = fragments(m).map((r) => r['rid439']).toSet();
     return records(m).values.whereType<Map>().where((r) =>
-      r['ok'] == true && (r['rows'] as List? ?? []).isNotEmpty &&
+      r['ok'] == true && r['model'] == model && (r['rows'] as List? ?? []).isNotEmpty &&
       (r['rows'] as List).every(live.contains)).map((r) => Map<String, dynamic>.from(r)).toList();
   }
   static Map<String, int> stats(ResearchMemory11 m) {
@@ -160,7 +166,7 @@ class NeuralReading439 {
 
   static Future<bool> examineNext(ResearchMemory11 m,
       {NeuralGenerate439? run, bool Function()? shouldContinue}) async {
-    if (run == null && (!enabled || busy)) return false;
+    if (run == null && (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false))) return false;
     final rs = records(m);
     final pending = batches(m).where((b) {
       final r = rs[batchId(b)];
@@ -187,6 +193,7 @@ class NeuralReading439 {
   }
 
   static void retry(ResearchMemory11 m) {
+    _retryAfter = null;
     final state = _state(m, create: true);
     final next = Map<String, dynamic>.from(state['records'] as Map? ?? {});
     next.removeWhere((_, r) => r is Map && r['ok'] != true);
@@ -259,19 +266,20 @@ class NeuralReading439 {
     'Mantieni negazioni, condizioni e differenze fra fonti. '
     'Restituisci solo JSON: {"answer":"risposta breve in italiano",'
     '"evidence":["P0"],"unknown":false}. '
-    'Ogni risposta richiede gli ID di brani pertinenti; per unknown usa []. /no_think\n'
+    'Ogni risposta richiede gli ID di brani pertinenti; per unknown usa [].\n'
     'DOMANDA: ${query.substring(0, query.length.clamp(0, 1300))}\nDATI:\n' +
     jsonEncode([for (var i = 0; i < rows.length; i++)
       {'id': 'P$i', 'title': rows[i]['title'], 'text': rows[i]['text']}]);
 
   static Future<NeuralAnswer439?> answer(ResearchMemory11 m, String query,
       {NeuralGenerate439? run}) async {
-    if (run == null && (!enabled || busy)) return null;
+    if (run == null && (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false))) return null;
+    if (query.length > 1300) return null;
     if (!RegExp(r'\?|^(chi|cosa|che cosa|come|dove|quando|perch|quale|quali|quanto|parlami|spieg|descriv|riassum|confronta|se )', caseSensitive: false).hasMatch(query.trim())) return null;
     final rows = context(m, query);
     if (rows.isEmpty) return null;
     try {
-      final data = parse(await (run ?? generate)(answerPrompt(query, rows)));
+      final data = parse(await (run ?? ((p) => generate(p, reasoning: true)))(answerPrompt(query, rows)));
       if (data == null || data['answer'] is! String || data['unknown'] is! bool) return null;
       final answer = (data['answer'] as String).trim();
       if (answer.isEmpty || answer.length > 2600) return null;

@@ -20,7 +20,7 @@ class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
       (r['notes'] as List? ?? []).whereType<Map>()).toList();
     return Scaffold(appBar: AppBar(title: const Text('Lettore neurale locale')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        const Text('Qwen3 0.6B interpreta i brani sul dispositivo. '
+        const Text('Qwen3 1.7B interpreta i brani sul dispositivo. '
           'MGD conserva fonti e letture; i pesi di Qwen restano fissi. '
           'Le note sono interpretazioni proposte: un riferimento valido non prova '
           'che la nota sia corretta.'),

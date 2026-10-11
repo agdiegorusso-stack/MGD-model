@@ -200,6 +200,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     super.initState();
     ClosedBookBridge350.enabled = true;
     NeuralReading439.enabled = true;
+    _chat.addListener(_interruptReader439);
     WidgetsBinding.instance.addObserver(this);
     SchedulerBinding.instance.addTimingsCallback(_onFrameTimings18);
     _boot();
@@ -207,6 +208,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _chat.removeListener(_interruptReader439);
     unawaited(NeuralReading439.close());
     BookLab342.closeChat();
     ClosedBookBridge350.close();
@@ -330,6 +332,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   bool _mindBusy320 = false;
   bool _neuralBusy439 = false;
+  void _interruptReader439() {
+    if (NeuralReading439.busy && _chat.text.isNotEmpty) unawaited(NeuralReading439.cancel());
+  }
+
 
   Future<void> _examineNeural439() async {
     if (!mounted || !_ready || _busy || _researchBusy || _maintenance317 ||

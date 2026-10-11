@@ -20,7 +20,7 @@ class NeuralReader439(private val context: Context, messenger: BinaryMessenger) 
     private var engine: Engine? = null
     @Volatile private var active: Conversation? = null
     private val channel = MethodChannel(messenger, "mgd/neural-reader439")
-    private val expectedHash = "03e7da1eb1108b50dffaa9bb52cc7bcbad2eb0c66ca990267f480c1e545d2856"
+    private val expectedHash = "2a72330b504a6596d53a2c00923c57173b10f1b83e6a541213ffec08d1fc5de8"
 
     init {
         channel.setMethodCallHandler { call, result ->
@@ -33,15 +33,16 @@ class NeuralReader439(private val context: Context, messenger: BinaryMessenger) 
                         result.error("INPUT", "Contesto troppo lungo o vuoto", null)
                     } else {
                         val turn = epoch.get()
+                        val reasoning = call.argument<Boolean>("reasoning") ?: false
                         worker.execute {
                             try {
                                 if (turn != epoch.get()) error("Lettura interrotta")
                                 val ready = ensureEngine()
                                 val text = ready.createConversation(ConversationConfig(
-                                    extraContext = mapOf("enable_thinking" to false),
-                                    thinkingConfig = ThinkingConfig(enableThinking = false),
-                                    samplerConfig = SamplerConfig(topK = 20, topP = 0.8, temperature = 0.0, seed = 439),
-                                    maxOutputToken = 384,
+                                    extraContext = mapOf("enable_thinking" to reasoning),
+                                    thinkingConfig = ThinkingConfig(enableThinking = reasoning, thinkingTokenBudget = if (reasoning) 256 else 0),
+                                    samplerConfig = SamplerConfig(topK = 20, topP = if (reasoning) 0.95 else 0.8, temperature = if (reasoning) 0.6 else 0.0, seed = 439),
+                                    maxOutputToken = if (reasoning) 768 else 384,
                                     automaticToolCalling = false
                                 )).use { conv ->
                                     active = conv
@@ -70,8 +71,8 @@ class NeuralReader439(private val context: Context, messenger: BinaryMessenger) 
             "Memoria libera insufficiente per il lettore locale; i brani restano consultabili"
         }
         val dir = File(context.filesDir, "neural439").apply { mkdirs() }
-        val file = File(dir, "qwen3-0.6b-int4.litertlm")
-        if (!file.isFile || file.length() != 344671744L) {
+        val file = File(dir, "qwen3-1.7b-int4.litertlm")
+        if (!file.isFile || file.length() != 977184032L) {
             val temp = File(dir, "model.partial")
             val digest = MessageDigest.getInstance("SHA-256")
             try {
@@ -83,12 +84,12 @@ class NeuralReader439(private val context: Context, messenger: BinaryMessenger) 
                     }
                 }
                 val hash = digest.digest().joinToString("") { "%02x".format(it) }
-                check(hash == expectedHash && temp.length() == 344671744L) { "Modello locale danneggiato" }
+                check(hash == expectedHash && temp.length() == 977184032L) { "Modello locale danneggiato" }
                 check(temp.renameTo(file)) { "Impossibile installare il lettore locale" }
             } finally { temp.delete() }
         }
         val ready = Engine(EngineConfig(modelPath = file.path,
-            backend = Backend.CPU(threadCount = 3), maxNumTokens = 2048,
+            backend = Backend.CPU(threadCount = 3), maxNumTokens = 3072,
             cacheDir = context.cacheDir.path))
         try { ready.initialize() } catch (e: Throwable) { ready.close(); throw e }
         engine = ready

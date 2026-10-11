@@ -1,0 +1,126 @@
+MGD: comprensione delle letture e stato dell'arte
+Revisione mirata aggiornata all'11 ottobre 2026
+
+Questa revisione copre le famiglie tecniche pertinenti al problema MGD;
+non pretende di aver esaurito ogni pubblicazione sull'intelligenza artificiale.
+Le misure effettive dell'implementazione sono nei JSON e nei log allegati.
+
+Problema osservato nel codice
+MGD 0.42.18 conserva i brani e usa recupero lessicale e grammatiche finite.
+Il predittore introdotto nella 0.42.17 è una piccola RNN, non un Transformer
+preaddestrato con competenza linguistica generale. Più brani conservati,
+più nodi o una loss predittiva inferiore non dimostrano comprensione.
+Il lettore 324 è un classificatore ristretto di ruoli; i ragionatori 429/435
+operano su costruzioni esplicitamente riconosciute. Questo spiega perché
+una lettura può essere acquisita senza produrre molte relazioni utilizzabili.
+
+Conclusioni della ricerca
+1. Pretraining e post-training forniscono capacità linguistiche trasferibili.
+   La memorizzazione delle parole di un singolo documento non sostituisce
+   queste capacità. Qwen3 è un esempio pubblico di questa separazione:
+   un modello già addestrato comprende e genera testo; nuove fonti possono
+   essere rese disponibili mediante contesto senza riscrivere i suoi pesi.
+2. RAG collega un modello linguistico a memoria esterna. Migliora l'accesso
+   ai dati, ma il recupero corretto non garantisce la risposta corretta.
+   Le difficoltà del contesto lungo e del testo nel mezzo sono documentate.
+   RAPTOR propone recupero a livelli di astrazione; sintesi e alberi hanno
+   però bisogno di un lettore competente e possono ereditare i suoi errori.
+3. Titans e MIRAS studiano memoria associativa neurale, aggiornamenti
+   e meccanismi di conservazione. Sono architetture addestrate: non una
+   procedura capace di dare comprensione generale a un piccolo motore vuoto.
+4. TTT-E2E tratta il contesto lungo come apprendimento continuo con
+   next-token prediction e meta-learning. L'esperimento descritto usa
+   modelli da 3B e 164B token di addestramento. Trasferirne soltanto l'idea
+   di aggiornare i pesi non trasferisce quelle capacità in un telefono.
+5. In-Place TTT riutilizza parti dei blocchi MLP di un LLM come fast weights.
+   Riduce il bisogno di una nuova architettura, ma richiede un LLM esistente,
+   obiettivi e implementazione dedicati. Non è presente in questa versione.
+6. Studi del 2026 distinguono adattamento a nuovi domini, aggiornamento
+   dei fatti e gestione del contesto. Non sono la stessa capacità.
+   Il lavoro sulle scritture iterative di fatti nei pesi mostra che gli
+   esempi variati aiutano, ma non eliminano la dimenticanza. La conservazione
+   delle fonti è quindi una scelta utile, non una prova di apprendimento
+   generalizzato nei pesi del modello.
+7. La verifica deve contenere testi nuovi, negazioni, condizioni, riferimenti,
+   informazioni assenti, conflitti, prove avverse e compiti indipendenti.
+   LongBench v2 e SuperGLUE mostrano come valutare famiglie di capacità.
+   Un buon punteggio su una suite finita non dimostra comprensione universale.
+
+Intervento implementato
+MGD conserva il testo originale e le fonti. Un lettore locale preaddestrato
+propone interpretazioni linguistiche e risponde su un contesto di brani.
+Le grammatiche esatte restano prioritarie per le deduzioni che supportano.
+Le astensioni di una grammatica limitata non bloccano più il lettore neurale.
+Ogni lettura acquisita genera gruppi di riesame: anche i brani lunghi vengono
+coperti con frammenti sovrapposti, mantenendo l'originale completo.
+Il riesame riprende dai gruppi salvati mentre l'app è aperta.
+Le note indicano citazioni originali e sono sempre interpretazioni proposte.
+Possono suggerire quali fonti recuperare, ma non diventano premesse di una
+deduzione certificata e non vengono promosse automaticamente a fatti veri.
+Le risposte alle domande non sono riapprese come nuove osservazioni.
+La cancellazione di fonti invalida anche le interpretazioni derivate.
+Il runtime lavora fuori dal thread UI e non invia i brani a un servizio remoto.
+
+Verifica e limiti pratici
+Il codice ha test separati per conservazione, ripresa, cancellazione, query
+senza apprendimento, citazioni inesistenti e dati modificati durante inferenza.
+I test del software non misurano la correttezza del lettore.
+La suite italiana di sviluppo contiene 24 testi e quattro alternative per
+domanda. La scelta del modello usa questa suite: non è un test cieco finale.
+Una seconda suite con 12 testi è stata fissata prima dei risultati del confronto.
+Il target corretto resta separato e non è passato al modello.
+Il report registra distintamente scelta, formato delle citazioni e astensione.
+La validità di un riferimento non dimostra che esso implichi la risposta.
+La prova pubblica CommitmentBank è il solo task CB di SuperGLUE, non l'intero
+benchmark. Il pretraining del modello potrebbe avere incontrato quei dati.
+Una prova su emulatore Android non è una misura su un telefono fisico.
+Il lettore ha un contesto e una memoria di lavoro finiti. I pesi linguistici
+restano fissi; la memoria delle letture cresce. Non è implementato TTT,
+fine-tuning continuo o l'addestramento ex novo di un modello generale MGD.
+Il recupero di contesti resta limitato: su grandi archivi può non trovare
+tutti i brani necessari. Mancano una valutazione ampia su libri lunghi,
+una verifica autonoma dell'implicazione e misure sul dispositivo dell'utente.
+Non è risolto il problema scientifico della comprensione di qualsiasi testo.
+
+Fonti primarie consultate
+[1] Qwen3 Technical Report. https://arxiv.org/abs/2505.09388
+    Modello e istruzioni: https://huggingface.co/Qwen/Qwen3-0.6B
+[2] Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.
+    https://arxiv.org/abs/2005.11401
+[3] Lost in the Middle: How Language Models Use Long Contexts.
+    https://arxiv.org/abs/2307.03172
+[4] RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval.
+    https://arxiv.org/abs/2401.18059
+[5] Titans: Learning to Memorize at Test Time.
+    https://arxiv.org/abs/2501.00663
+[6] MIRAS: It's All Connected: A Journey Through Test-Time Memorization,
+    Attentional Bias, Retention, and Online Optimization.
+    https://arxiv.org/abs/2504.13173
+[7] End-to-End Test-Time Training for Long Context.
+    https://arxiv.org/abs/2512.23675
+[8] In-Place Test-Time Training. https://arxiv.org/abs/2604.06169
+[9] Self-Guided Test-Time Training for Long-Context LLMs.
+    https://arxiv.org/abs/2607.09415
+[10] When Does Continual Learning Require Learning.
+     https://arxiv.org/abs/2607.07847
+[11] Can a Language Model Learn Facts Continually in Its Weights?
+     https://arxiv.org/abs/2607.11020v3
+[12] Time-Incremental Continued Pretraining of LLMs:
+     Knowledge Updates Without Catastrophic Forgetting.
+     https://arxiv.org/abs/2609.23916
+[13] Continual Learning in Transition. https://arxiv.org/abs/2608.06216
+[14] LongBench v2: Towards Deeper Understanding and Reasoning on
+     Realistic Long-context Multitasks. https://arxiv.org/abs/2412.15204
+[15] SuperGLUE: A Stickier Benchmark for General-Purpose Language
+     Understanding Systems. https://arxiv.org/abs/1905.00537
+[16] LiteRT-LM Kotlin API, Config, Engine e Conversation, versione 0.18.0.
+     https://github.com/google-ai-edge/LiteRT-LM/tree/v0.18.0
+     https://developers.google.com/edge/litert-lm
+[17] Conversioni e limiti specifici dei modelli locali:
+     https://huggingface.co/litert-community/Qwen3-0.6B
+     https://huggingface.co/litert-community/Qwen3.5-0.8B
+
+Inferenza progettuale dell'implementatore: per il progetto e l'ambiente di
+build disponibili è praticabile un sistema ibrido con lettore preaddestrato
+e memoria esplicita. Questa conclusione non è una dimostrazione che la teoria
+MGD da sola abbia acquisito comprensione generale o superato un Transformer.

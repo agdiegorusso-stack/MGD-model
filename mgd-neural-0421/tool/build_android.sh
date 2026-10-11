@@ -40,7 +40,17 @@ mgd_build_stage='live-application'
 flutter test tool/live_application_v0433_test.dart --reporter expanded 2>&1 | tee tool/reports/live-application.log
 mgd_build_stage='live-study'
 flutter test tool/live_study_v0427_test.dart --reporter expanded 2>&1 | tee tool/reports/live-study.log
-mgd_build_stage='apk'
+mgd_build_stage='verify-bundled-reader'
+python3 - <<'PYMODEL'
+import hashlib, json, pathlib
+folder = pathlib.Path('android/app/src/main/assets/reader439')
+manifest = json.loads((folder/'model.json').read_text())
+model = folder/'model.litertlm'
+assert model.stat().st_size == manifest['bytes']
+with model.open('rb') as stream:
+    assert hashlib.file_digest(stream,'sha256').hexdigest() == manifest['sha256']
+PYMODEL
+mgd_build_stage='apk' 
 flutter build apk --release 2>&1 | tee tool/reports/build.log
 python3 - <<'PY'
 import hashlib, pathlib

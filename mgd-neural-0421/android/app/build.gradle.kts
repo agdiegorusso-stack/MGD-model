@@ -37,6 +37,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             // Development installation by default; an owned key is optional.
             signingConfig = signingConfigs.getByName(
                 if (customStore.isNullOrBlank()) "debug" else "mgdRelease"

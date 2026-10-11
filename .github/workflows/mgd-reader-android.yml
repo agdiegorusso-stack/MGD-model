@@ -55,7 +55,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: cd mgd-neural-0421 && set -o pipefail && flutter test integration_test/neural_reader_android_v0439_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-neural-reader.log
+          script: bash -lc 'cd mgd-neural-0421 && set -euo pipefail && flutter test integration_test/neural_reader_android_v0439_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-neural-reader.log'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

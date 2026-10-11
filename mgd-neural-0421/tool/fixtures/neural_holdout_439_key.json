@@ -1,0 +1,50 @@
+{
+  "H01": {
+    "answer": "C",
+    "unknown": false
+  },
+  "H02": {
+    "answer": "A",
+    "unknown": false
+  },
+  "H03": {
+    "answer": "B",
+    "unknown": false
+  },
+  "H04": {
+    "answer": "D",
+    "unknown": false
+  },
+  "H05": {
+    "answer": "A",
+    "unknown": false
+  },
+  "H06": {
+    "answer": "C",
+    "unknown": true
+  },
+  "H07": {
+    "answer": "D",
+    "unknown": false
+  },
+  "H08": {
+    "answer": "B",
+    "unknown": true
+  },
+  "H09": {
+    "answer": "C",
+    "unknown": false
+  },
+  "H10": {
+    "answer": "A",
+    "unknown": false
+  },
+  "H11": {
+    "answer": "D",
+    "unknown": true
+  },
+  "H12": {
+    "answer": "B",
+    "unknown": false
+  }
+}
