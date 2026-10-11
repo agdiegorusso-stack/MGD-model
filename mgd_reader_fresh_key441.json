@@ -1,0 +1,66 @@
+{
+  "F01": {
+    "answer": "C",
+    "unknown": true
+  },
+  "F02": {
+    "answer": "A",
+    "unknown": false
+  },
+  "F03": {
+    "answer": "D",
+    "unknown": false
+  },
+  "F04": {
+    "answer": "B",
+    "unknown": false
+  },
+  "F05": {
+    "answer": "A",
+    "unknown": false
+  },
+  "F06": {
+    "answer": "D",
+    "unknown": true
+  },
+  "F07": {
+    "answer": "B",
+    "unknown": false
+  },
+  "F08": {
+    "answer": "C",
+    "unknown": false
+  },
+  "F09": {
+    "answer": "B",
+    "unknown": false
+  },
+  "F10": {
+    "answer": "A",
+    "unknown": false
+  },
+  "F11": {
+    "answer": "C",
+    "unknown": true
+  },
+  "F12": {
+    "answer": "D",
+    "unknown": false
+  },
+  "F13": {
+    "answer": "C",
+    "unknown": false
+  },
+  "F14": {
+    "answer": "D",
+    "unknown": false
+  },
+  "F15": {
+    "answer": "A",
+    "unknown": true
+  },
+  "F16": {
+    "answer": "B",
+    "unknown": true
+  }
+}

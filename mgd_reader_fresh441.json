@@ -1,0 +1,194 @@
+[
+  {
+    "id": "F01",
+    "domain": "vincolo necessario",
+    "text": "Un verbale può essere approvato soltanto se reca una firma. Il verbale Zeta reca una firma. Non sono indicati altri criteri di approvazione.",
+    "question": "Il verbale Zeta risulta certamente approvato?",
+    "options": {
+      "A": "Sì",
+      "B": "È certamente respinto",
+      "C": "Non è determinabile",
+      "D": "Sarà approvato domani"
+    }
+  },
+  {
+    "id": "F02",
+    "domain": "tempo e giorno",
+    "text": "Il ciclo inizia martedì alle 23:47 e dura 26 minuti. Non ci sono interruzioni.",
+    "question": "Quando termina il ciclo?",
+    "options": {
+      "A": "Mercoledì alle 00:13",
+      "B": "Martedì alle 00:13",
+      "C": "Martedì alle 23:21",
+      "D": "Mercoledì alle 01:13"
+    }
+  },
+  {
+    "id": "F03",
+    "domain": "revoca esplicita",
+    "text": "L’avviso iniziale fissa la consegna al 18 aprile. Una rettifica successiva annulla quella data e stabilisce il 21 aprile. La rettifica è l’ultima comunicazione valida.",
+    "question": "Quale data vale per la consegna?",
+    "options": {
+      "A": "18 aprile",
+      "B": "Non è determinabile",
+      "C": "19 aprile",
+      "D": "21 aprile"
+    }
+  },
+  {
+    "id": "F04",
+    "domain": "informazione ricevuta",
+    "text": "Elisa lascia una tessera nel vaso e si allontana. Karim la sposta nel cassetto. Elisa non vede lo spostamento. In seguito Karim le comunica sinceramente che la tessera si trova nel cassetto ed Elisa gli crede.",
+    "question": "Dove pensa Elisa che si trovi ora la tessera?",
+    "options": {
+      "A": "Nel vaso",
+      "B": "Nel cassetto",
+      "C": "Nella borsa",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F05",
+    "domain": "ordine temporale",
+    "text": "La pesatura avviene prima dell’imballaggio. L’etichettatura avviene dopo l’imballaggio. La spedizione avviene dopo l’etichettatura.",
+    "question": "Quale operazione avviene immediatamente prima dell’etichettatura nella sequenza descritta?",
+    "options": {
+      "A": "L’imballaggio",
+      "B": "La spedizione",
+      "C": "La pesatura",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F06",
+    "domain": "insiemi e quantificatori",
+    "text": "Tre scatole sono ispezionate: solo Alba e Bora sono sigillate. Del deposito Cima non viene ispezionata nessuna scatola.",
+    "question": "Le scatole del deposito Cima sono tutte sigillate?",
+    "options": {
+      "A": "Sì",
+      "B": "No, nessuna",
+      "C": "Solo quelle grandi",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F07",
+    "domain": "confronto frazioni",
+    "text": "Il serbatoio Uno è pieno per 3/8 della sua capacità. Il serbatoio Due è pieno per 2/5 della sua capacità. Le capacità sono uguali.",
+    "question": "Quale serbatoio contiene più liquido?",
+    "options": {
+      "A": "Uno",
+      "B": "Due",
+      "C": "Contengono la stessa quantità",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F08",
+    "domain": "negazione e relazione",
+    "text": "Il sigillo non è conservato nella busta di Rami. È nella busta di Vico. La busta di Vico si trova nell’armadio chiuso.",
+    "question": "Dove si trova il sigillo?",
+    "options": {
+      "A": "Nella busta di Rami",
+      "B": "Sul tavolo",
+      "C": "Nella busta di Vico dentro l’armadio",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F09",
+    "domain": "credenza di secondo ordine",
+    "text": "Bruna vede Ivo mettere la moneta nel barattolo. Ivo esce. Bruna sposta la moneta nel cofanetto senza che Ivo lo sappia. Bruna sa che Ivo non ha ricevuto informazioni sullo spostamento.",
+    "question": "Dove Bruna pensa che Ivo creda sia la moneta?",
+    "options": {
+      "A": "Nel cofanetto",
+      "B": "Nel barattolo",
+      "C": "In tasca a Bruna",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F10",
+    "domain": "scambio e restituzione",
+    "text": "Olmo ha 18 tessere. Ne consegna 7 a Pia e in seguito Pia gliene restituisce 3. Nessun’altra tessera entra o esce.",
+    "question": "Quante tessere ha Olmo alla fine?",
+    "options": {
+      "A": "14",
+      "B": "11",
+      "C": "18",
+      "D": "24"
+    }
+  },
+  {
+    "id": "F11",
+    "domain": "contraddizione irrisolta",
+    "text": "Due registri, entrambi senza data e con la stessa autorità, indicano rispettivamente che il passaggio è aperto e che il passaggio è chiuso. Non ci sono altri elementi per scegliere fra i registri.",
+    "question": "Qual è lo stato certo del passaggio?",
+    "options": {
+      "A": "Aperto",
+      "B": "Chiuso",
+      "C": "Non è determinabile",
+      "D": "Aperto di mattina"
+    }
+  },
+  {
+    "id": "F12",
+    "domain": "eccezione condizionale",
+    "text": "Il servizio effettua consegne il sabato, eccetto quando il ponte è chiuso. Oggi è sabato e il ponte è chiuso.",
+    "question": "Il servizio effettua consegne oggi secondo la regola descritta?",
+    "options": {
+      "A": "Sì",
+      "B": "Solo di notte",
+      "C": "Non è determinabile",
+      "D": "No"
+    }
+  },
+  {
+    "id": "F13",
+    "domain": "meccanismo causale",
+    "text": "La valvola rotta interrompe l’afflusso di acqua alla vasca. Senza afflusso la vasca si svuota. Senza acqua nella vasca la pompa si arresta.",
+    "question": "Perché la pompa si arresta nella sequenza descritta?",
+    "options": {
+      "A": "Perché il motore è troppo caldo",
+      "B": "Perché la vasca è troppo piena",
+      "C": "Perché la valvola rotta interrompe l’afflusso e la vasca si svuota",
+      "D": "Non è determinabile"
+    }
+  },
+  {
+    "id": "F14",
+    "domain": "controfattuale con unità",
+    "text": "Ogni scatola completa contiene 6 pezzi. Sono disponibili 4 scatole complete. Il controllo chiede di considerare l’ipotesi di aggiungere altre 2 scatole complete.",
+    "question": "Quanti pezzi sarebbero disponibili dopo l’aggiunta ipotizzata?",
+    "options": {
+      "A": "24",
+      "B": "12",
+      "C": "30",
+      "D": "36"
+    }
+  },
+  {
+    "id": "F15",
+    "domain": "ambiguità riferimento",
+    "text": "Daria incontra Petra davanti al laboratorio. Una delle due lascia il suo cappotto sulla sedia. Il testo non specifica chi lo abbia lasciato.",
+    "question": "Di chi è il cappotto lasciato sulla sedia?",
+    "options": {
+      "A": "Non è determinabile",
+      "B": "Di Daria",
+      "C": "Di Petra",
+      "D": "Di entrambe"
+    }
+  },
+  {
+    "id": "F16",
+    "domain": "regola sufficiente non inversa",
+    "text": "Se un campione porta il marchio Verde, viene conservato nel ripiano alto. Il testo non vieta che campioni di altro tipo siano conservati nello stesso ripiano. Il campione R è nel ripiano alto e il suo marchio non è indicato.",
+    "question": "Il campione R porta certamente il marchio Verde?",
+    "options": {
+      "A": "Sì",
+      "B": "Non è determinabile",
+      "C": "No, porta certamente un altro marchio",
+      "D": "Il marchio è blu"
+    }
+  }
+]
