@@ -41,6 +41,17 @@ void intake(ResearchMemory11 memory, WebDocument11 doc, {String? topic}) {
 
 void main() {
   sqfliteFfiInit();
+  test('deleting a source topic cannot leave indirect context references retrievable', () {
+    final memory = ResearchMemory11();
+    SourceMemory323.retain(memory, document('Il sensore misura la pressione.',
+      title: 'Scheda tecnica'), topic: 'Merlo');
+    SourceMemory323.retain(memory, document('Il sensore misura la temperatura.',
+      title: 'Scheda alternativa', url: 'local://alternativa'), topic: 'Salice');
+    expect(ReadingMemory438.answer(memory, 'Descrivi Merlo')!.available, 1);
+    SourceMemory323.forget33(memory, (s) => s.toLowerCase().contains('merlo'));
+    expect(ReadingMemory438.answer(memory, 'Descrivi Merlo'), isNull);
+    expect(ReadingMemory438.answer(memory, 'Descrivi Salice')!.available, 1);
+  });
   test('late information remains retrievable beyond older 2500 passage and 511 token limits', () {
     final memory = ResearchMemory11();
     final text = List.generate(5000, (i) =>

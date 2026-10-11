@@ -5,7 +5,9 @@ part of 'web_knowledge_explorer_v11.dart';
 class SourceMemory323 {
   static void forget33(ResearchMemory11 m, bool Function(String) matches) {
     recover(m);
-    _rows(m).removeWhere((_, r) => r is Map && matches('${r['text'] ?? ''}'));
+    _rows(m).removeWhere((_, r) => r is Map &&
+      (matches('${r['text'] ?? ''}') || matches('${r['title'] ?? ''}') ||
+       (r['topics438'] as List? ?? []).any((t) => matches('$t'))));
     final state = _state(m);
     state['revision'] = (state['revision'] as num? ?? 0).toInt() + 1;
     state['sourceCount'] =
