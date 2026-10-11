@@ -56,7 +56,3 @@ flutter {
     source = "../.."
 }
 
-// Pinned runtime: Kotlin JNI API verified against its v0.18.0 sources.
-dependencies {
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
-}

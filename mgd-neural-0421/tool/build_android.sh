@@ -10,7 +10,7 @@ mgd_build_stage='prerequisites'
 trap 'mgd_build_code=$?; python3 - "$mgd_build_stage" "$mgd_build_code" <<'"'"'PY'"'"'
 import json, pathlib, sys, time
 pathlib.Path("tool/reports/build_status.json").write_text(json.dumps({
-  "version": "0.42.20", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+  "version": "0.42.21", "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
   "stage": sys.argv[1], "exit_code": int(sys.argv[2]),
   "apk_built": sys.argv[1] == "complete" and sys.argv[2] == "0"
 }, indent=2))
@@ -43,12 +43,12 @@ flutter test tool/live_study_v0427_test.dart --reporter expanded 2>&1 | tee tool
 mgd_build_stage='verify-bundled-reader'
 python3 - <<'PYMODEL'
 import hashlib, json, pathlib
-folder = pathlib.Path('android/app/src/main/assets/reader439')
-manifest = json.loads((folder/'model.json').read_text())
-model = folder/'model.litertlm'
-assert model.stat().st_size == manifest['bytes']
-with model.open('rb') as stream:
-    assert hashlib.file_digest(stream,'sha256').hexdigest() == manifest['sha256']
+model = pathlib.Path('assets/reader443.json')
+manifest = json.loads(pathlib.Path('../research/mgd443_reader/results/app-reader-manifest443.json').read_text())
+assert model.stat().st_size == manifest['reader_bytes']
+assert hashlib.sha256(model.read_bytes()).hexdigest() == manifest['reader_sha256']
+assert json.loads(model.read_text())['transformer'] is False
+assert not pathlib.Path('android/app/src/main/assets/reader439/model.litertlm').exists()
 PYMODEL
 mgd_build_stage='apk' 
 flutter build apk --release 2>&1 | tee tool/reports/build.log

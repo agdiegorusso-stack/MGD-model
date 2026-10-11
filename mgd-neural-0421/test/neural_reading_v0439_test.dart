@@ -114,11 +114,7 @@ void main() {
   });
   test('user cancellation permits the next query without a backend-failure cooldown', () async {
     final gate = Completer<String>();
-    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(NeuralReading439.channel, (call) async {
-      if (call.method == 'generate') return gate.future;
-      return null;
-    });
+    NeuralReading439.backendForTest = (_) => gate.future;
     NeuralReading439.enabled = true;
     try {
       final pending = NeuralReading439.generate('Primo brano');
@@ -126,11 +122,11 @@ void main() {
       await NeuralReading439.cancel();
       gate.completeError(PlatformException(code: 'CANCELLED'));
       await expectLater(pending, throwsA(isA<PlatformException>()));
-      messenger.setMockMethodCallHandler(NeuralReading439.channel, (_) async => '{}');
+      NeuralReading439.backendForTest = (_) async => '{}';
       expect(await NeuralReading439.generate('Secondo brano'), '{}');
     } finally {
       NeuralReading439.enabled = false;
-      messenger.setMockMethodCallHandler(NeuralReading439.channel, null);
+      NeuralReading439.backendForTest = null;
     }
   });
   test('a cited answer with missing abstention remains explicitly unclassified and read-only', () async {

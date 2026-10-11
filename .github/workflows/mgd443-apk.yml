@@ -1,0 +1,82 @@
+name: MGD 0.42.21 experimental own reader APK
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['.github/workflows/mgd443-apk.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: mgd443-apk
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.21
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5 scipy==1.16.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-443-factorized-reader-training
+          run-id: 38176357502
+          github-token: ${{ github.token }}
+          path: research/mgd443_reader/results
+      - name: Prepare only the own small recurrent model
+        run: python research/mgd443_reader/prepare_app.py
+      - name: Build, analyze and test the full application
+        working-directory: mgd-neural-0421
+        run: bash tool/build_android.sh
+      - name: Verify APK payload identity and absence of bundled transformer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mgd-neural-0421/tool/reports
+          printf '%s\n' "$GITHUB_SHA" > mgd-neural-0421/tool/reports/BUILD-COMMIT.txt
+          mgd_build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$mgd_build_tools/aapt" dump badging mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk > mgd-neural-0421/tool/reports/apk-identity.txt
+          cp "$mgd_build_tools/lib/apksigner.jar" mgd-neural-0421/tool/reports/apksigner.jar
+          python3 - <<'PY'
+          import zipfile,json,pathlib,hashlib
+          apk=pathlib.Path('mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk')
+          manifest=json.loads(pathlib.Path('research/mgd443_reader/results/app-reader-manifest443.json').read_text())
+          with zipfile.ZipFile(apk) as z:
+              assert not any('.litertlm' in n or '/reader439/' in n or 'litertlm' in n.lower() for n in z.namelist())
+              data=z.read('assets/flutter_assets/assets/reader443.json')
+              assert hashlib.sha256(data).hexdigest()==manifest['reader_sha256']
+              assert json.loads(data)['transformer'] is False
+          identity=pathlib.Path('mgd-neural-0421/tool/reports/apk-identity.txt').read_text()
+          assert "name='it.diegorusso.mgdneurostable.studio'" in identity
+          assert "versionName='0.42.21'" in identity and "versionCode='103'" in identity
+          pathlib.Path('mgd-neural-0421/tool/reports/apk-payload443.json').write_text(json.dumps({'bytes':apk.stat().st_size,'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'reader':manifest,'transformer_payload_absent':True},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-0.42.21-build-verification
+          path: |
+            mgd-neural-0421/tool/reports
+            research/mgd443_reader/results/*results.json
+            research/mgd443_reader/results/*protocol.json
+            research/mgd443_reader/results/app-reader-manifest443.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.21-APK
+          path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

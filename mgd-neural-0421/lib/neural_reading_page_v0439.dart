@@ -34,12 +34,12 @@ class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
     final s = NeuralReading439.stats(widget.memory);
     final notes = NeuralReading439.notes(widget.memory).expand((r) =>
       (r['notes'] as List? ?? []).whereType<Map>()).toList();
-    return Scaffold(appBar: AppBar(title: const Text('Lettore neurale locale')),
+    return Scaffold(appBar: AppBar(title: const Text('Lettore MGD sperimentale')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        const Text('Qwen3 1.7B interpreta i brani sul dispositivo. '
-          'MGD conserva fonti e letture; i pesi di Qwen restano fissi. '
-          'Le note sono interpretazioni proposte: un riferimento valido non prova '
-          'che la nota sia corretta.'),
+        const Text('Il lettore MGD riconosce ruoli, negazioni e condizioni e cerca '
+          'risposte nei brani acquisiti. I suoi pesi sono stati addestrati da zero. '
+          'Le capacità sono sperimentali: può sbagliare o non riconoscere una domanda. '
+          'Le letture restano disponibili con le loro fonti.'),
         const SizedBox(height: 12),
         Text('${s['examined']}/${s['batches']} gruppi esaminati · ${s['notes']} note · ${s['failed']} da riesaminare'),
         Text(NeuralReading439.status),
@@ -63,7 +63,13 @@ class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
           title: Text('${n['text']}'), subtitle: const Text('Interpretazione proposta'),
           children: [for (final e in (n['evidence'] as List? ?? []).whereType<Map>())
             Padding(padding: const EdgeInsets.all(12), child: SelectableText(
-              '«${e['quote']}»\n${e['title']}\n${e['url']}'))],
+              '«${e['quote']}»\n${e['title']}\n${e['url']}')),
+            if (n['scope443'] != null) Padding(padding:const EdgeInsets.all(12),child:Text(
+              'Stato proposto: ${ {'asserted':'affermato','negated':'negato','conditional':'condizionato','planned':'promesso o previsto'}[n['scope443']] ?? n['scope443']}')),
+            for (final role in (n['roles443'] as List? ?? []).whereType<Map>())
+              Padding(padding:const EdgeInsets.all(8),child:Text(
+                '${ {'agent':'Chi agisce','predicate':'Azione','object':'Oggetto','recipient':'Destinatario','time':'Quando','location':'Dove','negation':'Negazione','condition':'Condizione','modal':'Previsione o promessa','reference':'Riferimento','predicate_reference':'Azione con riferimento'}[role['role']] ?? role['role']}: ${role['text']}')),
+          ],
         ))),
         if (notes.length > 100) const Text('Sono mostrate le 100 note più recenti. Tutti i brani restano nelle Letture.'),
       ]));

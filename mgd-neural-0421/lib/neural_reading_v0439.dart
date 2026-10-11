@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'package:flutter/services.dart';
 import 'reading_memory_v0438.dart';
 import 'reading_context_v0440.dart';
 import 'web_knowledge_explorer_v11.dart';
+import 'own_reader_v0443.dart';
 
 typedef NeuralGenerate439 = Future<String> Function(String prompt);
 
@@ -12,20 +14,21 @@ class NeuralAnswer439 {
   const NeuralAnswer439(this.text, this.proof);
 }
 
-/// Frozen pretrained language competence + continually acquired source memory.
+/// From-scratch recurrent reader + continually acquired source memory.
 /// Neither model output nor a valid citation proves entailment or truth.
 class NeuralReading439 {
   static const channel = MethodChannel('mgd/neural-reader439');
   static bool enabled = false;
   static bool busy = false;
-  static String status = 'Lettore locale incluso: Qwen3 1.7B';
+  static String status = 'Lettore MGD sperimentale senza transformer';
+  static NeuralGenerate439? backendForTest;
   static int _epoch = 0;
   static DateTime? _retryAfter;
-  static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4 / reading JSON v2 / QA reasoning v1';
+  static const model = 'MGD-443 / from-scratch recurrent roles / learned questions / extractive QA v1';
   static const inferenceConfig440 = {
-    'thinking_budget': 256, 'max_context_tokens': 3072,
-    'max_output_tokens': 768, 'top_k': 20, 'top_p': .95,
-    'temperature': .6, 'seed': 439,
+    'architecture': 'learned entity factorization and bidirectional recurrent roles',
+    'transformer': false, 'pretrained_external_weights': false,
+    'answer_decoder': 'source span extraction', 'semantic_validation': false,
   };
 
   static Future<String> generate(String prompt, {bool reasoning = false, Map<String, dynamic>? schema}) async {
@@ -37,13 +40,19 @@ class NeuralReading439 {
     var timedOut = false;
     try {
       status = 'Interpretazione locale in corso';
-      final raw = await channel.invokeMethod<String>('generate', {'prompt': prompt, 'reasoning': reasoning, if (schema != null) 'schema': jsonEncode(schema)})
-          .timeout(const Duration(seconds: 180), onTimeout: () {
+      final run=backendForTest;
+      final Future<String> pending;
+      if (run!=null) { pending=run(prompt); }
+      else {
+        final reader=await OwnReader443.load();
+        pending=Isolate.run(() => reader.generate(prompt));
+      }
+      final raw = await pending.timeout(const Duration(seconds: 30), onTimeout: () {
         timedOut = true; cancel(); throw StateError('Il lettore ha superato il tempo disponibile');
       });
       if (epoch != _epoch) throw StateError('Interpretazione interrotta');
       status = 'Lettore locale pronto';
-      return raw ?? '';
+      return raw;
     } catch (e) {
       if (epoch != _epoch && !timedOut) {
         status = 'Interpretazione interrotta';
@@ -59,11 +68,9 @@ class NeuralReading439 {
 
   static Future<void> cancel() async {
     _epoch++;
-    try { await channel.invokeMethod<void>('cancel'); } catch (_) {}
   }
   static Future<void> close() async {
     await cancel();
-    try { await channel.invokeMethod<void>('close'); } catch (_) {}
   }
 
   static String id(Map row) => ResearchSemantics317.digest([
@@ -141,7 +148,7 @@ class NeuralReading439 {
     'dei brani che la sostengono. Rispondi solo JSON: '
     'un oggetto con campo notes, lista di oggetti con text (contenuto concreto) ed evidence (lista ID). /no_think\nDATI:\n' +
     jsonEncode([for (var i = 0; i < rows.length; i++)
-      {'id': 'P$i', 'title': rows[i]['title'], 'text': rows[i]['text']}]);
+      {'id': 'P$i', 'title': rows[i]['title'], 'url':rows[i]['url'], 'text': rows[i]['text']}]);
 
   static Map<String, dynamic> _references(int count, {bool required = false}) => {
     'type': 'array', if (required) 'minItems': 1,
@@ -189,6 +196,8 @@ class NeuralReading439 {
       result.add({'text': text.trim(), 'evidence': [for (final i in indices.toSet())
         {'id': rows[i]['rid439'], 'quote': rows[i]['text'],
           'url': rows[i]['url'], 'title': rows[i]['title']}],
+        if (note['roles'] is List) 'roles443':note['roles'],
+        if (note['scope'] is String) 'scope443':note['scope'],
         'semanticValidation': false, 'status': 'interpretazione proposta'});
     }
     return result;
@@ -257,7 +266,7 @@ class NeuralReading439 {
     'Ogni risposta richiede gli ID di brani pertinenti; per unknown usa []. \n'
     'DOMANDA: ${query.substring(0, query.length.clamp(0, 1300))}\nDATI:\n' +
     jsonEncode([for (var i = 0; i < rows.length; i++)
-      {'id': 'P$i', 'title': rows[i]['title'], 'text': rows[i]['text']}]);
+      {'id': 'P$i', 'title': rows[i]['title'], 'url':rows[i]['url'], 'text': rows[i]['text']}]);
 
   static Future<NeuralAnswer439?> answer(ResearchMemory11 m, String query,
       {NeuralGenerate439? run}) async {
