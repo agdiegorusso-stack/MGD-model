@@ -2,7 +2,7 @@ name: MGD local reader Android execution
 on:
   push:
     branches: ['codex/mgd-predictive-04217']
-    paths: ['mgd-neural-0421/integration_test/neural_reader_android_v0439_test.dart', 'mgd-neural-0421/lib/neural_reading_v0439.dart', 'mgd-neural-0421/android/app/src/main/kotlin/**', '.github/workflows/mgd-reader-android.yml']
+    paths: ['mgd_reader_native_diagnostic439.dart', 'mgd-neural-0421/integration_test/neural_reader_android_v0439_test.dart', 'mgd-neural-0421/lib/neural_reading_v0439.dart', 'mgd-neural-0421/android/app/src/main/kotlin/**', '.github/workflows/mgd-reader-android.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,6 +37,7 @@ jobs:
           pip install huggingface_hub
           python tool/prepare_neural439.py
           flutter pub get
+          cp ../mgd_reader_native_diagnostic439.dart integration_test/neural_reader_diagnostic_v0439_test.dart
           sed -i 's/-Xmx4G/-Xmx2G/;s/org.gradle.workers.max=2/org.gradle.workers.max=1/;s/-Xmx1G/-Xmx512m/' android/gradle.properties
       - name: Enable KVM
         working-directory: .
@@ -55,7 +56,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash -lc 'cd mgd-neural-0421 && set -euo pipefail && flutter test integration_test/neural_reader_android_v0439_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-neural-reader.log'
+          script: bash -lc 'cd mgd-neural-0421 && set -euo pipefail && flutter test integration_test/neural_reader_diagnostic_v0439_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee tool/reports/android-neural-reader.log'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
