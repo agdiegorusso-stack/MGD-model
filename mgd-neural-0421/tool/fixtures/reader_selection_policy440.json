@@ -1,0 +1,10 @@
+{
+  "baseline": {"thinking_budget": 256, "exact_choices_correct": 21, "full_protocol_passed": 17, "total": 24},
+  "candidates": [768, 1024],
+  "suite_used_for_selection": "24 existing development texts only",
+  "rule": "A candidate must match or exceed both baseline scores and strictly improve at least one. Choose maximum exact choices, then full-protocol passes, then the smaller thinking budget. Otherwise retain 256 tokens.",
+  "new_test_suite": "K01-K16, fixed in commit 420b3350b4b62e103164fd605678d14b6634108c before seeing results or selecting a configuration",
+  "new_suite_is_not_used_for_configuration_selection": true,
+  "no_reconfiguration_after_heldout_results": true,
+  "universal_comprehension_proven": false
+}
