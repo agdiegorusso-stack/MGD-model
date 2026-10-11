@@ -1,4 +1,4 @@
-name: MGD 0.42.18 source reading
+name: MGD 0.42.19 source reading
 on:
   push:
     branches: ['codex/mgd-predictive-04217']
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 45
     env:
       MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
-      MGD_APPLICATION_LABEL: MGD Studio 0.42.18
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.19
     defaults:
       run:
         working-directory: mgd-neural-0421
@@ -38,12 +38,22 @@ jobs:
             ~/.gradle/wrapper
             ~/.android/debug.keystore
           key: mgd-study-goal-android-signing-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bundle verified local language model
+        run: |
+          set -euo pipefail
+          pip install litert-lm==0.18.0 huggingface_hub
+          python tool/prepare_neural439.py
       - name: Focused reading and predictor checks
         run: |
           set -euo pipefail
           mkdir -p tool/reports
           flutter pub get
-          flutter test test/predictive_memory_v0437_test.dart test/predictive_memory_widget_v0437_test.dart test/reading_memory_v0438_test.dart test/reading_memory_widget_v0438_test.dart --reporter expanded 2>&1 | tee tool/reports/predictor-tests.log
+          flutter test test/predictive_memory_v0437_test.dart test/predictive_memory_widget_v0437_test.dart test/reading_memory_v0438_test.dart test/reading_memory_widget_v0438_test.dart test/neural_reading_v0439_test.dart --reporter expanded 2>&1 | tee tool/reports/predictor-tests.log
+      - name: Independent real-model comprehension assessment
+        run: python tool/evaluate_neural439.py
       - name: Analyze, test and compile
         run: bash tool/build_android.sh
       - name: Record APK signature and identity
@@ -56,11 +66,11 @@ jobs:
           cp "$mgd_tools/lib/apksigner.jar" tool/reports/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: MGD-Neural-0.42.18-APK
+          name: MGD-Neural-0.42.19-APK
           path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Neural-0.42.18-verification
+          name: MGD-Neural-0.42.19-verification
           path: mgd-neural-0421/tool/reports

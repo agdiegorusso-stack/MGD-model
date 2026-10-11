@@ -1,3 +1,4 @@
+import 'neural_reading_v0439.dart';
 import 'reading_memory_v0438.dart';
 import 'dart:convert';
 import 'dart:math';
@@ -33,16 +34,20 @@ class MemoryQuery428 {
   static Future<VerificationAnswer428> answer(PlasticLanguageBrain04 brain,
       ResearchMemory11 memory, String prompt, CognitiveCore400 core) async {
     final transport = TransportReasoning433.answer(memory, prompt);
-    if (transport != null) return VerificationAnswer428(transport.text,
+    if (transport != null && (!NeuralReading439.enabled || transport.truth != 'unknown')) return VerificationAnswer428(transport.text,
         transport.truth == 'unknown' || transport.truth == 'conflict' ? 'astensione' : 'inferenza',
         proof: transport.proof);
     final semantic = ReadingReasoning435.answer(memory, prompt);
-    if (semantic != null) return VerificationAnswer428(semantic.text,
+    if (semantic != null && (!NeuralReading439.enabled || !semantic.unknown)) return VerificationAnswer428(semantic.text,
         semantic.unknown ? 'astensione' : 'inferenza', proof: semantic.proof);
     final logic = RuleReasoning429.answer(memory, prompt);
-    if (logic != null) return VerificationAnswer428(logic.text,
+    if (logic != null && (!NeuralReading439.enabled || logic.truth != 'unknown')) return VerificationAnswer428(logic.text,
         logic.truth == 'unknown' || logic.truth == 'conflict' ? 'astensione' : 'inferenza',
         proof: logic.proof?.toJson());
+    final neural439 = await NeuralReading439.answer(memory, prompt);
+    if (neural439 != null) return VerificationAnswer428(neural439.text,
+      neural439.proof['unknown'] == true ? 'astensione' : 'interpretazione neurale',
+      proof: neural439.proof);
     final recall438 = ReadingMemory438.answer(memory, prompt);
     if (recall438 != null) return VerificationAnswer428(recall438.text,
         recall438.missing ? 'astensione' : 'passaggi', proof: recall438.proof);
@@ -328,7 +333,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.18'}) async {
+    String? goalId, String? topic, String version = '0.42.19'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;

@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId = System.getenv("MGD_APPLICATION_ID") ?: "it.diegorusso.mgdneurostable"
         manifestPlaceholders["mgdAppLabel"] = System.getenv("MGD_APPLICATION_LABEL") ?: if (System.getenv("MGD_APPLICATION_ID").isNullOrBlank()) "MGD Neuro" else "MGD Studio"
-        minSdk = 24
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -36,6 +36,7 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = false
             // Development installation by default; an owned key is optional.
             signingConfig = signingConfigs.getByName(
                 if (customStore.isNullOrBlank()) "debug" else "mgdRelease"
@@ -52,4 +53,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// Pinned runtime: Kotlin JNI API verified against its v0.18.0 sources.
+dependencies {
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
 }

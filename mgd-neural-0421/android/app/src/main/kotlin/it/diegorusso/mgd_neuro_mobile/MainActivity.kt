@@ -9,12 +9,14 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var playback: AudioTrack? = null
+    private var reader439: NeuralReader439? = null
     private fun stopPlayback() {
         playback?.let { try { it.stop() } catch (_: Exception) {} ; it.release() }
         playback = null
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        reader439 = NeuralReader439(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "mgd.cls/audio")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -48,5 +50,6 @@ class MainActivity : FlutterActivity() {
                 }
             }
     }
+    override fun onDestroy() { reader439?.dispose(); reader439 = null; super.onDestroy() }
     override fun onStop() { stopPlayback(); super.onStop() }
 }

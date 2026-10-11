@@ -1,3 +1,4 @@
+import 'neural_reading_v0439.dart';
 // BOOK_EXAM_DELETION_0342
 import 'package:flutter/foundation.dart';
 import 'cls_bridge_v0340.dart';
@@ -139,6 +140,7 @@ class KnowledgeDeletion33 {
     if (queue is List) queue.removeWhere(deep);
     RelationalMemory324.forget33(research, matches);
     SourceMemory323.forget33(research, matches);
+    NeuralReading439.forget(research, matches);
     BookLab342.closeChat();
     final lab = research.state317['bookLab342'];
     if (lab is Map) {

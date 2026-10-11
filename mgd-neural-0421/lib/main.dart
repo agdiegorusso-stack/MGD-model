@@ -1,3 +1,5 @@
+import 'neural_reading_v0439.dart';
+import 'neural_reading_page_v0439.dart';
 import 'reading_memory_v0438.dart';
 import 'reading_memory_page_v0438.dart';
 import 'predictive_memory_page_v0437.dart';
@@ -197,6 +199,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     ClosedBookBridge350.enabled = true;
+    NeuralReading439.enabled = true;
     WidgetsBinding.instance.addObserver(this);
     SchedulerBinding.instance.addTimingsCallback(_onFrameTimings18);
     _boot();
@@ -204,6 +207,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    unawaited(NeuralReading439.close());
     BookLab342.closeChat();
     ClosedBookBridge350.close();
     unawaited(DialogueBridge410.close());
@@ -325,6 +329,24 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
   }
 
   bool _mindBusy320 = false;
+  bool _neuralBusy439 = false;
+
+  Future<void> _examineNeural439() async {
+    if (!mounted || !_ready || _busy || _researchBusy || _maintenance317 ||
+        _bookImportBusy341 || _neuralBusy439 || NeuralReading439.busy) return;
+    final memory = _researchMemory;
+    setState(() { _neuralBusy439 = true; _busy = true; });
+    try {
+      final changed = await NeuralReading439.examineNext(memory,
+        shouldContinue: () => mounted && identical(memory, _researchMemory) &&
+          _lifecycle319 == AppLifecycleState.resumed);
+      if (changed && mounted) await _checkpoint319();
+      if (mounted) setState(() => _status = NeuralReading439.status);
+    } finally {
+      if (mounted) setState(() { _neuralBusy439 = false; _busy = false; });
+    }
+  }
+
 
   void _startMindTimer19() {
     _mindTimer?.cancel();
@@ -349,6 +371,10 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
           !_busy && !_researchBusy && !_maintenance317 && !_bookImportBusy341 &&
           _chat.text.isEmpty && StudyGoal426.state(_researchMemory) != null) {
         await _researchOnce10(autonomous: true);
+      }
+      if (_lifecycle319 == AppLifecycleState.resumed && !_busy && !_researchBusy &&
+          !_maintenance317 && !_bookImportBusy341 && _chat.text.isEmpty && _uiIdle18) {
+        await _examineNeural439();
       }
       if (_world.eventDriven33) {
         _world.runtime319['state'] =
@@ -444,6 +470,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) unawaited(NeuralReading439.close());
     _lifecycle319 = state;
     if (!_ready || _bootError318 != null) return;
     if (state == AppLifecycleState.paused ||
@@ -964,7 +991,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
     await Future<void>.delayed(Duration.zero);
     try {
       final transport433 = TransportReasoning433.answer(_researchMemory, text);
-      if (transport433 != null) {
+      if (transport433 != null && transport433.truth != 'unknown') {
         if (!mounted) return;
         setState(() {
           _messages.add(ChatMessage04(user: false, text: transport433.text, prompt: text));
@@ -976,7 +1003,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         return;
       }
       final semantic435 = ReadingReasoning435.answer(_researchMemory, text);
-      if (semantic435 != null) {
+      if (semantic435 != null && !semantic435.unknown) {
         if (!mounted) return;
         setState(() {
           _messages.add(ChatMessage04(user: false, text: semantic435.text, prompt: text));
@@ -988,7 +1015,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         return;
       }
       final logic429 = RuleReasoning429.answer(_researchMemory, text);
-      if (logic429 != null) {
+      if (logic429 != null && logic429.truth != 'unknown') {
         if (!mounted) return;
         setState(() {
           _messages.add(ChatMessage04(user: false, text: logic429.text, prompt: text));
@@ -997,6 +1024,17 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         });
         _scrollDown();
         await _save('Ragionamento e cronologia salvati');
+        return;
+      }
+      final neural439 = await NeuralReading439.answer(_researchMemory, text);
+      if (neural439 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: neural439.text, prompt: text));
+          _status = 'Interpretazione locale con i brani originali';
+        });
+        _scrollDown();
+        await _save('Interpretazione e cronologia salvate; nessun fatto aggiunto dalla risposta');
         return;
       }
       final recall438 = ReadingMemory438.answer(_researchMemory, text);
@@ -2190,6 +2228,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         onPauseGoal426: _pauseStudyGoal426,
         onRetryGoal426: _retryStudyGoal426,
         onVerify428: _openLearningVerification428,
+        onNeural439: _examineNeural439,
         onEdit: _openEditor12,
         onSave: _save,
         onReset: _reset,
@@ -2793,6 +2832,7 @@ class _MindPage07 extends StatelessWidget {
   final Future<void> Function(bool) onPauseGoal426;
   final Future<void> Function() onRetryGoal426;
   final VoidCallback onVerify428;
+  final Future<void> Function() onNeural439;
   final Future<void> Function() onEdit;
   final Future<void> Function([String?]) onSave;
   final Future<void> Function() onReset;
@@ -2819,6 +2859,7 @@ class _MindPage07 extends StatelessWidget {
     required this.onPauseGoal426,
     required this.onRetryGoal426,
     required this.onVerify428,
+    required this.onNeural439,
     required this.onEdit,
     required this.onSave,
     required this.onReset,
@@ -2844,6 +2885,17 @@ class _MindPage07 extends StatelessWidget {
             onRetry: onRetryGoal426),
         LearningVerificationCard428(memory: research, busy: busy || researchBusy,
             onOpen: onVerify428),
+        Card(child: ListTile(
+          leading: const Icon(Icons.psychology_outlined),
+          title: const Text('Lettore neurale locale'),
+          subtitle: Text('${NeuralReading439.stats(research)['examined']}/'
+            '${NeuralReading439.stats(research)['batches']} gruppi esaminati · '
+            'interpretazioni da verificare'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
+            NeuralReadingPage439(memory: research, onProcess: onNeural439,
+              onSave: () => onSave('Note del lettore salvate')))),
+        )),
         Card(child: ListTile(
           leading: const Icon(Icons.menu_book_outlined),
           title: Text('${ReadingMemory438.stats(research)['passages']} passaggi nelle letture'),
