@@ -37,7 +37,7 @@ jobs:
           run-id: 38176357502
           github-token: ${{ github.token }}
           path: research/mgd443_reader/results
-      - name: Prepare own recurrent model and trainable lexical input interface
+      - name: Prepare own reader with versioned persistent lexical learning
         run: python research/mgd443_reader/prepare_app.py
       - name: Build, analyze and test the full application
         working-directory: mgd-neural-0421

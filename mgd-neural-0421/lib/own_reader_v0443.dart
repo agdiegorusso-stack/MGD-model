@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
 import 'semantic_plasticity_v0445.dart';
 
 /// Learned recurrent roles and question interpretation. No pretrained model,
@@ -32,7 +33,11 @@ class OwnReader443 {
   static Future<OwnReader443> load() => _loading ??= _load();
   static Future<OwnReader443> _load() async {
     try {
-      final m = jsonDecode(await rootBundle.loadString('assets/reader443.json')) as Map<String, dynamic>;
+      final raw = await rootBundle.loadString('assets/reader443.json');
+      if (sha256.convert(utf8.encode(raw)).toString()!=SemanticPlasticity445.baseModelId) {
+        throw const FormatException('Aggiornare la revisione della plasticità per questi pesi di base.');
+      }
+      final m = jsonDecode(raw) as Map<String, dynamic>;
       final c = jsonDecode(await rootBundle.loadString('assets/coreference443.json')) as Map;
       return OwnReader443(m, (c['weights'] as List).map((x) => (x as num).toDouble()).toList());
     } catch (_) { _loading = null; rethrow; }

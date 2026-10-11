@@ -146,7 +146,8 @@ class NeuralReading439 {
     final bs = batches(m), rs = records(m);
     final learning = semanticState(m);
     return {'batches': bs.length,
-      'examined': bs.where((b) => rs[batchId(b)] is Map && rs[batchId(b)]['ok'] == true).length,
+      'examined': bs.where((b) => rs[batchId(b)] is Map && rs[batchId(b)]['ok'] == true &&
+        (rs[batchId(b)]['semanticRevision'] ?? 0) == learning['revision']).length,
       'failed': bs.where((b) => rs[batchId(b)] is Map && rs[batchId(b)]['ok'] != true).length,
       'notes': notes(m).fold(0, (n, r) => n + (r['notes'] as List? ?? []).length),
       'learningRevision': (learning['revision'] as num).toInt(),
@@ -227,6 +228,7 @@ class NeuralReading439 {
     final processed = (previous['processed'] as List).toSet();
     final pending = batches(m).where((b) {
       final r = rs[batchId(b)];
+      if (r is Map && r['ok'] != true && (r['attempts'] as num? ?? 0)>=2) return false;
       return r is! Map || (run == null && b.any((row)=>!processed.contains(row['rid439']))) ||
         (r['semanticRevision'] ?? 0) != previous['revision'] ||
         (r['ok'] != true && (r['attempts'] as num? ?? 0) < 2);
@@ -257,6 +259,7 @@ class NeuralReading439 {
     if (epoch != _epoch || shouldContinue?.call() == false) return false;
     final live = fragments(m).map((r) => r['rid439']).toSet();
     if (!batch.every((r) => live.contains(r['rid439']))) return false;
+    if (learned != null && !(learned['processed'] as List).every(live.contains)) return false;
     if (learned != null) m.state317['semantic445'] = learned;
     final state = _state(m, create: true);
     final next = Map<String, dynamic>.from(state['records'] as Map? ?? {});

@@ -11,6 +11,7 @@ typedef Tokenize445 = List<String> Function(String text);
 class SemanticPlasticity445 {
   static const version = 1;
   static const capacity = 4096;
+  static const baseModelId = 'a374c981c4386b5cb90c7871566ff840debe44788bfeb0c464df4d8ab6892cd2';
   final int dimensions;
   final Map<String, List<double>> weights = {};
   final Map<String, List<Map<String, dynamic>>> definitions = {};
@@ -25,7 +26,7 @@ class SemanticPlasticity445 {
 
   factory SemanticPlasticity445.restore(Map? state, int dimensions) {
     final p = SemanticPlasticity445(dimensions);
-    if (state == null || state['version'] != version || state['dimensions'] != dimensions) return p;
+    if (state == null || state['version'] != version || state['dimensions'] != dimensions || state['baseModelId'] != baseModelId) return p;
     for (final e in (state['weights'] as Map? ?? {}).entries) {
       final v = e.value;
       if (p.weights.length >= capacity) break;
@@ -51,7 +52,7 @@ class SemanticPlasticity445 {
   }
 
   Map<String, dynamic> toJson() => {
-    'version': version, 'dimensions': dimensions, 'weights': weights,
+    'version': version, 'baseModelId':baseModelId, 'dimensions': dimensions, 'weights': weights,
     'definitions': definitions, 'replay': replay, 'processed': processed.toList(),
     'conflicts': conflicts.toList(), 'revision': revision,
     'predictionSteps': predictionSteps, 'definitionSteps': definitionSteps,

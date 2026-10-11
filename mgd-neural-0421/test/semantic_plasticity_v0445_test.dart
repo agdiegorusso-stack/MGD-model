@@ -79,6 +79,25 @@ void main() {
       expect(jsonEncode(restored.toJson()),original);
     } finally { NeuralReading439.enabled=false; }
   });
+  test('a retired teaching source during the next learning job prevents committing its influence', () async {
+    final memory = ResearchMemory11();
+    SourceMemory323.retain(memory,WebDocument11(provider:'Test',family:'local',title:'Glossario',url:'local://teacher',
+      text:'«zanfra» significa «consegna».',trust:.9));
+    NeuralReading439.enabled=true;
+    try {
+      expect(await NeuralReading439.examineNext(memory),true);
+      SourceMemory323.retain(memory,WebDocument11(provider:'Test',family:'local',title:'Nuovo',url:'local://new',
+        text:'Anna legge il libro.',trust:.9));
+      var calls=0;
+      final changed = await NeuralReading439.examineNext(memory,shouldContinue:() {
+        calls++;
+        if (calls==2) SourceMemory323.forget33(memory,(s)=>s.contains('local://teacher'));
+        return true;
+      });
+      expect(changed,false);
+      expect(NeuralReading439.semanticState(memory)['weights'],isEmpty);
+    } finally { NeuralReading439.enabled=false; }
+  });
   test('bounded lexical transfer audit reports all failures and retention separately', () async {
     final base = await OwnReader443.load(), reader = base.withSemanticState(null);
     // Declared before the first CI run; these are artificial single-word
