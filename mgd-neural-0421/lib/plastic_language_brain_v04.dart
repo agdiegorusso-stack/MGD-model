@@ -1,3 +1,4 @@
+import 'predictive_memory_v0437.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -653,6 +654,7 @@ class PlasticLanguageBrain04 {
   final Map<int, Map<int, PlasticEdge04>> temporal = {};
   final Map<int, Map<int, PlasticEdge04>> associative = {};
   final List<int> workingMemory = [];
+  PredictiveMemory437 predictor437 = PredictiveMemory437();
 
   final Map<String, int> _entityKeyToId = {};
   final List<EntityMemory04> entities = [];
@@ -714,6 +716,9 @@ class PlasticLanguageBrain04 {
   /// Keep numeric slots stable, but remove active semantic/lexical references.
   /// A new explicit exposure may learn this name again as a new entity.
   Set<int> forgetNode33(String label) {
+    // Clearing shared weights also removes distributed traces of deleted names.
+    // The remaining graph and semantic memory stay available.
+    predictor437 = PredictiveMemory437();
     final n = normalizeText(label);
     final ids = entities
         .where((e) =>
@@ -2972,8 +2977,8 @@ class PlasticLanguageBrain04 {
     );
   }
 
-  int? predictNext(List<int> context) {
-    if (context.isEmpty) return null;
+  Map<int, double> predictionRecall437(List<int> context) {
+    if (context.isEmpty) return {};
     final scores = <int, double>{};
     final depth = min(5, context.length);
     for (var d = 0; d < depth; d++) {
@@ -2986,11 +2991,38 @@ class PlasticLanguageBrain04 {
         if (s > 0) scores[entry.key] = (scores[entry.key] ?? 0) + w * s;
       }
     }
+    return scores;
+  }
+
+  int? predictNext(List<int> context) {
+    if (context.isEmpty) return null;
+    if (predictor437.ready && predictor437.covers(context.last)) {
+      final predictions = predictor437.predict(context, recall: predictionRecall437);
+      for (final p in predictions) {
+        if (p.token > 0 && p.token < assemblies.length &&
+            !assemblies[p.token].token.startsWith('<deleted:')) return p.token;
+      }
+    }
+    final scores = predictionRecall437(context);
     if (scores.isEmpty) return null;
     return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 
-  LearningReport04 learnSurface(String text, {double reward = 0.25}) {
+  List<int> predictiveContext437(String text) => [
+    _tokenToId['<bos>']!,
+    ...lexicalTokens(text).map((t) => _tokenToId[normalizeText(t)] ?? -1),
+  ];
+
+  /// Text acquisition only. Generated answers must opt out explicitly.
+  void learnPredictiveText437(String text) {
+    final ids = encode(text).ids;
+    if (ids.isNotEmpty) predictor437.observe(
+        [_tokenToId['<bos>']!, ...ids, _tokenToId['<eos>']!],
+        recall: predictionRecall437);
+  }
+
+  LearningReport04 learnSurface(String text,
+      {double reward = 0.25, bool trainPredictor437 = true}) {
     final enc = encode(text);
     final ids = enc.ids;
     if (ids.isEmpty) {
@@ -3003,6 +3035,15 @@ class PlasticLanguageBrain04 {
     var misses = 0;
     var predictions = 0;
     final sequence = <int>[_tokenToId['<bos>']!, ...ids, _tokenToId['<eos>']!];
+    final recallBefore437 = <String, Map<int, double>>{};
+    if (trainPredictor437 && reward > 0) {
+      final count = min(PredictiveMemory437.updatesPerExposure, sequence.length - 1);
+      for (var n = 0; n < count; n++) {
+        final i = count == 1 ? 0 : n * (sequence.length - 2) ~/ (count - 1);
+        final c = sequence.sublist(max(0, i + 1 - PredictiveMemory437.contextSize), i + 1);
+        recallBefore437[c.join(',')] = predictionRecall437(c);
+      }
+    }
 
     for (final id in ids) {
       final assembly = assemblies[id];
@@ -3011,7 +3052,7 @@ class PlasticLanguageBrain04 {
     }
 
     for (var i = 0; i < sequence.length - 1; i++) {
-      final context = sequence.sublist(max(0, i - 4), i + 1);
+      final context = sequence.sublist(max(0, i + 1 - PredictiveMemory437.contextSize), i + 1);
       final p = predictNext(context);
       if (p != null) {
         predictions++;
@@ -3032,6 +3073,10 @@ class PlasticLanguageBrain04 {
       }
     }
 
+    if (trainPredictor437 && reward > 0) {
+      // Retrieval features are the pre-exposure graph, captured separately below.
+      predictor437.observe(sequence, recall: (c) => recallBefore437[c.join(',')] ?? {});
+    }
     workingMemory.addAll(ids);
     while (workingMemory.length > workingMemorySize) {
       workingMemory.removeAt(0);
@@ -3894,7 +3939,7 @@ class PlasticLanguageBrain04 {
       );
     }
     ep.agentText = answer;
-    learnSurface(answer, reward: successful ? 0.14 : 0.0);
+    learnSurface(answer, reward: successful ? 0.14 : 0.0, trainPredictor437: false);
     return answer;
   }
 
@@ -4133,7 +4178,7 @@ class PlasticLanguageBrain04 {
       ep.salience =
           (ep.salience + (positive ? 0.08 : -0.16)).clamp(0.0, 1.0).toDouble();
     }
-    learnSurface(response, reward: positive ? 0.70 : -0.65);
+    learnSurface(response, reward: positive ? 0.70 : -0.65, trainPredictor437: false);
     if (positive) teachResponse(prompt, response, reward: 0.65);
   }
 
@@ -4260,6 +4305,7 @@ class PlasticLanguageBrain04 {
   }
 
   void sleepReplay({int cycles = 64}) {
+    predictor437.replay(cycles: cycles);
     if (episodes.isEmpty) return;
     final ranked = [...episodes]..sort((a, b) {
         final sa = a.salience + 0.12 * a.boundary + 0.08 * max(0.0, a.reward);
@@ -4270,7 +4316,7 @@ class PlasticLanguageBrain04 {
     var sleepFlux = 0.0;
     for (final ep in selected) {
       final replayReward = 0.14 + 0.20 * max(0.0, ep.reward);
-      final r1 = learnSurface(ep.userText, reward: replayReward);
+      final r1 = learnSurface(ep.userText, reward: replayReward, trainPredictor437: false);
       final ri = interpret(ep.userText, speaker: 'user', create: false);
       if (ri.relationId != null) {
         _trainRelationAttractor(ri.relationId!, ri.relationCues, replayReward);
@@ -4281,7 +4327,7 @@ class PlasticLanguageBrain04 {
           ep.agentText!.trim().isNotEmpty &&
           !_responseRevoked331(ep.userText, ep.agentText!)) {
         sleepFlux += learnSurface(ep.agentText!,
-                reward: 0.18 + 0.22 * max(0.0, ep.reward))
+                reward: 0.18 + 0.22 * max(0.0, ep.reward), trainPredictor437: false)
             .flux;
       }
       ep.replays++;
@@ -5144,6 +5190,7 @@ class PlasticLanguageBrain04 {
 
   Map<String, dynamic> toJson() => {
         'version': version,
+        'predictor437': predictor437.toJson(),
         'assemblies': assemblies.map((e) => e.toJson()).toList(),
         'temporal': _graphToJson(temporal),
         'associative': _graphToJson(associative),
@@ -5315,6 +5362,7 @@ class PlasticLanguageBrain04 {
     b.curiosity = (j['curiosity'] as num?)?.toDouble() ?? 0;
     b.entropicAge = (j['entropicAge'] as num?)?.toDouble() ?? 0;
     b.lastFlux = (j['lastFlux'] as num?)?.toDouble() ?? 0;
+    b.predictor437 = PredictiveMemory437.fromJson(j['predictor437']);
     final needsMigration = storedVersion < version;
     if (needsMigration) {
       b.repairSemanticMemory();

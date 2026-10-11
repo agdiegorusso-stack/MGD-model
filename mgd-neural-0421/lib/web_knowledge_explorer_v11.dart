@@ -848,7 +848,7 @@ class WebKnowledgeExplorer11 {
     return data;
   }
 
-  static const _ua = 'MGD-Studio/0.42.16 (https://github.com/agdiegorusso-stack/MGD-model; educational reader)';
+  static const _ua = 'MGD-Studio/0.42.17 (https://github.com/agdiegorusso-stack/MGD-model; educational reader)';
   static final Map<String, Map<String, dynamic>> _cache12 =
       <String, Map<String, dynamic>>{};
   static final Map<String, DateTime> _hostNext12 = <String, DateTime>{};

@@ -34,6 +34,7 @@ class TextLearning421 {
             shouldContinue: () => !(cancelled?.call() ?? false));
       } else {
         // A sentence cut by the resource budget is evidence, not a new fact.
+        brain.learnPredictiveText437(part.text);
         language.ingestText(part.text, reward: .42, learnFrames341: false);
         SourceMemory323.retain(
             research,

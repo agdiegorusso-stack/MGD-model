@@ -1,0 +1,64 @@
+name: MGD 0.42.17 learned prediction
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd-neural-0421/**', '.github/workflows/mgd-predictive-04217.yml']
+  workflow_dispatch:
+concurrency:
+  group: mgd-predictive-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.17
+    defaults:
+      run:
+        working-directory: mgd-neural-0421
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/debug.keystore
+          key: mgd-study-goal-android-signing-v1
+      - name: Focused predictor checks
+        run: |
+          mkdir -p tool/reports
+          flutter pub get
+          flutter test test/predictive_memory_v0437_test.dart test/predictive_memory_widget_v0437_test.dart --reporter expanded 2>&1 | tee tool/reports/predictor-tests.log
+      - name: Analyze, test and compile
+        run: bash tool/build_android.sh
+      - name: Record APK signature and identity
+        run: |
+          set -euo pipefail
+          mgd_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          "$mgd_tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk > tool/reports/signature.txt
+          "$mgd_tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > tool/reports/apk-identity.txt
+          printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
+          cp "$mgd_tools/lib/apksigner.jar" tool/reports/apksigner.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Neural-0.42.17-APK
+          path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-Neural-0.42.17-verification
+          path: mgd-neural-0421/tool/reports

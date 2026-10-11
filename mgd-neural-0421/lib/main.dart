@@ -1,3 +1,4 @@
+import 'predictive_memory_page_v0437.dart';
 import 'closed_book_service_v0350.dart';
 import 'closed_book_page_v0350.dart';
 import 'cognitive_core_v0400.dart';
@@ -901,6 +902,17 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
                         _language20 = models.language;
                       },
                       onSave: _saveAllSilent22)))));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openPredictor437() async {
+    if (_busy || _researchBusy || _maintenance317 || !_ready) return;
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) =>
+          PredictiveMemoryPage437(brain: _brain, onSave: _saveAllSilent22)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -2180,6 +2192,11 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text('MGD Neuro $mgdAppVersion319'),
         actions: [
+          IconButton(
+            tooltip: 'Previsioni apprese',
+            onPressed: _busy || _researchBusy || _maintenance317 ? null : _openPredictor437,
+            icon: const Icon(Icons.auto_awesome_outlined),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 14),
             child: Center(child: _Pulse04(active: _busy)),
