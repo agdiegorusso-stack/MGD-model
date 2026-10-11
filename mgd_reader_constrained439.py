@@ -19,7 +19,7 @@ with litert_lm.Engine(path, max_num_tokens=3072) as engine:
         t = time.monotonic()
         try:
             with engine.create_conversation(extra_context={'enable_thinking': False},
-                    thinking_config=litert_lm.ThinkingConfig(enable_thinking=False, thinking_token_budget=0), constrained_decoding_config=litert_lm.ConstrainedDecodingConfig(enable=True),
+                    thinking_config=litert_lm.ThinkingConfig(enable_thinking=False, thinking_token_budget=0), constrained_decoding_config=litert_lm.ConstrainedDecodingConfig(enable=True, provider=litert_lm.LiteRtLmConstraintProviderType.LL_GUIDANCE),
                     sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.8, temperature=0.7, seed=439),
                     max_output_tokens=512, automatic_tool_calling=False) as conv:
                 schema = {'type':'object','properties':{'answer':{'type':'string'},'evidence':{'type':'array','items':{'type':'string','enum':['P'+str(i) for i in range(p['context_rows'])]}},'unknown':{'type':'boolean'}},'required':['answer','evidence','unknown'],'additionalProperties':False}
@@ -37,7 +37,7 @@ with litert_lm.Engine(path, max_num_tokens=3072) as engine:
         results.append(r);print('CANDIDATE CASE',p['id'],r['passed'],flush=True)
     for p in prompts[::4]:
         try:
-            with engine.create_conversation(extra_context={'enable_thinking': False}, constrained_decoding_config=litert_lm.ConstrainedDecodingConfig(enable=True),
+            with engine.create_conversation(extra_context={'enable_thinking': False}, constrained_decoding_config=litert_lm.ConstrainedDecodingConfig(enable=True, provider=litert_lm.LiteRtLmConstraintProviderType.LL_GUIDANCE),
                     sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.8, temperature=0.7, seed=439),
                     max_output_tokens=512, automatic_tool_calling=False) as conv:
                 reading = p['reading_prompt'].replace('{\"notes\":[{\"text\":\"nota\",\"evidence\":[\"P0\"]}]}', 'un oggetto con campo notes, lista di oggetti con text (contenuto concreto) ed evidence (lista ID)')
