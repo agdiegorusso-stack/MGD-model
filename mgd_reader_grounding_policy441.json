@@ -1,0 +1,22 @@
+{
+  "baseline": {
+    "development24": {
+      "exact_choices_correct": 21,
+      "full_protocol_passed": 17,
+      "total": 24
+    },
+    "diagnostic16": {
+      "exact_choices_correct": 11,
+      "full_protocol_passed": 9,
+      "total": 16
+    }
+  },
+  "candidates": [
+    "premises",
+    "guided"
+  ],
+  "all_previously_inspected_tests_are_development_data": true,
+  "rule": "A candidate must match or exceed baseline choices and passes WITH exact quote provenance in both cohorts, and improve at least one cohort by two correct choices. Rank qualifying candidates by total choices, then passes with quote provenance, then lower total inference time. If none qualify, retain the released reader. Selection uses these 40 old cases only; no tuning or reselection on a later fresh set.",
+  "exact_quotes_verify_provenance_not_entailment": true,
+  "universal_comprehension_proven": false
+}

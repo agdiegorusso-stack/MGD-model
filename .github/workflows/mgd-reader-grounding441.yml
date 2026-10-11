@@ -1,0 +1,29 @@
+name: MGD evidence-first reasoning experiment
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd_reader_grounding441.py', 'mgd_reader_grounding_development441.json', 'mgd_reader_grounding_policy441.json', '.github/workflows/mgd-reader-grounding441.yml']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [premises, guided]
+    env:
+      MGD_GROUNDING_MODE: ${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install litert-lm==0.18.0 huggingface_hub
+      - run: python mgd_reader_grounding441.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-reader-grounding-${{ matrix.mode }}
+          path: mgd-reader-grounding-results
