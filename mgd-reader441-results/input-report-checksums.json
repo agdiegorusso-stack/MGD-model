@@ -1,0 +1,57 @@
+[
+  {
+    "path": "mgd441-premises/grounding-premises.json",
+    "bytes": 41368,
+    "sha256": "4fa6eafd1a757df2d0ac06bb7c590575798f602bcd1bcb4ac648ca10d517aeeb"
+  },
+  {
+    "path": "mgd441-guided/grounding-guided.json",
+    "bytes": 41900,
+    "sha256": "ed0ed26791bede10f6bf6a4b1f373e361aa4e7765936996de8ab0d7ad0d15359"
+  },
+  {
+    "path": "mgd441-larger-probe/larger-probe441.json",
+    "bytes": 3916,
+    "sha256": "8c39ab8b0023b606bf4173f3f00fe476d846dfacfe5e32962aa110b963e5dc6d"
+  },
+  {
+    "path": "mgd441-larger-original-format/larger-compare441.json",
+    "bytes": 15895,
+    "sha256": "f563c586204857c59d81fbb04b5bfe630a7641c6b5a70f23041619c218ff14f9"
+  },
+  {
+    "path": "mgd441-template-probe/template-probe441.json",
+    "bytes": 2564,
+    "sha256": "69e30d7ead6e7f7b69b665cd8d8f4985fe23a905a54fe28eedb081b781e3e538"
+  },
+  {
+    "path": "mgd441-larger-corrected/larger-corrected441.json",
+    "bytes": 16837,
+    "sha256": "7a0f45675427e4d93d2ad10a9fe493f46978821335182d1c407e388ab6e29240"
+  },
+  {
+    "path": "mgd441-android/source-preservation.json",
+    "bytes": 193,
+    "sha256": "182d77162c7744261d912682650ef104f96a8025434320cf11ae1d33269b227a"
+  },
+  {
+    "path": "mgd441-android/android-neural-reader.log",
+    "bytes": 10528,
+    "sha256": "d63c2c87db9f7c92bd93c96b6e7700cfc117c5a46e93d0a0f0b3a49a41f14067"
+  },
+  {
+    "path": "mgd441-android/neural-model-439.json",
+    "bytes": 407,
+    "sha256": "8a801db79f05ec221d79a39349fb61e221435876a81a63b39879f106b35c8440"
+  },
+  {
+    "path": "mgd441-android/android441-prototype-source-sha256.txt",
+    "bytes": 341,
+    "sha256": "426acce44e2895046c2c6154ed4f8414dab4b9842403a65b29b0b6d931798519"
+  },
+  {
+    "path": "mgd441-android/tested-reader-sha256.txt",
+    "bytes": 96,
+    "sha256": "3865263941e7bf5408c9946776a8c39aaeacf3d8aab0090ea1e85d1c5730e10c"
+  }
+]

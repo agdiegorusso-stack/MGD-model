@@ -1,0 +1,58 @@
+MGD — esperimenti sulla comprensione, 11 ottobre 2026
+
+Questo archivio documenta esperimenti; non certifica comprensione universale.
+Le 24 prove precedenti e le 16 prove K sono tutte casi di sviluppo in questo ciclo.
+I 16 testi F sono congelati prima dei nuovi risultati; l'esecuzione è condizionata
+alla politica di selezione. Una prova non eseguita non vale come una prova superata.
+
+La scelta corretta richiede che il campo answer, letto da JSON valido, coincida
+con la chiave separata. Il protocollo completo richiede anche riferimenti validi
+e il valore corretto di unknown. Controllare che una citazione esista nel brano
+verifica la sua provenienza, non la conseguenza logica della risposta.
+I casi sintetici a scelta multipla non misurano tutta la conoscenza, tutti i
+possibili documenti o la qualità di ogni risposta libera.
+
+I pesi dei lettori Qwen sono preaddestrati e restano fissi. La conservazione dei
+brani e delle note di MGD non è addestramento dei pesi del lettore. Questo non
+esclude gli altri piccoli modelli già addestrati presenti nel progetto.
+
+Il primo formato del prototipo 4B perdeva l'input: i risultati di quel formato
+misurano l'integrazione errata, non la capacità intrinseca del modello 4B.
+La correzione usa un template che conserva sia messaggi con testo diretto sia
+liste di parti testuali, come richiesto dall'API LiteRT-LM 0.18.0.
+Il test Android usa un emulatore; non è una misura sul telefono dell'utente.
+
+I file di risultati grezzi, le sorgenti dei prompt, le chiavi e le politiche di
+selezione permettono di controllare gli esiti. Non sono inclusi modelli binari,
+APK, credenziali o chiavi private di firma.
+
+ESITO CONCLUSIVO
+Nessuno dei tre candidati supera la politica congelata. L'applicazione rilasciata
+resta 0.42.20: il codice dell'app è identico al rilascio precedente. Non è stato
+creato un APK nuovo per questi esperimenti. La comprensione totale non è risolta.
+I 16 testi F non sono stati eseguiti da alcun modello: nessun candidato si è
+qualificato per quella fase. L'assenza di risultati F non è un successo.
+
+Risposte corrette da JSON valido / protocollo completo:
+                         24 casi di sviluppo        16 casi diagnostici K
+App 0.42.20              21/24 ; 17/24               11/16 ; 9/16
+1.7B premesse thinking    9/24 ;  9/24                6/16 ; 6/16
+1.7B premesse guidate    13/24 ; 12/24               11/16 ;10/16
+4B template corretto    17/24 ; 14/24               12/16 ; 8/16
+
+Le premesse thinking hanno 17 errori di parsing su 40. Nella diagnosi separata,
+una sola lettera esplicita è recuperabile in 16 di quei 17 output; 11 sono
+corrette. Anche questa lettura non adottata nell'app resta sotto la baseline.
+La variante guidata emette JSON valido, ma sbaglia ragionamenti pur citando
+frasi realmente presenti nel testo. La variante 4B emette unknown=false
+anche in casi in cui la lettera corretta corrisponde a informazione insufficiente.
+Il protocollo completo rende visibili anche questi errori di calibrazione.
+
+Il 4B ha superato una prova nativa su emulatore Android API35 x86_64 con 8 GiB
+configurati: lettura, note, risposta libera, riavvio del motore e conservazione
+della memoria. Nei log è mantenuto un avviso di disinstallazione della fase di
+pulizia: DELETE_FAILED_INTERNAL_ERROR. La prova di apprendimento passa.
+Nel confronto Linux completo, il picco RSS del processo 4B è 8864364 KiB,
+pari a circa 8.45 GiB; il modello pesa 2659057664 byte. La breve prova Android
+non dimostra che tutte le domande o una sessione lunga funzionino su un telefono
+con 8 GiB. Il telefono dell'utente non è stato misurato.

@@ -1,0 +1,98 @@
+{
+  "all_prior_40_cases_are_development": true,
+  "universal_comprehension_proven": false,
+  "candidates": {
+    "premises": {
+      "scores": {
+        "development24": {
+          "total": 24,
+          "exact_choices_correct": 9,
+          "passed": 9,
+          "passed_with_quote_provenance": 8
+        },
+        "diagnostic16": {
+          "total": 16,
+          "exact_choices_correct": 6,
+          "passed": 6,
+          "passed_with_quote_provenance": 4
+        }
+      },
+      "eligible": false,
+      "report_sha256": "4fa6eafd1a757df2d0ac06bb7c590575798f602bcd1bcb4ac648ca10d517aeeb"
+    },
+    "guided": {
+      "scores": {
+        "development24": {
+          "total": 24,
+          "exact_choices_correct": 13,
+          "passed": 12,
+          "passed_with_quote_provenance": 12
+        },
+        "diagnostic16": {
+          "total": 16,
+          "exact_choices_correct": 11,
+          "passed": 10,
+          "passed_with_quote_provenance": 7
+        }
+      },
+      "eligible": false,
+      "report_sha256": "ed0ed26791bede10f6bf6a4b1f373e361aa4e7765936996de8ab0d7ad0d15359"
+    },
+    "larger_corrected": {
+      "scores": {
+        "development24": {
+          "total": 24,
+          "exact_choices_correct": 17,
+          "passed": 14
+        },
+        "diagnostic16": {
+          "total": 16,
+          "exact_choices_correct": 12,
+          "passed": 8
+        }
+      },
+      "eligible": false,
+      "report_sha256": "7a0f45675427e4d93d2ad10a9fe493f46978821335182d1c407e388ab6e29240"
+    }
+  },
+  "completed_at_utc": "2026-10-11T19:08:19.133719+00:00",
+  "decision": "retain_released_0.42.20",
+  "released_app_unchanged": true,
+  "released_app_tree": "df59d6adf813ade021b695c0078f605eb5b5fe79",
+  "baseline": {
+    "development24": {
+      "total": 24,
+      "exact_choices_correct": 21,
+      "passed": 17
+    },
+    "diagnostic16": {
+      "total": 16,
+      "exact_choices_correct": 11,
+      "passed": 9
+    }
+  },
+  "fresh_16_inference_performed": false,
+  "fresh_fixture_commit": "023fc031438dce1abc77738cbfe0301273fd472a",
+  "android_feasibility": {
+    "workflow_run": 38165159409,
+    "source_commit": "38a0504380205f783e7abdff40c0b26c30909da1",
+    "model_sha256": "9e48b165836256f5344d9d044930607b9c47f6ef34e27f82e96881664f3ba2fd",
+    "model_bytes": 2659057664,
+    "api_level": 35,
+    "arch": "x86_64",
+    "ram_mib": 8192,
+    "integration_tests_passed": true,
+    "tests_asserted": [
+      "read acquired original text",
+      "notes with valid references",
+      "free answer cassetto",
+      "answer after engine close/reload",
+      "original source memory unchanged",
+      "no generated claims added"
+    ],
+    "cleanup_warning": "adb uninstall failed: DELETE_FAILED_INTERNAL_ERROR",
+    "physical_phone_tested": false,
+    "total_comprehension_proven": false
+  },
+  "model_weights_updated": false
+}

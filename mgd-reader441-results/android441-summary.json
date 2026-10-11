@@ -1,0 +1,21 @@
+{
+  "workflow_run": 38165159409,
+  "source_commit": "38a0504380205f783e7abdff40c0b26c30909da1",
+  "model_sha256": "9e48b165836256f5344d9d044930607b9c47f6ef34e27f82e96881664f3ba2fd",
+  "model_bytes": 2659057664,
+  "api_level": 35,
+  "arch": "x86_64",
+  "ram_mib": 8192,
+  "integration_tests_passed": true,
+  "tests_asserted": [
+    "read acquired original text",
+    "notes with valid references",
+    "free answer cassetto",
+    "answer after engine close/reload",
+    "original source memory unchanged",
+    "no generated claims added"
+  ],
+  "cleanup_warning": "adb uninstall failed: DELETE_FAILED_INTERNAL_ERROR",
+  "physical_phone_tested": false,
+  "total_comprehension_proven": false
+}
