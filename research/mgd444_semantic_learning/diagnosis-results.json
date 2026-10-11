@@ -1,0 +1,232 @@
+{
+  "deployed_semantic_weights_changed_by_210_readings": false,
+  "weights_before": "9ef4dcf533b2b71335f7765c6d43489bdc2cd458ec875543d68b333e317c5c6e",
+  "weights_after": "9ef4dcf533b2b71335f7765c6d43489bdc2cd458ec875543d68b333e317c5c6e",
+  "observations": 210,
+  "actual_correct": 15,
+  "total": 21,
+  "oracle_intent_correct": 17,
+  "oracle_is_not_autonomous_performance": true,
+  "cases": [
+    {
+      "id": "a01",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "Ettore"
+    },
+    {
+      "id": "a02",
+      "actual_correct": false,
+      "oracle_intent_correct": false,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "requested_argument_missing_or_uncertain",
+      "oracle_reason": "requested_argument_missing_or_uncertain",
+      "oracle_answer": null
+    },
+    {
+      "id": "a03",
+      "actual_correct": false,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": false,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": null,
+      "oracle_answer": "oggi"
+    },
+    {
+      "id": "a04",
+      "actual_correct": false,
+      "oracle_intent_correct": false,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": "scope_uncertain_or_inconsistent",
+      "oracle_answer": null
+    },
+    {
+      "id": "a05",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "Se il pacco è pronto"
+    },
+    {
+      "id": "a06",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "nel cassetto"
+    },
+    {
+      "id": "a07",
+      "actual_correct": false,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "Simone"
+    },
+    {
+      "id": "a08",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "Daniela"
+    },
+    {
+      "id": "a09",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "il giornale"
+    },
+    {
+      "id": "a10",
+      "actual_correct": false,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": false,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": null,
+      "oracle_answer": "Omar"
+    },
+    {
+      "id": "a11",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "la cartella"
+    },
+    {
+      "id": "a12",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "domani"
+    },
+    {
+      "id": "a13",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "il quaderno"
+    },
+    {
+      "id": "a14",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": "requested_argument_missing_or_uncertain",
+      "oracle_answer": null
+    },
+    {
+      "id": "a15",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "Il testo presenta una promessa o un evento previsto."
+    },
+    {
+      "id": "a16",
+      "actual_correct": false,
+      "oracle_intent_correct": false,
+      "actual_unknown": false,
+      "oracle_unknown": false,
+      "actual_reason": null,
+      "oracle_reason": null,
+      "oracle_answer": "Vittoria; che"
+    },
+    {
+      "id": "a17",
+      "actual_correct": true,
+      "oracle_intent_correct": false,
+      "actual_unknown": true,
+      "oracle_unknown": false,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": null,
+      "oracle_answer": "Il testo presenta l’evento come affermato."
+    },
+    {
+      "id": "a18",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "requested_argument_missing_or_uncertain",
+      "oracle_reason": "requested_argument_missing_or_uncertain",
+      "oracle_answer": null
+    },
+    {
+      "id": "a19",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": "question_outside_verified_support",
+      "oracle_answer": null
+    },
+    {
+      "id": "a20",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "scope_uncertain_or_inconsistent",
+      "oracle_reason": "scope_uncertain_or_inconsistent",
+      "oracle_answer": null
+    },
+    {
+      "id": "a21",
+      "actual_correct": true,
+      "oracle_intent_correct": true,
+      "actual_unknown": true,
+      "oracle_unknown": true,
+      "actual_reason": "question_outside_verified_support",
+      "oracle_reason": "question_outside_verified_support",
+      "oracle_answer": null
+    }
+  ],
+  "empirical_scope_distance_role_swap": 0.3416574108768554,
+  "theoretical_Q_counterexample": {
+    "scope_only_distance": 0.0,
+    "scope_and_agent_distance": 1.0,
+    "agent_ground_truth_supplied_for_counterexample_only": true,
+    "symmetric_metric_does_not_prohibit_encoding_ordered_roles": true
+  },
+  "conclusion": "Need learned persistent event bindings and a semantic outcome learning signal; scope geometry alone is insufficient.",
+  "general_comprehension_solved": false,
+  "app_changed": false
+}
