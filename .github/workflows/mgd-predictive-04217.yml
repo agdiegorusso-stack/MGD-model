@@ -52,10 +52,10 @@ jobs:
           mkdir -p tool/reports
           flutter pub get
           flutter test test/predictive_memory_v0437_test.dart test/predictive_memory_widget_v0437_test.dart test/reading_memory_v0438_test.dart test/reading_memory_widget_v0438_test.dart test/neural_reading_v0439_test.dart --reporter expanded 2>&1 | tee tool/reports/predictor-tests.log
-      - name: Independent real-model comprehension assessment
-        run: python tool/evaluate_neural439.py
       - name: Analyze, test and compile
         run: bash tool/build_android.sh
+      - name: Independent real-model comprehension assessment
+        run: python tool/evaluate_neural439.py
       - name: Record APK signature and identity
         run: |
           set -euo pipefail

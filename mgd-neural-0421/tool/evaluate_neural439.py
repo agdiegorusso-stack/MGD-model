@@ -16,8 +16,9 @@ with litert_lm.Engine(str(model), max_num_tokens=3072) as engine:
             with engine.create_conversation(extra_context={'enable_thinking': True},
                     thinking_config=litert_lm.ThinkingConfig(enable_thinking=True, thinking_token_budget=256),
                     sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.95, temperature=0.6, seed=439),
-                    max_output_tokens=768, automatic_tool_calling=False) as conv:
-                raw = str(conv.send_message(p['prompt']))
+                    max_output_tokens=768, automatic_tool_calling=False,
+                    constrained_decoding_config=litert_lm.ConstrainedDecodingConfig(enable=True, provider=litert_lm.LiteRtLmConstraintProviderType.LL_GUIDANCE)) as conv:
+                raw = str(conv.send_message(p['prompt'], response_format=litert_lm.ResponseFormat.json(p['answer_schema'])))
             a, b = raw.find('{'), raw.rfind('}')
             data = json.loads(raw[a:b+1]) if a >= 0 and b > a else {}
             refs = data.get('evidence', [])
@@ -41,14 +42,16 @@ with litert_lm.Engine(str(model), max_num_tokens=3072) as engine:
     for p in prompts[::4]:
         try:
             with engine.create_conversation(extra_context={'enable_thinking': False},
-                    sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.8, temperature=0.0, seed=439),
-                    max_output_tokens=384, automatic_tool_calling=False) as conv:
-                raw = str(conv.send_message(p['reading_prompt']))
+                    sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.8, temperature=0.7, seed=439),
+                    max_output_tokens=512, automatic_tool_calling=False,
+                    constrained_decoding_config=litert_lm.ConstrainedDecodingConfig(enable=True, provider=litert_lm.LiteRtLmConstraintProviderType.LL_GUIDANCE)) as conv:
+                raw = str(conv.send_message(p['reading_prompt'], response_format=litert_lm.ResponseFormat.json(p['reading_schema'])))
             a, b = raw.find('{'), raw.rfind('}')
             data = json.loads(raw[a:b+1])
             notes = data.get('notes', [])
             valid = isinstance(notes, list) and bool(notes) and all(isinstance(n, dict)
-                and isinstance(n.get('text'), str) and n['text'].strip()
+                and isinstance(n.get('text'), str) and len(n['text'].strip()) >= 8
+                and n['text'].strip().lower() not in ['nota','contenuto concreto','risposta']
                 and isinstance(n.get('evidence'), list) and n['evidence']
                 and all(x.startswith('P') and x[1:].isdigit() and int(x[1:]) < p['context_rows'] for x in n['evidence']) for n in notes)
             readings.append(dict(id=p['id'], raw=raw, note_references_valid=valid, semantic_correctness_verified=False))
@@ -63,7 +66,7 @@ report = {'version': '0.42.19', 'model': json.loads((out / 'neural-model-439.jso
     'exact_choices_correct': sum(r.get('exact_choice_correct', False) for r in results),
     'valid_note_reference_batches': sum(r['note_references_valid'] for r in readings),
     'note_batches_tested': len(readings), 'elapsed_seconds': time.monotonic()-start,
-    'universal_comprehension_proven': False, 'public_benchmark_run': False, 'thinking_budget': 256, 'max_context_tokens': 3072,
+    'universal_comprehension_proven': False, 'public_benchmark_run': False, 'thinking_budget': 256, 'max_context_tokens': 3072, 'constrained_json': True,
     'results': results, 'reading_results': readings}
 (out / 'neural-comprehension-439.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
 print(json.dumps({k: v for k, v in report.items() if k not in ['results','reading_results','model']}), flush=True)

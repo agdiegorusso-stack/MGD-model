@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import '../lib/neural_reading_v0439.dart';
@@ -104,6 +106,33 @@ void main() {
     expect(ctx.any((r) => '${r['text']}'.contains('batteria')), true);
     expect(NeuralReading439.answerPrompt('Come funziona?', ctx), isNot(contains('Un accumulatore conserva')));
   });
+  test('placeholder template notes never count as successful interpretation', () async {
+    final m = ResearchMemory11(); add(m, 'Anna legge.');
+    await NeuralReading439.examineNext(m, run: (_) async => '{"notes":[{"text":"nota","evidence":["P0"]}]}');
+    expect(NeuralReading439.stats(m)['examined'], 0);
+    expect(NeuralReading439.notes(m), isEmpty);
+  });
+  test('user cancellation permits the next query without a backend-failure cooldown', () async {
+    final gate = Completer<String>();
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(NeuralReading439.channel, (call) async {
+      if (call.method == 'generate') return gate.future;
+      return null;
+    });
+    NeuralReading439.enabled = true;
+    try {
+      final pending = NeuralReading439.generate('Primo brano');
+      await Future<void>.delayed(Duration.zero);
+      await NeuralReading439.cancel();
+      gate.completeError(PlatformException(code: 'CANCELLED'));
+      await expectLater(pending, throwsA(isA<PlatformException>()));
+      messenger.setMockMethodCallHandler(NeuralReading439.channel, (_) async => '{}');
+      expect(await NeuralReading439.generate('Secondo brano'), '{}');
+    } finally {
+      NeuralReading439.enabled = false;
+      messenger.setMockMethodCallHandler(NeuralReading439.channel, null);
+    }
+  });
   test('emit production prompts for an independent real-model assessment', () {
     final public = [...jsonDecode(File('tool/fixtures/neural_comprehension_439.json').readAsStringSync()) as List, ...jsonDecode(File('tool/fixtures/neural_holdout_439.json').readAsStringSync()) as List];
     final prompts = <Map<String, dynamic>>[];
@@ -114,6 +143,8 @@ void main() {
       final ctx = NeuralReading439.context(m, q);
       prompts.add({'id': c['id'], 'domain': c['domain'], 'capability': c['capability'],
         'prompt': NeuralReading439.answerPrompt(q, ctx), 'context_rows': ctx.length, 'split': c['split'] ?? 'development',
+        'answer_schema': NeuralReading439.answerSchema(ctx),
+        'reading_schema': NeuralReading439.readingSchema(NeuralReading439.batches(m).first),
         'reading_prompt': NeuralReading439.readingPrompt(NeuralReading439.batches(m).first)});
     }
     Directory('tool/reports').createSync(recursive: true);

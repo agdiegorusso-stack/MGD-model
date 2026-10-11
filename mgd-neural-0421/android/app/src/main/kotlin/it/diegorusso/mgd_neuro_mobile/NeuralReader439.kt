@@ -34,6 +34,7 @@ class NeuralReader439(private val context: Context, messenger: BinaryMessenger) 
                     } else {
                         val turn = epoch.get()
                         val reasoning = call.argument<Boolean>("reasoning") ?: false
+                        val schema = call.argument<String>("schema")
                         worker.execute {
                             try {
                                 if (turn != epoch.get()) error("Lettura interrotta")
@@ -41,12 +42,13 @@ class NeuralReader439(private val context: Context, messenger: BinaryMessenger) 
                                 val text = ready.createConversation(ConversationConfig(
                                     extraContext = mapOf("enable_thinking" to reasoning),
                                     thinkingConfig = ThinkingConfig(enableThinking = reasoning, thinkingTokenBudget = if (reasoning) 256 else 0),
-                                    samplerConfig = SamplerConfig(topK = 20, topP = if (reasoning) 0.95 else 0.8, temperature = if (reasoning) 0.6 else 0.0, seed = 439),
-                                    maxOutputToken = if (reasoning) 768 else 384,
-                                    automaticToolCalling = false
+                                    samplerConfig = SamplerConfig(topK = 20, topP = if (reasoning) 0.95 else 0.8, temperature = if (reasoning) 0.6 else 0.7, seed = 439),
+                                    maxOutputToken = if (reasoning) 768 else 512,
+                                    automaticToolCalling = false,
+                                    enableResponseFormat = schema != null
                                 )).use { conv ->
                                     active = conv
-                                    conv.sendMessage(prompt).toString()
+                                    conv.sendMessage(prompt, responseFormat = schema?.let { ResponseFormat.json(it) }).toString()
                                 }
                                 active = null
                                 if (turn != epoch.get()) error("Lettura interrotta")

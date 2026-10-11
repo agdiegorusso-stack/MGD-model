@@ -2,7 +2,7 @@ name: MGD local reader Android execution
 on:
   push:
     branches: ['codex/mgd-predictive-04217']
-    paths: ['mgd-neural-0421/integration_test/neural_reader_android_v0439_test.dart', '.github/workflows/mgd-reader-android.yml']
+    paths: ['mgd-neural-0421/integration_test/neural_reader_android_v0439_test.dart', 'mgd-neural-0421/lib/neural_reading_v0439.dart', 'mgd-neural-0421/android/app/src/main/kotlin/**', '.github/workflows/mgd-reader-android.yml']
   workflow_dispatch:
 permissions:
   contents: read

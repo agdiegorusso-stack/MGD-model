@@ -20,24 +20,29 @@ class NeuralReading439 {
   static String status = 'Lettore locale incluso: Qwen3 1.7B';
   static int _epoch = 0;
   static DateTime? _retryAfter;
-  static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4';
+  static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4 / JSON v2';
 
-  static Future<String> generate(String prompt, {bool reasoning = false}) async {
+  static Future<String> generate(String prompt, {bool reasoning = false, Map<String, dynamic>? schema}) async {
     if (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false)) {
       throw StateError('Lettore locale non disponibile');
     }
     busy = true;
     final epoch = _epoch;
+    var timedOut = false;
     try {
       status = 'Interpretazione locale in corso';
-      final raw = await channel.invokeMethod<String>('generate', {'prompt': prompt, 'reasoning': reasoning})
+      final raw = await channel.invokeMethod<String>('generate', {'prompt': prompt, 'reasoning': reasoning, if (schema != null) 'schema': jsonEncode(schema)})
           .timeout(const Duration(seconds: 180), onTimeout: () {
-        cancel(); throw StateError('Il lettore ha superato il tempo disponibile');
+        timedOut = true; cancel(); throw StateError('Il lettore ha superato il tempo disponibile');
       });
       if (epoch != _epoch) throw StateError('Interpretazione interrotta');
       status = 'Lettore locale pronto';
       return raw ?? '';
     } catch (e) {
+      if (epoch != _epoch && !timedOut) {
+        status = 'Interpretazione interrotta';
+        rethrow;
+      }
       _retryAfter = DateTime.now().add(const Duration(minutes: 5));
       status = e is PlatformException
         ? 'Lettore sospeso: ${e.message ?? 'non disponibile sul dispositivo'}'
@@ -128,9 +133,27 @@ class NeuralReading439 {
     'Ricava note brevi su eventi, relazioni, cause, condizioni, negazioni e limiti. '
     'Non aggiungere fatti esterni. Conserva le condizioni. Ogni nota deve indicare gli ID '
     'dei brani che la sostengono. Rispondi solo JSON: '
-    '{"notes":[{"text":"nota","evidence":["P0"]}]}. /no_think\nDATI:\n' +
+    'un oggetto con campo notes, lista di oggetti con text (contenuto concreto) ed evidence (lista ID). /no_think\nDATI:\n' +
     jsonEncode([for (var i = 0; i < rows.length; i++)
       {'id': 'P$i', 'title': rows[i]['title'], 'text': rows[i]['text']}]);
+
+  static Map<String, dynamic> _references(int count, {bool required = false}) => {
+    'type': 'array', if (required) 'minItems': 1,
+    'items': {'type': 'string', 'enum': [for (var i = 0; i < count; i++) 'P$i']},
+  };
+  static Map<String, dynamic> readingSchema(List<Map<String, dynamic>> rows) => {
+    'type': 'object', 'properties': {'notes': {'type': 'array', 'minItems': 1, 'maxItems': 8,
+      'items': {'type': 'object', 'properties': {
+        'text': {'type': 'string', 'minLength': 8, 'maxLength': 640},
+        'evidence': _references(rows.length, required: true)},
+        'required': ['text', 'evidence'], 'additionalProperties': false}}},
+    'required': ['notes'], 'additionalProperties': false,
+  };
+  static Map<String, dynamic> answerSchema(List<Map<String, dynamic>> rows) => {
+    'type': 'object', 'properties': {'answer': {'type': 'string'},
+      'evidence': _references(rows.length), 'unknown': {'type': 'boolean'}},
+    'required': ['answer', 'evidence', 'unknown'], 'additionalProperties': false,
+  };
 
   static Map? parse(String raw) {
     final start = raw.indexOf('{'), end = raw.lastIndexOf('}');
@@ -145,7 +168,8 @@ class NeuralReading439 {
     if (items is! List) return result;
     for (final note in items.whereType<Map>()) {
       final text = note['text']; final refs = note['evidence'];
-      if (text is! String || text.trim().isEmpty || text.length > 1500 ||
+      if (text is! String || text.trim().length < 8 || text.length > 1500 ||
+          {'nota', 'contenuto concreto', 'risposta'}.contains(text.trim().toLowerCase()) ||
           refs is! List || refs.isEmpty) continue;
       final indices = <int>[];
       var valid = true;
@@ -176,7 +200,7 @@ class NeuralReading439 {
     final batch = pending.first, key = batchId(batch);
     final epoch = _epoch;
     String? error; List<Map<String, dynamic>> extracted = [];
-    try { extracted = validateNotes(await (run ?? generate)(readingPrompt(batch)), batch); }
+    try { extracted = validateNotes(await (run ?? ((p) => generate(p, schema: readingSchema(batch))))(readingPrompt(batch)), batch); }
     catch (e) { error = '$e'; }
     if (epoch != _epoch || shouldContinue?.call() == false) return false;
     final live = fragments(m).map((r) => r['rid439']).toSet();
@@ -264,8 +288,8 @@ class NeuralReading439 {
     'Collega gli eventi e risolvi i riferimenti solo quando il testo lo permette. '
     'Se manca il dato rispondi unknown=true e non inventare. '
     'Mantieni negazioni, condizioni e differenze fra fonti. '
-    'Restituisci solo JSON: {"answer":"risposta breve in italiano",'
-    '"evidence":["P0"],"unknown":false}. '
+    'Restituisci solo JSON con answer (risposta breve in italiano), '
+    'evidence (lista ID) e unknown (booleano). '
     'Ogni risposta richiede gli ID di brani pertinenti; per unknown usa [].\n'
     'DOMANDA: ${query.substring(0, query.length.clamp(0, 1300))}\nDATI:\n' +
     jsonEncode([for (var i = 0; i < rows.length; i++)
@@ -279,7 +303,7 @@ class NeuralReading439 {
     final rows = context(m, query);
     if (rows.isEmpty) return null;
     try {
-      final data = parse(await (run ?? ((p) => generate(p, reasoning: true)))(answerPrompt(query, rows)));
+      final data = parse(await (run ?? ((p) => generate(p, reasoning: true, schema: answerSchema(rows))))(answerPrompt(query, rows)));
       if (data == null || data['answer'] is! String || data['unknown'] is! bool) return null;
       final answer = (data['answer'] as String).trim();
       if (answer.isEmpty || answer.length > 2600) return null;

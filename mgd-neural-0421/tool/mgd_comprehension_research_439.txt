@@ -119,8 +119,20 @@ Fonti primarie consultate
 [17] Conversioni e limiti specifici dei modelli locali:
      https://huggingface.co/litert-community/Qwen3-0.6B
      https://huggingface.co/litert-community/Qwen3.5-0.8B
+     https://huggingface.co/litert-community/Qwen3-1.7B
 
 Inferenza progettuale dell'implementatore: per il progetto e l'ambiente di
 build disponibili è praticabile un sistema ibrido con lettore preaddestrato
 e memoria esplicita. Questa conclusione non è una dimostrazione che la teoria
 MGD da sola abbia acquisito comprensione generale o superato un Transformer.
+
+Confronto misurato prima della configurazione finale:
+Qwen3 0.6B INT4: 9/24 casi completi; 0.6B INT8: 8/24; Qwen3.5 0.8B:
+2/24; Qwen3 1.7B INT4 senza ragionamento: 12/24. Attivando 256 token
+di ragionamento, 1.7B raggiunge 21/24 scelte corrette e 17/24 esiti completi.
+Queste sono misure sulla suite di sviluppo, prima del formato vincolato finale.
+La prima prova del formato vincolato in Python non ha eseguito inferenza:
+mancava il provider LLGuidance esplicito. Il suo zero non è un punteggio semantico.
+Il task CB pubblico, sul solo modello 0.6B INT4, dà 5/56 (8,9%) dopo la
+correzione del parser delle etichette: le prime misure zero erano invalide per
+valutare la comprensione. I punteggi della versione finale sono nei JSON.
