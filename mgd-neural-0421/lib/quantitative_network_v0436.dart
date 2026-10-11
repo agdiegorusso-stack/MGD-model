@@ -116,13 +116,14 @@ class _QuantitativeNetwork436 {
     final target = targets.single;
     final needed = <String>{target}, relevant = <_Constraint436>{};
     var changed = true;
-    while (changed) {
+    while (changed && needed.length <= 32 && relevant.length <= 128) {
       changed = false;
       for (final c in constraints) {
         if (!relevant.contains(c) && c.variables.any(needed.contains)) {
           relevant.add(c);
           needed.addAll(c.variables);
           changed = true;
+          if (needed.length > 32 || relevant.length > 128) break;
         }
       }
     }
@@ -167,7 +168,13 @@ class _QuantitativeNetwork436 {
             return unknown(
               'il sistema quantitativo richiede valori scalari: l’unità o il qualificatore dopo $variable non è interpretato',
             );
-          numbers.add(_number435(m[1]!)!);
+          final raw = m[1]!;
+          final number = _number435(
+            raw.startsWith('-') ? raw.substring(1) : raw,
+          );
+          if (number == null || !number.isFinite)
+            return unknown('un valore numerico non è finito o interpretabile');
+          numbers.add(raw.startsWith('-') ? -number : number);
         }
       }
       if (numbers.isEmpty) continue;

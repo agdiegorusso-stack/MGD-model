@@ -75,6 +75,13 @@ List<Map<String, dynamic>> quantitativeTransfer436() {
       false,
     ),
     (
+      'negative-word',
+      'S indica la somma. A indica la quota. Formula: S = A + A.',
+      'La quota vale -uno. Quanto vale la somma?',
+      '-2',
+      false,
+    ),
+    (
       'negative-result',
       'S indica la somma. A indica la quota. Formula: S = 3 * A + 6.',
       'La somma vale 3. Quanto vale la quota?',
