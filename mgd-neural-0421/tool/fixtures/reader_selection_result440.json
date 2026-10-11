@@ -1,0 +1,30 @@
+{
+  "selected_thinking_budget": 256,
+  "selected_max_context_tokens": 3072,
+  "selected_max_output_tokens": 768,
+  "selection_policy_commit": "5277cb94b66d78cf6e1d8d0481322bad678b0fba",
+  "fresh_holdout_frozen_commit": "420b3350b4b62e103164fd605678d14b6634108c",
+  "probe_commit": "89f1be381b0518151206cc137a12ae6190838430",
+  "probe_workflow_run": 38157529227,
+  "baseline": {
+    "choices": 21,
+    "full_protocol": 17,
+    "total": 24
+  },
+  "rejected_candidates": [
+    {
+      "thinking_budget": 768,
+      "exact_choices_correct": 22,
+      "full_protocol_passed": 16,
+      "accepted": false
+    },
+    {
+      "thinking_budget": 1024,
+      "exact_choices_correct": 22,
+      "full_protocol_passed": 15,
+      "accepted": false
+    }
+  ],
+  "weights_updated": false,
+  "universal_comprehension_proven": false
+}

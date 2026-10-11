@@ -17,7 +17,7 @@ shutil.copyfile(source, out / 'model.litertlm')
 (out / 'model.json').write_text(json.dumps(manifest, indent=2))
 license_path = hf_hub_download('Qwen/Qwen3-1.7B', 'LICENSE')
 shutil.copyfile(license_path, out / 'LICENSE-Qwen.txt')
-(out / 'NOTICE.txt').write_text('MGD Studio 0.42.19 uses Qwen3-1.7B by the Qwen team, converted by LiteRT Community.\n'
+(out / 'NOTICE.txt').write_text('MGD Studio 0.42.20 uses Qwen3-1.7B by the Qwen team, converted by LiteRT Community.\n'
     'Runtime: LiteRT-LM by Google, Apache-2.0. The MGD reading memory and source records are separate from the pretrained model.\n'
     'Model source: https://huggingface.co/litert-community/Qwen3-1.7B\n'
     'Original model: https://huggingface.co/Qwen/Qwen3-1.7B\n'

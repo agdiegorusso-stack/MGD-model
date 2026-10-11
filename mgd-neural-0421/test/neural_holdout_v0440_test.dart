@@ -30,6 +30,7 @@ void main() {
     }
     final out = Directory('tool/reports')..createSync(recursive: true);
     File('${out.path}/neural-holdout-prompts-440.json').writeAsStringSync(jsonEncode(prompts));
+    File('${out.path}/neural-inference-config-440.json').writeAsStringSync(jsonEncode(NeuralReading439.inferenceConfig440));
     expect(prompts.length, 16);
     expect(prompts.every((p) => p['context_rows'] > 0), true);
     final late = prompts.singleWhere((p) => p['id'] == 'K13');

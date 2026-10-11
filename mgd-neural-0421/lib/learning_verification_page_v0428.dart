@@ -37,7 +37,7 @@ class LearningVerificationCard428 extends StatelessWidget {
       if (controls != null) ...[
         Text('Casi nuovi simulati: ${controls['passed']}/${controls['total']} prove superate.'),
         if (controls['version'] != null) Text('Misurati con la versione ${controls['version']}.'),
-        if (controls['version'] != null && controls['version'] != '0.42.19')
+        if (controls['version'] != null && controls['version'] != '0.42.20')
           const Text('Ripeti la verifica per misurare il motore aggiornato.'),
         const Text('Il risultato riguarda le capacità provate nel modello simulato.'),
       ],

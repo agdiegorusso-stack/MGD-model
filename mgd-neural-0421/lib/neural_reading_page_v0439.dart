@@ -44,7 +44,8 @@ class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
         Text('${s['examined']}/${s['batches']} gruppi esaminati · ${s['notes']} note · ${s['failed']} da riesaminare'),
         Text(NeuralReading439.status),
         const Text('Il riesame riprende dalle letture salvate mentre l’app è aperta. '
-          'Puoi chiedere in Vivi spiegazioni e confronti sui testi acquisiti.'),
+          'Puoi chiedere in Vivi spiegazioni e confronti sui testi acquisiti. '
+          'Ogni risposta mostra quanti brani sono stati esaminati rispetto a quelli conservati.'),
         const SizedBox(height: 12),
         FilledButton.icon(onPressed: active ? null : () async {
           setState(() => working = true);

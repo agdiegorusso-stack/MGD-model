@@ -1,0 +1,119 @@
+name: MGD 0.42.20 measured reading
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd-neural-0421/**', '.github/workflows/mgd-comprehension440.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.20
+    defaults:
+      run:
+        working-directory: mgd-neural-0421
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/debug.keystore
+          key: mgd-study-goal-android-signing-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare the pinned model
+        run: |
+          set -euo pipefail
+          pip install huggingface_hub
+          python tool/prepare_neural439.py
+      - name: Analyze, test and compile
+        run: bash tool/build_android.sh
+      - name: Verify identity and split the APK for direct delivery
+        run: |
+          set -euo pipefail
+          python tool/verify_neural_config440.py
+          mgd_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          "$mgd_tools/apksigner" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk > tool/reports/signature.txt
+          "$mgd_tools/aapt" dump badging build/app/outputs/flutter-apk/app-release.apk > tool/reports/apk-identity.txt
+          printf '%s\n' "$GITHUB_SHA" > tool/reports/BUILD-COMMIT.txt
+          cp "$mgd_tools/lib/apksigner.jar" tool/reports/apksigner.jar
+          mkdir -p tool/apk-parts
+          split -b 400M -d build/app/outputs/flutter-apk/app-release.apk tool/apk-parts/apk.part-
+          sha256sum tool/apk-parts/* > tool/reports/APK-PARTS-SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.20-APK-part-00
+          path: mgd-neural-0421/tool/apk-parts/apk.part-00
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.20-APK-part-01
+          path: mgd-neural-0421/tool/apk-parts/apk.part-01
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.20-APK-part-02
+          path: mgd-neural-0421/tool/apk-parts/apk.part-02
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-0.42.20-build-verification
+          path: mgd-neural-0421/tool/reports
+  assessment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        role: [baseline, candidate]
+    env:
+      MGD_EVALUATION_ROLE: ${{ matrix.role }}
+    defaults:
+      run:
+        working-directory: mgd-neural-0421
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate the actual production prompts
+        run: |
+          set -euo pipefail
+          flutter pub get
+          mkdir -p tool/reports
+          flutter test test/neural_reading_v0439_test.dart test/neural_holdout_v0440_test.dart --reporter expanded 2>&1 | tee tool/reports/production-prompts.log
+          python tool/verify_neural_config440.py
+      - name: Prepare the pinned model
+        run: |
+          set -euo pipefail
+          pip install litert-lm==0.18.0 huggingface_hub
+          python tool/prepare_neural439.py
+      - name: Measure the fixed new sources
+        run: python tool/evaluate_neural440.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-0.42.20-assessment-${{ matrix.role }}
+          path: mgd-neural-0421/tool/reports

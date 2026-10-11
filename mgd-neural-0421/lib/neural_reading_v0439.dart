@@ -22,6 +22,11 @@ class NeuralReading439 {
   static int _epoch = 0;
   static DateTime? _retryAfter;
   static const model = 'Qwen3-1.7B / LiteRT-LM 0.18.0 / INT4 / reading JSON v2 / QA reasoning v1';
+  static const inferenceConfig440 = {
+    'thinking_budget': 256, 'max_context_tokens': 3072,
+    'max_output_tokens': 768, 'top_k': 20, 'top_p': .95,
+    'temperature': .6, 'seed': 439,
+  };
 
   static Future<String> generate(String prompt, {bool reasoning = false, Map<String, dynamic>? schema}) async {
     if (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false)) {
@@ -286,7 +291,7 @@ class NeuralReading439 {
         '${unknown == null ? '\nAstensione non dichiarata dal modello.' : ''}',
         {'kind': 'neural_source_interpretation', 'unknown': unknown, 'unknownDeclared': unknown != null,
           'model': model, 'passages': selected, 'examined': rows.length, 'available': live.length,
-          'semanticValidation': false, 'weightsUpdated': false});
+          'semanticValidation': false, 'weightsUpdated': false, 'qaConfig': inferenceConfig440});
     } catch (_) { return null; }
   }
 }

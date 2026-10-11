@@ -1,0 +1,104 @@
+{
+  "method": "Finite human-authored premise substrings, consulted only by the grader after generation. Necessary premise coverage does not prove unrestricted entailment. Unknown cases use the separately fixed label and abstention criteria.",
+  "cases": {
+    "K01": [],
+    "K02": [
+      [
+        "3,4 grammi",
+        "3,09 grammi",
+        "3,8 grammi"
+      ]
+    ],
+    "K03": [
+      [
+        "sigillatura avvenne prima della spedizione",
+        "dopo il controllo"
+      ],
+      [
+        "pagamento avvenne prima del controllo"
+      ]
+    ],
+    "K04": [
+      [
+        "spostò nella scatola mentre Leda guardava"
+      ]
+    ],
+    "K05": [
+      [
+        "non deve necessariamente farlo"
+      ]
+    ],
+    "K06": [],
+    "K07": [
+      [
+        "23:38",
+        "34 minuti"
+      ]
+    ],
+    "K08": [
+      [
+        "sostituire integralmente",
+        "chiude alle 18"
+      ]
+    ],
+    "K09": [],
+    "K10": [
+      [
+        "arven.csv",
+        "Analisi/Sette"
+      ]
+    ],
+    "K11": [
+      [
+        "17 pedine"
+      ],
+      [
+        "dona 6"
+      ],
+      [
+        "restituisce 2"
+      ],
+      [
+        "dona altre 3"
+      ]
+    ],
+    "K12": [
+      [
+        "scatola nera davanti a Lira"
+      ],
+      [
+        "spostò il dado nella scatola bianca"
+      ],
+      [
+        "Orio non ha visto lo spostamento"
+      ]
+    ],
+    "K13": [
+      [
+        "Orbena",
+        "Tersio"
+      ]
+    ],
+    "K14": [
+      [
+        "Orveno",
+        "Frassio"
+      ],
+      [
+        "Frassio",
+        "Tivra"
+      ],
+      [
+        "Tivra",
+        "Fergio"
+      ]
+    ],
+    "K15": [
+      [
+        "ultimo aggiornamento",
+        "porto Nefra"
+      ]
+    ],
+    "K16": []
+  }
+}
