@@ -1,0 +1,96 @@
+name: MGD signed APK draft delivery
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['.github/workflows/mgd-apk-delivery.yml', 'mgd_signed_apk_recipe439.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neural-0.42.19-APK
+          run-id: 38142273925
+          github-token: ${{ github.token }}
+          path: original-apk
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neural-0.42.19-verification
+          run-id: 38142273925
+          github-token: ${{ github.token }}
+          path: original-verification
+      - name: Reconstruct exact locally signed APK using public signature metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib,json,hashlib,base64
+          recipe=json.loads(pathlib.Path('mgd_signed_apk_recipe439.json').read_text())
+          assert recipe['private_key_included'] is False
+          source=pathlib.Path('original-apk/app-release.apk')
+          with source.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()==recipe['original_sha256']
+          assert (pathlib.Path('original-verification')/'BUILD-COMMIT.txt').read_text().strip()==recipe['source_commit']
+          target=pathlib.Path('MGD-Studio-0.42.19.apk')
+          with source.open('rb') as src,target.open('wb') as dst:
+              for op in recipe['operations']:
+                  if 'literal_base64' in op: dst.write(base64.b64decode(op['literal_base64'],validate=True))
+                  else:
+                      assert op['copy_offset']>=0 and op['length']>=0 and op['copy_offset']+op['length']<=source.stat().st_size
+                      src.seek(op['copy_offset']);left=op['length']
+                      while left:
+                          block=src.read(min(left,1024*1024));assert block;dst.write(block);left-=len(block)
+          assert target.stat().st_size==recipe['signed_bytes']
+          with target.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()==recipe['signed_sha256']
+          pathlib.Path('release-notes.txt').write_text('MGD Studio 0.42.19: APK firmato con il certificato originale. Android 8+ a 64 bit. Modello Qwen3 1.7B incluso, circa 964 MB.\n\n552 test del software superati; integrazione su emulatore Android API 35. Lettore: 21/24 scelte corrette nello sviluppo e 9/12 sui nuovi casi J; 17/24 e 6/12 esiti completi. Restano errori, contesto finito e pesi del lettore fissi. Comprensione universale non dimostrata.\n\nSorgente APK: '+recipe['source_commit']+'\nSHA256 APK: '+recipe['signed_sha256']+'\n')
+          PY
+          java -jar original-verification/apksigner.jar verify --verbose --print-certs MGD-Studio-0.42.19.apk > delivery-signature.txt
+          python3 - <<'PY'
+          import pathlib,json,re
+          r=json.loads(pathlib.Path('mgd_signed_apk_recipe439.json').read_text())
+          certs=re.findall(r'certificate SHA-256 digest:\s*([0-9a-f]+)',pathlib.Path('delivery-signature.txt').read_text())
+          assert certs and all(c==r['signing_certificate_sha256'] for c in certs)
+          print('Exact signed APK hash and original signing certificate verified. No private key is used in CI.')
+          PY
+      - name: Deliver through a draft release owned by the user
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mgd_draft_tag='mgd-studio-0.42.19-codex-63a30d45'
+          if gh release view "$mgd_draft_tag" --repo "$GITHUB_REPOSITORY" --json isDraft,url > draft-existing.json; then
+            python3 -c 'import json; assert json.load(open("draft-existing.json"))["isDraft"] is True'
+          else
+            gh release create "$mgd_draft_tag" --repo "$GITHUB_REPOSITORY" --draft --target 63a30d45bc4a8b4c065f0ed150ad9c7dfcc06140 --title 'MGD Studio 0.42.19 — APK firmato' --notes-file release-notes.txt > draft-url.txt
+          fi
+          gh release upload "$mgd_draft_tag" MGD-Studio-0.42.19.apk --repo "$GITHUB_REPOSITORY"
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > draft-releases.json
+          python3 - <<'PY'
+          import pathlib,json
+          r=next(x for x in json.loads(pathlib.Path('draft-releases.json').read_text()) if x['tag_name']=='mgd-studio-0.42.19-codex-63a30d45')
+          assert r['draft'] is True and r['published_at'] is None
+          a=next(x for x in r['assets'] if x['name']=='MGD-Studio-0.42.19.apk')
+          assert a['state']=='uploaded' and a['size']==964291067
+          assert a.get('digest')=='sha256:239a22639e6180ffef2d885cec1694d00a132ae04c6f0867e2d1d8135ac3fc05'
+          proof={'release_id':r['id'],'release_url':r['html_url'],'draft':True,'published_at':None,'asset_id':a['id'],'asset_name':a['name'],'asset_bytes':a['size'],'asset_sha256':a['digest'],'browser_download_url':a['browser_download_url'],'source_commit':'63a30d45bc4a8b4c065f0ed150ad9c7dfcc06140','private_key_uploaded':False}
+          pathlib.Path('draft-delivery.json').write_text(json.dumps(proof,indent=2))
+          print(json.dumps(proof,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-signed-draft-delivery-proof
+          path: |
+            draft-delivery.json
+            delivery-signature.txt
+            draft-url.txt
