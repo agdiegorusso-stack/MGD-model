@@ -3008,6 +3008,12 @@ class PlasticLanguageBrain04 {
     return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 
+  int? _predictTemporal437(List<int> context) {
+    final scores = predictionRecall437(context);
+    if (scores.isEmpty) return null;
+    return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+  }
+
   List<int> predictiveContext437(String text) => [
     _tokenToId['<bos>']!,
     ...lexicalTokens(text).map((t) => _tokenToId[normalizeText(t)] ?? -1),
@@ -3036,10 +3042,12 @@ class PlasticLanguageBrain04 {
     var predictions = 0;
     final sequence = <int>[_tokenToId['<bos>']!, ...ids, _tokenToId['<eos>']!];
     final recallBefore437 = <String, Map<int, double>>{};
+    final sampledPositions437 = <int>{};
     if (trainPredictor437 && reward > 0) {
       final count = min(PredictiveMemory437.updatesPerExposure, sequence.length - 1);
       for (var n = 0; n < count; n++) {
         final i = count == 1 ? 0 : n * (sequence.length - 2) ~/ (count - 1);
+        sampledPositions437.add(i);
         final c = sequence.sublist(max(0, i + 1 - PredictiveMemory437.contextSize), i + 1);
         recallBefore437[c.join(',')] = predictionRecall437(c);
       }
@@ -3053,7 +3061,8 @@ class PlasticLanguageBrain04 {
 
     for (var i = 0; i < sequence.length - 1; i++) {
       final context = sequence.sublist(max(0, i + 1 - PredictiveMemory437.contextSize), i + 1);
-      final p = predictNext(context);
+      final p = sampledPositions437.contains(i)
+          ? predictNext(context) : _predictTemporal437(context);
       if (p != null) {
         predictions++;
         if (p != sequence[i + 1]) misses++;
@@ -3074,7 +3083,7 @@ class PlasticLanguageBrain04 {
     }
 
     if (trainPredictor437 && reward > 0) {
-      // Retrieval features are the pre-exposure graph, captured separately below.
+      // Retrieval features were frozen before any graph update for this exposure.
       predictor437.observe(sequence, recall: (c) => recallBefore437[c.join(',')] ?? {});
     }
     workingMemory.addAll(ids);

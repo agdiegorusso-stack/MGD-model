@@ -169,4 +169,37 @@ void main() {
     expect(brain.predictor437.vocabulary, 0);
     expect(brain.predictor437.replayExamples, 0);
   });
+
+  test('The real MGD acquisition and prediction paths learn ordered continuations', () {
+    final brain = PlasticLanguageBrain04();
+    String trainingText(String body) {
+      for (final suffix in ['', '.', '!', '?']) {
+        final text = body + suffix;
+        final ids = brain.encode(text).ids;
+        if (hash([0, ...ids, 1]) % 5 != 0) return text;
+      }
+      throw StateError('No training sequence in the deterministic split');
+    }
+    final a = trainingText('rosso blu segno alfa');
+    final b = trainingText('blu rosso segno beta');
+    brain.learnSurface(a); brain.learnSurface(b);
+    final ca = brain.predictiveContext437('rosso blu segno');
+    final cb = brain.predictiveContext437('blu rosso segno');
+    final alpha = brain.encode('alfa', create: false).ids.single;
+    final beta = brain.encode('beta', create: false).ids.single;
+    final initial = (loss(brain.predictor437, ca, alpha) + loss(brain.predictor437, cb, beta)) / 2;
+    for (var i = 0; i < 250; i++) { brain.learnSurface(a); brain.learnSurface(b); }
+    final finalLoss = (loss(brain.predictor437, ca, alpha) + loss(brain.predictor437, cb, beta)) / 2;
+    expect(brain.predictor437.ready, true);
+    expect(finalLoss, lessThan(initial * .6));
+    expect(brain.predictNext(ca), alpha); expect(brain.predictNext(cb), beta);
+    final reloaded = PlasticLanguageBrain04.fromJson(jsonDecode(brain.encodeJson()));
+    expect(reloaded.predictNext(ca), alpha); expect(reloaded.predictNext(cb), beta);
+    final file = File('tool/reports/predictor-0.42.17.json');
+    final report = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    report['mgd_integration'] = {'initial_loss_without_retrieval': initial,
+      'final_loss_without_retrieval': finalLoss, 'ordered_continuations_correct': 2,
+      'reload_correct': 2, 'updates': brain.predictor437.updates};
+    file.writeAsStringSync(jsonEncode(report));
+  });
 }

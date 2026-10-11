@@ -12,6 +12,7 @@ void main() {
     expect(find.text('Previsioni apprese'), findsOneWidget);
     final exposures = brain.predictor437.exposures;
     await tester.enterText(find.byType(TextField), 'Il gatto');
+    await tester.ensureVisible(find.text('Prevedi la prossima parola'));
     await tester.tap(find.text('Prevedi la prossima parola'));
     await tester.pump();
     expect(brain.predictor437.exposures, exposures);
