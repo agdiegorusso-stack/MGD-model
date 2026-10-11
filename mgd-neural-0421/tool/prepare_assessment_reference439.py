@@ -49,7 +49,12 @@ assert 'with litert_lm.Engine(str(model), max_num_tokens=3072) as engine:' in ne
 assert report['thinking_budget'] == 256 and report['max_context_tokens'] == 3072
 assert report['qa_constrained_json'] is False and report['reading_constrained_json'] is True
 development = [r for r in report['results'] if r['split'] == 'development']
-assert len(development) == 24 and all('raw' in r and 'error' not in r for r in development)
+assert len(development) == 24
+reusable = [r for r in development if 'raw' in r and 'error' not in r]
+assert len(reusable) == 23
+missing_raw = [r for r in development if r not in reusable]
+assert [r['id'] for r in missing_raw] == ['17']
+assert missing_raw[0]['passed'] is False and missing_raw[0]['error'].startswith('Invalid control character')
 assert len(report['reading_results']) == 9
 proof = {
     'equivalent_inputs_verified': True,
@@ -61,9 +66,9 @@ proof = {
     'native_source_sha256': digest(native.read_bytes()),
     'model_sha256': report['model']['sha256'],
     'qa_and_reading_inference_blocks_identical': True,
-    'development_outputs_reused': 24, 'note_format_outputs_reused': 9,
+    'development_outputs_reused': 23, 'development_cases_to_reexecute': ['17'], 'note_format_outputs_reused': 9,
     'heldout_outputs_reused': 0, 'heldout_cases_to_reexecute': 12,
-    'reason': 'Model inputs and inference are unchanged. App change only exposes missing abstention metadata as undeclared uncertainty. Reference held-out key mismatch requires new inference and grading.'
+    'reason': 'Model inputs and inference are unchanged. App change only exposes missing abstention metadata as undeclared uncertainty. Reference held-out key mismatch requires new inference and grading. Development case 17 is re-executed because the original JSON error omitted its raw output.'
 }
 (out / 'reference-neural-comprehension-439.json').write_bytes(report_bytes)
 (out / 'reference-assessment-equivalence-439.json').write_text(json.dumps(proof, indent=2))

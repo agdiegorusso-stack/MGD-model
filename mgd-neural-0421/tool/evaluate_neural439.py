@@ -24,13 +24,13 @@ if reference.exists():
     assert hashlib.sha256((out / 'neural-prompts-439.json').read_bytes()).hexdigest() == provenance['production_prompts_sha256']
     prior = json.loads(reference.read_text())
     results = [dict(r, assessment_source_commit=provenance['reference_commit'], assessment_workflow_run=provenance['reference_workflow_run'])
-        for r in prior['results'] if r['split'] == 'development']
-    assert len(results) == 24 and all('raw' in r and 'error' not in r for r in results)
+        for r in prior['results'] if r['split'] == 'development' and 'raw' in r and 'error' not in r]
+    assert len(results) == 23 and all('raw' in r and 'error' not in r for r in results)
     assert all(r['expected'] == gold[r['id']] for r in results)
     readings = prior['reading_results']
     assert len(readings) == 9 and [r['id'] for r in readings] == [p['id'] for p in prompts[::4]]
-    to_run = [p for p in prompts if p['split'] == 'heldout']
-    print('Reusing 24 development answers and 9 note-format probes with verified identical inputs. Re-executing all 12 held-out cases with the corrected key.', flush=True)
+    to_run = [p for p in prompts if p['split'] == 'heldout' or p['id'] == '17']
+    print('Reusing 23 development answers and 9 note-format probes with verified identical inputs. Re-executing development case 17 to retain raw malformed output and all 12 held-out cases with the corrected key.', flush=True)
 start = time.monotonic()
 with litert_lm.Engine(str(model), max_num_tokens=3072) as engine:
     for p in to_run:
@@ -98,7 +98,7 @@ report = {'version': '0.42.19', 'model': json.loads((out / 'neural-model-439.jso
     'universal_comprehension_proven': False, 'public_benchmark_run': False, 'thinking_budget': 256, 'max_context_tokens': 3072, 'qa_constrained_json': False, 'reading_constrained_json': True,
     'results': results, 'reading_results': readings,
     'assessment_provenance': provenance,
-    'heldout_key_mismatch_in_previous_run': 'Previous run 38139443358 used H keys for J inputs: its 12 held-out results are invalid, excluded and re-executed here. Development outputs and note-format probes were unaffected.',
+    'heldout_key_mismatch_in_previous_run': 'Previous run 38139443358 used H keys for J inputs: its 12 held-out results are invalid, excluded and re-executed here. Development scores and note-format probes were unaffected. Development case 17 is also re-executed to retain the raw output omitted by the old JSON-error handler.',
     'uncertainty_reporting': 'Missing unknown is accepted by the app as explicitly undeclared uncertainty, never imputed. This assessment retains the strict full-protocol grading: missing unknown still fails.'}
 (out / 'neural-comprehension-439.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
 print(json.dumps({k: v for k, v in report.items() if k not in ['results','reading_results','model']}), flush=True)
