@@ -1,7 +1,7 @@
 """Apply an isolated 4B Android feasibility experiment inside a CI checkout only."""
 import pathlib,hashlib
 from mgd_reader_qwen_template441 import TEMPLATE
-root=pathlib.Path('mgd-neural-0421')
+root=pathlib.Path(__file__).resolve().parent/'mgd-neural-0421'
 k=root/'android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/NeuralReader439.kt'
 s=k.read_text()
 def once(old,new):
