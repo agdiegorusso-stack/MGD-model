@@ -214,7 +214,7 @@ class SemanticPlasticity445 {
   /// Source deletion resets derived fast weights. Rebuild from surviving raw
   /// passages on the next study tick; removed observations cannot persist.
   static Map<String,dynamic> surviving(Map? state, Set<String> live, int dimensions) {
-    final p = restore(state, dimensions);
+    final p = SemanticPlasticity445.restore(state, dimensions);
     if (!p.processed.every(live.contains)) return SemanticPlasticity445(dimensions).toJson();
     return p.toJson();
   }

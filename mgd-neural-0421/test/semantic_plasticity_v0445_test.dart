@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import '../lib/own_reader_v0443.dart';
 import '../lib/semantic_plasticity_v0445.dart';
 import '../lib/neural_reading_v0439.dart';
-import '../lib/reading_memory_v0438.dart';
 import '../lib/web_knowledge_explorer_v11.dart';
 
 void main() {
