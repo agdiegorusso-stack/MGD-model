@@ -375,6 +375,20 @@ class ResearchSemantics317 {
       (pattern: r'^(?:studia|studiano)\s+(.+)', rel: 'studia'),
       (pattern: r'^(?:produce|producono)\s+(.+)', rel: 'produce'),
       (pattern: r'^(?:unisce|uniscono)\s+(.+)', rel: 'unisce'),
+      (pattern: r'^(?:rimuove|rimuovono)\s+(.+)', rel: 'rimuove'),
+      (pattern: r'^(?:elimina|eliminano)\s+(.+)', rel: 'elimina'),
+      (pattern: r'^(?:riduce|riducono)\s+(.+)', rel: 'riduce'),
+      (pattern: r'^(?:trasporta|trasportano)\s+(.+)', rel: 'trasporta'),
+      (pattern: r'^(?:regola|regolano)\s+(.+)', rel: 'regola'),
+      (pattern: r'^(?:utilizza|utilizzano|usa|usano)\s+(.+)', rel: 'utilizza'),
+      (pattern: r'^(?:richiede|richiedono)\s+(.+)', rel: 'richiede'),
+      (pattern: r'^(?:attraversa|attraversano)\s+(.+)', rel: 'attraversa'),
+      (pattern: r'^(?:separa|separano)\s+(.+)', rel: 'separa'),
+      (pattern: r'^(?:scambia|scambiano)\s+(.+)', rel: 'scambia'),
+      (pattern: r'^(?:filtra|filtrano)\s+(.+)', rel: 'filtra'),
+      (pattern: r'^(?:collega|collegano)\s+(.+)', rel: 'collega'),
+      (pattern: r'^(?:misura|misurano)\s+(.+)', rel: 'misura'),
+      (pattern: r'^(?:si basa|si basano)\s+su\s+(.+)', rel: 'si basa su'),
       (
         pattern:
             r'^(?:è|sono|is|are)\s+(?:compost[oaie]|costituit[oaie]|format[oaie])\s+da\s+(.+)',
@@ -478,7 +492,7 @@ class ResearchSemantics317 {
       String sentence, WebDocument11 doc) {
     if (sentence.trim().endsWith('?')) return [];
     final m = RegExp(
-            r'^(.{2,100}?)\s+(?=(?:non\s+)?(?:è|sono|ha|hanno|contiene|contengono|comprende|comprendono|serve|servono|consente|consentono|permette|permettono|fa|fanno|si trova|si trovano|vive|vivono|mangia|mangiano|studia|studiano|produce|producono|unisce|uniscono)\s)',
+            r'^(.{2,100}?)\s+(?=(?:non\s+)?(?:è|sono|ha|hanno|contiene|contengono|comprende|comprendono|serve|servono|consente|consentono|permette|permettono|fa|fanno|si trova|si trovano|vive|vivono|mangia|mangiano|studia|studiano|produce|producono|unisce|uniscono|rimuove|rimuovono|elimina|eliminano|riduce|riducono|trasporta|trasportano|regola|regolano|utilizza|utilizzano|usa|usano|richiede|richiedono|attraversa|attraversano|separa|separano|scambia|scambiano|filtra|filtrano|collega|collegano|misura|misurano|si basa|si basano)\s)',
             caseSensitive: false)
         .firstMatch(sentence.trim().replaceFirst(_domainLead322, ''));
     if (m == null) return [];
@@ -948,7 +962,7 @@ class ResearchSemantics317 {
     );
     final done = Set<String>.from(m.state317['documentsRead'] as List? ?? []);
     for (final d in docs) {
-      SourceMemory323.retain(m, d);
+      SourceMemory323.retain(m, d, topic: topic);
       if (d.text.trim().isEmpty) continue;
       final key = digest([
         'reader320',

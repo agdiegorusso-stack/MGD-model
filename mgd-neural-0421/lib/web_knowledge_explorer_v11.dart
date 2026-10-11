@@ -515,9 +515,9 @@ class ResearchMemory11 {
   ResearchSession11? get lastSession => sessions.isEmpty ? null : sessions.last;
   int get unresolvedPassages => passages.where((p) => !p.structured).length;
   Iterable<ResearchPassage11> get pendingPassages321 => passages
-      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '323');
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] != '438');
   Iterable<ResearchPassage11> get uninterpretedPassages321 => passages
-      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '323');
+      .where((p) => !p.structured && p.meta318['extractorAttempt321'] == '438');
 
   int get requestsToday321 {
     final t = DateTime.now();
@@ -848,7 +848,7 @@ class WebKnowledgeExplorer11 {
     return data;
   }
 
-  static const _ua = 'MGD-Studio/0.42.17 (https://github.com/agdiegorusso-stack/MGD-model; educational reader)';
+  static const _ua = 'MGD-Studio/0.42.18 (https://github.com/agdiegorusso-stack/MGD-model; educational reader)';
   static final Map<String, Map<String, dynamic>> _cache12 =
       <String, Map<String, dynamic>>{};
   static final Map<String, DateTime> _hostNext12 = <String, DateTime>{};
@@ -1495,7 +1495,7 @@ class WebKnowledgeExplorer11 {
     for (final p in pending) {
       p.attempts++;
       p.lastAttemptIso = now;
-      p.meta318['extractorAttempt321'] = '323';
+      p.meta318['extractorAttempt321'] = '438';
       final doc = WebDocument11(
           provider: p.provider,
           family: p.sourceFamily,

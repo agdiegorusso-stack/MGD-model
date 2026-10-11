@@ -1,3 +1,5 @@
+import 'reading_memory_v0438.dart';
+import 'reading_memory_page_v0438.dart';
 import 'predictive_memory_page_v0437.dart';
 import 'closed_book_service_v0350.dart';
 import 'closed_book_page_v0350.dart';
@@ -995,6 +997,18 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         });
         _scrollDown();
         await _save('Ragionamento e cronologia salvati');
+        return;
+      }
+      final recall438 = ReadingMemory438.answer(_researchMemory, text);
+      if (recall438 != null) {
+        if (!mounted) return;
+        setState(() {
+          _messages.add(ChatMessage04(user: false, text: recall438.text, prompt: text));
+          _status = recall438.missing ? 'Informazione non trovata nelle letture'
+              : '${recall438.available} passaggi pertinenti nelle letture';
+        });
+        _scrollDown();
+        await _save('Consultazione delle letture e cronologia salvate');
         return;
       }
       final queryOnly423 =
@@ -2830,6 +2844,16 @@ class _MindPage07 extends StatelessWidget {
             onRetry: onRetryGoal426),
         LearningVerificationCard428(memory: research, busy: busy || researchBusy,
             onOpen: onVerify428),
+        Card(child: ListTile(
+          leading: const Icon(Icons.menu_book_outlined),
+          title: Text('${ReadingMemory438.stats(research)['passages']} passaggi nelle letture'),
+          subtitle: Text('${ReadingMemory438.stats(research)['sources']} fonti · '
+            'consultabili anche quando mancano relazioni nella mappa'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
+            ReadingMemoryPage438(memory: research,
+              initialTopic: StudyGoal426.state(research)?['topic'] as String?))),
+        )),
         OutlinedButton.icon(
           onPressed: () =>
               InspectorScope315.maybeOf(context)?.openCatalog(context),

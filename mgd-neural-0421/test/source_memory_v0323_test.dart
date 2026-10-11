@@ -157,8 +157,11 @@ void main() {
     final m = ResearchMemory11();
     SourceMemory323.retain(
         m, doc('Talverio ' + List.filled(1000, 'testo').join(' ')));
-    expect(SourceMemory323.stats(m)['passages'], 0);
-    expect(SourceMemory323.stats(m)['lastIntakeSkippedLongSentences'], 1);
+    expect(SourceMemory323.stats(m)['passages'], 1);
+    expect(SourceMemory323.stats(m)['lastIntakeSkippedLongSentences'], 0);
+    expect(m.claims, isEmpty);
+    expect(SourceMemory323.rows(m).single['text'],
+        'Talverio ' + List.filled(1000, 'testo').join(' '));
   });
 
   testWidgets(

@@ -1,3 +1,5 @@
+import 'reading_memory_v0438.dart';
+import 'reading_memory_page_v0438.dart';
 import 'package:flutter/material.dart';
 import 'study_goal_v0426.dart';
 import 'web_knowledge_explorer_v11.dart';
@@ -19,6 +21,13 @@ class StudyGoalCard426 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Obiettivo di studio', style: Theme.of(context).textTheme.titleMedium),
         Text(StudyGoal426.summary(memory)),
+        if (g != null) Text('${ReadingMemory438.stats(memory, topic: '${g['topic']}')['passages']} '
+            'passaggi consultabili per questo obiettivo; '
+            'le relazioni estratte sono solo una parte delle letture.'),
+        if (g != null) TextButton.icon(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
+            ReadingMemoryPage438(memory: memory, initialTopic: '${g['topic']}'))),
+          icon: const Icon(Icons.menu_book_outlined), label: const Text('Apri le letture')),
         if (busy) ...[
           const LinearProgressIndicator(),
           const Text('Ricerca e lettura in corso…'),

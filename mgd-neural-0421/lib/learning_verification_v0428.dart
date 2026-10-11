@@ -1,3 +1,4 @@
+import 'reading_memory_v0438.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -42,6 +43,9 @@ class MemoryQuery428 {
     if (logic != null) return VerificationAnswer428(logic.text,
         logic.truth == 'unknown' || logic.truth == 'conflict' ? 'astensione' : 'inferenza',
         proof: logic.proof?.toJson());
+    final recall438 = ReadingMemory438.answer(memory, prompt);
+    if (recall438 != null) return VerificationAnswer428(recall438.text,
+        recall438.missing ? 'astensione' : 'passaggi', proof: recall438.proof);
     final reading = ReadingQuery430.answer(memory, prompt);
     if (reading != null) return VerificationAnswer428(reading.text, 'letture', proof: reading.proof);
     final mapped = map(brain, memory, prompt, readOnly: true);
@@ -267,6 +271,15 @@ class LearningVerification428 {
       return (passed: passed, reason: passed ? 'La conclusione ha passaggi verificabili nel testo.'
           : 'Non ha ricavato la conclusione richiesta con una catena di premesse.');
     }
+    if ({'recall', 'paraphrase'}.contains(question.capability) &&
+        answer.proof?['kind'] == 'source_passages' && question.sources.isNotEmpty) {
+      final passages = (answer.proof?['passages'] as List? ?? []).whereType<Map>();
+      final passed = passages.any((p) => question.sources.any((source) =>
+          p['url'] == source['url'] && norm('${p['text']}') == norm(source['text'] ?? '')));
+      return (passed: passed, reason: passed
+          ? 'Ha recuperato il passaggio originale con la fonte. Non misura una deduzione.'
+          : 'Non ha recuperato il passaggio di riferimento con la sua fonte.');
+    }
     if (question.object.isNotEmpty) {
       if (question.acceptable.isNotEmpty && answer.proof?['kind'] == 'retrieval') {
         final assertions = (answer.proof?['claims'] as List? ?? []).whereType<Map>().toList();
@@ -315,7 +328,7 @@ class LearningVerification428 {
     Future<void> Function()? read,
     bool Function()? cancelled,
     void Function(int done, int total, String stage)? progress,
-    String? goalId, String? topic, String version = '0.42.17'}) async {
+    String? goalId, String? topic, String version = '0.42.18'}) async {
     final results = <Map<String, dynamic>>[];
     final before = <String, VerificationAnswer428>{};
     var done = 0;

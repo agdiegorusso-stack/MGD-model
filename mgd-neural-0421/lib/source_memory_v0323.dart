@@ -31,21 +31,26 @@ class SourceMemory323 {
     return value;
   }
 
-  static int retain(ResearchMemory11 m, WebDocument11 d) {
+  static int retain(ResearchMemory11 m, WebDocument11 d, {String? topic}) {
     if (d.text.trim().isEmpty) return 0;
     final rows = _rows(m), state = _state(m);
-    var added = 0, skipped = 0;
+    var added = 0, updated = 0, order = 0;
     // Keep whole sentences: slicing a condition away changes its meaning.
     for (final sentence in d.text.split(RegExp(r'(?<=[.!?])\s+|\n+'))) {
       final text = sentence.trim();
-      if (text.length < 8) continue;
-      if (text.length > 4000) {
-        skipped++;
-        continue;
-      }
+      if (text.isEmpty) continue;
       final id = ResearchSemantics317.digest(
           [ResearchSemantics317.canonicalUrl(d.url), text]);
-      if (rows.containsKey(id)) continue;
+      final previous = rows[id];
+      if (previous is Map) {
+        final topics = Set<String>.from(previous['topics438'] as List? ?? []);
+        if (topic != null && topic.trim().isNotEmpty && topics.add(topic.trim())) {
+          previous['topics438'] = topics.toList();
+          updated++;
+        }
+        order++;
+        continue;
+      }
       rows[id] = {
         'id': id,
         'text': text,
@@ -53,25 +58,28 @@ class SourceMemory323 {
         'url': d.url,
         'provider': d.provider,
         'family': ResearchSemantics317.family(d),
+        'trust438': d.trust,
+        'order438': order++,
+        'topics438': [if (topic != null && topic.trim().isNotEmpty) topic.trim()],
         'observedAt': DateTime.now().toIso8601String(),
       };
       added++;
     }
-    if (added > 0) {
+    if (added > 0 || updated > 0) {
       state['revision'] = (state['revision'] as num? ?? 0).toInt() + 1;
       state['sourceCount'] =
           rows.values.whereType<Map>().map((r) => r['url']).toSet().length;
       _cache[m] = null;
     }
-    // Source text remains in its original document even if a sentence is too
-    // long for the interactive index. This number is per intake, not a total.
-    state['lastIntakeSkippedLongSentences'] = skipped;
+    // Preserve even long or short sentences. Only the relational parser has
+    // size limits; exact source memory must not silently discard information.
+    state['lastIntakeSkippedLongSentences'] = 0;
     state['lastIntakeNewPassages'] = added;
     return added;
   }
 
   static void recover(ResearchMemory11 m) {
-    if (_state(m)['recovered'] == true) return;
+    if (_state(m)['completeRecovery438'] == true) return;
     for (final d in ResearchSemantics317.uniqueDocuments320(m)) {
       retain(m, ResearchSemantics317.docFrom(d));
     }
@@ -98,6 +106,29 @@ class SourceMemory323 {
               trust: e.trust));
     }
     _state(m)['recovered'] = true;
+    _state(m)['completeRecovery438'] = true;
+  }
+
+  /// Assessments and chat probes can rebuild old reading memory without
+  /// changing the saved state. Intake, deletion and source revisions invalidate
+  /// the separate reading index automatically.
+  static List<Map<String, dynamic>> readRows438(ResearchMemory11 m) {
+    final raw = m.state317['sourceMemory323'];
+    if (raw is Map && raw['completeRecovery438'] == true && raw['rows'] is Map) {
+      return (raw['rows'] as Map).values.whereType<Map>()
+          .map((r) => Map<String, dynamic>.from(r)).toList();
+    }
+    final view = ResearchMemory11(enabled: false);
+    view.state317.addAll(m.state317);
+    final state = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final stored = state['rows'];
+    view.state317['sourceMemory323'] = {...state, 'rows': stored is Map
+      ? stored.map((k, v) => MapEntry(k.toString(), v is Map ? Map<String, dynamic>.from(v) : v))
+      : <String, dynamic>{}};
+    view.sessions.addAll(m.sessions);
+    view.passages.addAll(m.passages);
+    view.evidence.addAll(m.evidence);
+    return rows(view);
   }
 
   static List<Map<String, dynamic>> rows(ResearchMemory11 m) {
