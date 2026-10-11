@@ -14,14 +14,15 @@ print('CANDIDATE VERIFIED', json.dumps(manifest), flush=True)
 prompts = json.loads(pathlib.Path('mgd_reader_assessment_prompts439.json').read_text())
 key = json.loads(pathlib.Path('mgd-neural-0421/tool/fixtures/neural_comprehension_439_key.json').read_text())
 results, readings = [], []
-with litert_lm.Engine(path, max_num_tokens=2048) as engine:
+with litert_lm.Engine(path, max_num_tokens=3072) as engine:
     for p in prompts:
         t = time.monotonic()
         try:
-            with engine.create_conversation(extra_context={'enable_thinking': False},
-                    sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.8, temperature=0.0, seed=439),
-                    max_output_tokens=384, automatic_tool_calling=False) as conv:
-                raw = str(conv.send_message(p['prompt']))
+            with engine.create_conversation(extra_context={'enable_thinking': True},
+                    thinking_config=litert_lm.ThinkingConfig(enable_thinking=True, thinking_token_budget=256),
+                    sampler_config=litert_lm.SamplerConfig(top_k=20, top_p=0.95, temperature=0.6, seed=439),
+                    max_output_tokens=768, automatic_tool_calling=False) as conv:
+                raw = str(conv.send_message(p['prompt'].replace('/no_think', '')))
             a,b=raw.find('{'),raw.rfind('}')
             data=json.loads(raw[a:b+1])
             refs=data.get('evidence',[]); unknown=data.get('unknown')
@@ -44,7 +45,7 @@ with litert_lm.Engine(path, max_num_tokens=2048) as engine:
         except Exception as ex: readings.append(dict(id=p['id'],parsed=False,error=str(ex)))
 report=dict(manifest=manifest,total=len(results),passed=sum(r['passed'] for r in results),
     exact_choices_correct=sum(r.get('exact_choice_correct',False) for r in results),
-    results=results,readings=readings,model_selection_used_development_suite=True,
+    results=results,readings=readings,model_selection_used_development_suite=True,thinking_budget=256,
     universal_comprehension_proven=False)
-(out/'candidate-17b-comprehension-439.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+(out/'candidate-17b-reasoning-comprehension-439.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
 print('CANDIDATE RESULT',json.dumps({k:v for k,v in report.items() if k not in ['results','readings']}),flush=True)

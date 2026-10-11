@@ -28,7 +28,7 @@ with litert_lm.Engine(model, max_num_tokens=2048) as engine:
             # Extract a single option token from a concise first line; do not
             # infer a label from a long explanation or from the premise.
             first = raw.splitlines()[0] if raw else ''
-            token = re.fullmatch(r'\s*[(*]?([ABC])[).*:]?\s*', first)
+            token = re.match(r'^\s*[(*]?([ABC])(?:[).*:\s]|$)', first)
             prediction = labels.get(token[1]) if token else None
             if prediction is None and first.lower() in labels.values():
                 prediction = first.lower()
