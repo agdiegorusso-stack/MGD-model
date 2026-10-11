@@ -2,7 +2,7 @@ name: MGD 0.42.19 source reading
 on:
   push:
     branches: ['codex/mgd-predictive-04217']
-    paths: ['mgd-neural-0421/**', '.github/workflows/mgd-predictive-04217.yml']
+    paths: ['retired-workflow-439/**']
   workflow_dispatch:
 concurrency:
   group: mgd-predictive-${{ github.ref }}

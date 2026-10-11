@@ -1,0 +1,34 @@
+name: MGD original passage retrieval regression
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd-neural-0421/lib/reading_context_v0440.dart', 'mgd-neural-0421/test/reading_context_v0440_test.dart', '.github/workflows/mgd-reader-retrieval440.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mgd-neural-0421
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - run: flutter pub get
+      - run: |
+          set -euo pipefail
+          mkdir -p tool/reports
+          flutter test test/reading_context_v0440_test.dart test/neural_reading_v0439_test.dart --reporter expanded 2>&1 | tee tool/reports/context-440-tests.log
+      - run: |
+          set -euo pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee tool/reports/context-440-analyze.log
+          flutter test --machine 2>&1 | tee tool/reports/context-440-all-tests.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-retrieval-440-verification
+          path: mgd-neural-0421/tool/reports
