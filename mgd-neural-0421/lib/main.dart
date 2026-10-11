@@ -379,7 +379,8 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
         await _researchOnce10(autonomous: true);
       }
       if (_lifecycle319 == AppLifecycleState.resumed && !_busy && !_researchBusy &&
-          !_maintenance317 && !_bookImportBusy341 && _chat.text.isEmpty && _uiIdle18) {
+          !_maintenance317 && !_bookImportBusy341 && _chat.text.isEmpty && _uiIdle18 &&
+          _researchMemory.enabled && StudyGoal426.state(_researchMemory)?['paused'] != true) {
         await _examineNeural439();
       }
       if (_world.eventDriven33) {
@@ -614,6 +615,7 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
   Future<void> _pauseStudyGoal426(bool paused) async {
     StudyGoal426.pause(_researchMemory, paused);
+    if (paused) await NeuralReading439.cancel();
     await _checkpoint319();
     if (mounted) setState(() => _status = StudyGoal426.summary(_researchMemory));
   }
