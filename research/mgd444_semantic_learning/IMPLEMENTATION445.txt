@@ -1,0 +1,56 @@
+MGD 0.42.22: correction of frozen semantic input weights
+
+The previous deployed reader acquired raw sources but did not adapt its
+semantic interpretation weights. Freezing those weights was an engineering
+choice, not a requirement found in the three original MGD documents.
+
+This change introduces persistent learned word-vector offsets, used BEFORE
+entity mixing and recurrent role inference. These numerical weights are shared
+by source prediction and interpretation; the input text is not replaced by a
+synonym string, and answers are not supplied as training targets. Source text
+and copied answer spans remain unchanged.
+
+The recurrent matrices, role/scope heads and question head retain their
+offline training. Only the new lexical input parameters are trained online.
+This is not end-to-end learning of arbitrary new semantic rules. It corrects
+one frozen component and must not be described as total comprehension.
+
+Two observational losses:
+1. Sampled next-word cross entropy from up to three preceding observed words,
+   against at most eight actual vocabulary candidates from the passage.
+   This is a proxy language prediction task, not full-vocabulary perplexity
+   and not a semantic comprehension measurement. Held-out positions are never
+   gradient targets. Older actual token examples are replayed. Input drift for
+   these updates has L2 regularization and a 0.25 norm cap.
+2. Squared embedding difference for narrowly recognized explicit single-word
+   equivalences: e.g. an entire sentence '«X» significa «Y».' The observed
+   equivalence, not a generated interpretation, supplies the constraint.
+   Twelve gradient steps update the X input vector toward the Y vector.
+   Previously observed definitional constraints are replayed. Scope, factual
+   reliability, polysemy and arbitrary definition parsing are not solved.
+
+The declared artificial audit contains 20 lexical definitions and 40 new
+frames with different roles, people and objects. None of the question answers
+is used in learning. Report before/after success, every failure and a separate
+21-case retention comparison. Keeping an earlier prediction unchanged is NOT
+proof that it was correct. Do not market this as a fresh unrestricted book
+benchmark, general semantic learning, or a mathematical guarantee.
+
+Source ingestion trains in a worker isolate. Commit learned state only if
+the task remains active and all evidence fragments still exist. Persist the
+weights, observation replay and definitions in the regular research checkpoint.
+The answering path reads saved learned weights without training on questions
+or on its own answers. Learning-dependent answers also cite teaching passages.
+Source deletion invalidates all derived fast weights and rebuilds from
+surviving passages. Conflicting equivalence targets suspend affected-term
+interpretation. Notes with older weight revisions are reexamined.
+
+Finite capacity: 4096 word-vector offsets, 1024 raw-observation replay examples,
+bounded per-passage work. Capacity misses are displayed; source texts remain
+available. This finite learner cannot losslessly retain every possible text.
+
+This is an engineering variant inspired by adaptive memory and prediction in
+MGD. It does not inherit proofs of MGD's originally specified stochastic
+process after replacing its forcing mechanism with linguistic gradients.
+It has no transformer or external pretrained model. No new phone energy,
+RAM, biological equivalence or general-understanding result is claimed.

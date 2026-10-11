@@ -38,10 +38,15 @@ class _NeuralReadingPage439State extends State<NeuralReadingPage439> {
       body: ListView(padding: const EdgeInsets.all(16), children: [
         const Text('Il lettore MGD riconosce ruoli, negazioni e condizioni e cerca '
           'risposte nei brani acquisiti. I suoi pesi sono stati addestrati da zero. '
+          'Durante la lettura aggiorna e salva rappresentazioni lessicali: usa le '
+          'parole osservate e le equivalenze esplicite del tipo «X» significa «Y». '
           'Le capacità sono sperimentali: può sbagliare o non riconoscere una domanda. '
           'Le letture restano disponibili con le loro fonti.'),
         const SizedBox(height: 12),
         Text('${s['examined']}/${s['batches']} gruppi esaminati · ${s['notes']} note · ${s['failed']} da riesaminare'),
+        Text('${s['plasticWords']} rappresentazioni aggiornate · ${s['definitionSteps']} aggiornamenti da definizioni · ${s['predictionSteps']} passi predittivi'),
+        if ((s['conflicts'] ?? 0)>0) Text('${s['conflicts']} termini con definizioni incompatibili: serve chiarirne il contesto.'),
+        if ((s['capacityMisses'] ?? 0)>0) const Text('La capacità delle rappresentazioni lessicali è piena. Le fonti restano nelle Letture.'),
         Text(NeuralReading439.status),
         const Text('Il riesame riprende dalle letture salvate mentre l’app è aperta. '
           'Puoi chiedere in Vivi spiegazioni e confronti sui testi acquisiti. '

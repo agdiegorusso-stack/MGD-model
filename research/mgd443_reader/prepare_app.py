@@ -20,12 +20,15 @@ def main():
     model=json.loads((assets/'reader443.json').read_text());report=json.loads((OUT/'final-audit-results.json').read_text())
     weights=model['parameters'];params=sum(len(r)*len(r[0]) if isinstance(r[0],list) else len(r) for r in weights.values())
     params+=len(model['question_bag']['weight'])*len(model['questions'])
-    receipt={'version':'0.42.21','transformer':False,'external_pretrained_weights':False,
+    receipt={'version':'0.42.22','transformer':False,'external_pretrained_weights':False,
       'reader_sha256':hashlib.sha256((assets/'reader443.json').read_bytes()).hexdigest(),
       'reader_bytes':(assets/'reader443.json').stat().st_size,'parameters_including_unused_legacy_question_head':params,
       'base_training_run':38176357502,'base_model_sha256':'b5f75ea69011b4dbb53a0d2bc17d64a066078d14de0a438b743ec03c379f0585',
-      'experimental':True,'general_comprehension_solved':False,'fixed_own_semantic_weights_after_offline_training':True,
-      'automatic_semantic_learning_from_reading_proven':False,'phone_energy_measured':False,
+      'experimental':True,'general_comprehension_solved':False,'fixed_own_semantic_weights_after_offline_training':False,
+      'offline_recurrent_and_role_heads':True,'plastic_lexical_input_weights':True,
+      'online_targets':['observed next words','explicit quoted single-word equivalences'],
+      'general_autonomous_semantic_learning_proven':False,
+      'bounded_lexical_transfer_audit':'tool/reports/semantic-learning445.json','phone_energy_measured':False,
       'audit_correct':report['correct'],'audit_total':report['total'],'scope_questions_and_extractable_arguments_only':True}
     (OUT/'app-reader-manifest443.json').write_text(json.dumps(receipt,indent=2))
     print(json.dumps(receipt))

@@ -1,4 +1,4 @@
-name: MGD 0.42.21 experimental own reader APK
+name: MGD 0.42.22 plastic lexical reader APK
 on:
   push:
     branches: ['codex/mgd-predictive-04217']
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 45
     env:
       MGD_APPLICATION_ID: it.diegorusso.mgdneurostable.studio
-      MGD_APPLICATION_LABEL: MGD Studio 0.42.21
+      MGD_APPLICATION_LABEL: MGD Studio 0.42.22
       OPENBLAS_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v4
@@ -62,13 +62,13 @@ jobs:
               assert json.loads(data)['transformer'] is False
           identity=pathlib.Path('mgd-neural-0421/tool/reports/apk-identity.txt').read_text()
           assert "name='it.diegorusso.mgdneurostable.studio'" in identity
-          assert "versionName='0.42.21'" in identity and "versionCode='103'" in identity
+          assert "versionName='0.42.22'" in identity and "versionCode='104'" in identity
           pathlib.Path('mgd-neural-0421/tool/reports/apk-payload443.json').write_text(json.dumps({'bytes':apk.stat().st_size,'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'reader':manifest,'transformer_payload_absent':True},indent=2))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-0.42.21-build-verification
+          name: MGD-0.42.22-build-verification
           path: |
             mgd-neural-0421/tool/reports
             research/mgd443_reader/results/*results.json
@@ -77,6 +77,6 @@ jobs:
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: MGD-0.42.21-APK
+          name: MGD-0.42.22-APK
           path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error

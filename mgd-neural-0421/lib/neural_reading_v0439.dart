@@ -5,6 +5,7 @@ import 'reading_memory_v0438.dart';
 import 'reading_context_v0440.dart';
 import 'web_knowledge_explorer_v11.dart';
 import 'own_reader_v0443.dart';
+import 'semantic_plasticity_v0445.dart';
 
 typedef NeuralGenerate439 = Future<String> Function(String prompt);
 
@@ -24,14 +25,17 @@ class NeuralReading439 {
   static NeuralGenerate439? backendForTest;
   static int _epoch = 0;
   static DateTime? _retryAfter;
-  static const model = 'MGD-443 / from-scratch recurrent roles / learned questions / extractive QA v1';
+  static const model = 'MGD-445 / recurrent roles / plastic lexical weights / extractive QA v2';
   static const inferenceConfig440 = {
     'architecture': 'learned entity factorization and bidirectional recurrent roles',
     'transformer': false, 'pretrained_external_weights': false,
     'answer_decoder': 'source span extraction', 'semantic_validation': false,
+    'online_semantic_input_weights': true,
+    'online_objectives': ['observed next word', 'explicit quoted lexical equivalence'],
+    'general_semantic_learning_solved': false,
   };
 
-  static Future<String> generate(String prompt, {bool reasoning = false, Map<String, dynamic>? schema}) async {
+  static Future<String> generate(String prompt, {bool reasoning = false, Map<String, dynamic>? schema, Map? semanticState}) async {
     if (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false)) {
       throw StateError('Lettore locale non disponibile');
     }
@@ -45,7 +49,7 @@ class NeuralReading439 {
       if (run!=null) { pending=run(prompt); }
       else {
         final reader=await OwnReader443.load();
-        pending=Isolate.run(() => reader.generate(prompt));
+        pending=Isolate.run(() => reader.withSemanticState(semanticState).generate(prompt));
       }
       final raw = await pending.timeout(const Duration(seconds: 30), onTimeout: () {
         timedOut = true; cancel(); throw StateError('Il lettore ha superato il tempo disponibile');
@@ -124,21 +128,33 @@ class NeuralReading439 {
     return value;
   }
   static Map records(ResearchMemory11 m) => _state(m)['records'] as Map? ?? {};
+  static Map<String,dynamic> semanticState(ResearchMemory11 m) =>
+    SemanticPlasticity445.surviving(m.state317['semantic445'] as Map?,
+      fragments(m).map((r)=>'${r['rid439']}').toSet(),32);
 
   /// Only records whose COMPLETE evidence batch still exists may be used.
   /// A deletion or withdrawn source invalidates the derived interpretation.
   static List<Map<String, dynamic>> notes(ResearchMemory11 m) {
     final live = fragments(m).map((r) => r['rid439']).toSet();
+    final revision = semanticState(m)['revision'];
     return records(m).values.whereType<Map>().where((r) =>
       r['ok'] == true && r['model'] == model && (r['rows'] as List? ?? []).isNotEmpty &&
+      (r['semanticRevision'] ?? 0) == revision &&
       (r['rows'] as List).every(live.contains)).map((r) => Map<String, dynamic>.from(r)).toList();
   }
   static Map<String, int> stats(ResearchMemory11 m) {
     final bs = batches(m), rs = records(m);
+    final learning = semanticState(m);
     return {'batches': bs.length,
       'examined': bs.where((b) => rs[batchId(b)] is Map && rs[batchId(b)]['ok'] == true).length,
       'failed': bs.where((b) => rs[batchId(b)] is Map && rs[batchId(b)]['ok'] != true).length,
-      'notes': notes(m).fold(0, (n, r) => n + (r['notes'] as List? ?? []).length)};
+      'notes': notes(m).fold(0, (n, r) => n + (r['notes'] as List? ?? []).length),
+      'learningRevision': (learning['revision'] as num).toInt(),
+      'plasticWords': (learning['weights'] as Map).length,
+      'predictionSteps': (learning['predictionSteps'] as num).toInt(),
+      'definitionSteps': (learning['definitionSteps'] as num).toInt(),
+      'conflicts': (learning['conflicts'] as List).length,
+      'capacityMisses': (learning['capacityMisses'] as num).toInt()};
   }
 
   static String readingPrompt(List<Map<String, dynamic>> rows) =>
@@ -207,25 +223,48 @@ class NeuralReading439 {
       {NeuralGenerate439? run, bool Function()? shouldContinue}) async {
     if (run == null && (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false))) return false;
     final rs = records(m);
+    final previous = semanticState(m);
+    final processed = (previous['processed'] as List).toSet();
     final pending = batches(m).where((b) {
       final r = rs[batchId(b)];
-      return r is! Map || (r['ok'] != true && (r['attempts'] as num? ?? 0) < 2);
+      return r is! Map || (run == null && b.any((row)=>!processed.contains(row['rid439']))) ||
+        (r['semanticRevision'] ?? 0) != previous['revision'] ||
+        (r['ok'] != true && (r['attempts'] as num? ?? 0) < 2);
     });
     if (pending.isEmpty || shouldContinue?.call() == false) return false;
     final batch = pending.first, key = batchId(batch);
     final epoch = _epoch;
     String? error; List<Map<String, dynamic>> extracted = [];
-    try { extracted = validateNotes(await (run ?? ((p) => generate(p, schema: readingSchema(batch))))(readingPrompt(batch)), batch); }
+    Map<String,dynamic>? learned;
+    try {
+      if (run != null) {
+        extracted = validateNotes(await run(readingPrompt(batch)),batch);
+      } else {
+        busy = true; status = 'Apprendimento dai brani originali';
+        final base = await OwnReader443.load();
+        final result = await Isolate.run(() async {
+          final reader = base.withSemanticState(previous);
+          final learning = reader.learnFromSources(batch);
+          return {'learning':learning,'raw':await reader.generate(readingPrompt(batch))};
+        }).timeout(const Duration(seconds:30));
+        learned = result['learning'] as Map<String,dynamic>;
+        extracted = validateNotes(result['raw'] as String,batch);
+        status = 'Lettore locale pronto';
+      }
+    }
     catch (e) { error = '$e'; }
+    finally { if (run == null) busy = false; }
     if (epoch != _epoch || shouldContinue?.call() == false) return false;
     final live = fragments(m).map((r) => r['rid439']).toSet();
     if (!batch.every((r) => live.contains(r['rid439']))) return false;
+    if (learned != null) m.state317['semantic445'] = learned;
     final state = _state(m, create: true);
     final next = Map<String, dynamic>.from(state['records'] as Map? ?? {});
     next[key] = {'rows': batch.map((r) => r['rid439']).toList(), 'notes': extracted,
       'ok': extracted.isNotEmpty, 'attempts': ((next[key] as Map?)?['attempts'] as num? ?? 0) + 1,
       'error': error ?? (extracted.isEmpty ? 'Nessuna nota con riferimenti validi' : null),
       'model': model, 'at': DateTime.now().toIso8601String(),
+      'semanticRevision': (learned ?? previous)['revision'],
       'semanticValidation': false};
     state['records'] = next;
     return true;
@@ -246,6 +285,7 @@ class NeuralReading439 {
     next.removeWhere((_, r) => r is! Map || matches(jsonEncode(r)) ||
       !(r['rows'] as List? ?? []).every(live.contains));
     state['records'] = next;
+    m.state317['semantic445'] = SemanticPlasticity445(32).toJson();
   }
 
   /// Partial lexical ranking seeds CONTIGUOUS context, rather than insisting
@@ -276,7 +316,8 @@ class NeuralReading439 {
     final rows = context(m, query);
     if (rows.isEmpty) return null;
     try {
-      final data = parse(await (run ?? ((p) => generate(p, reasoning: true)))(answerPrompt(query, rows)));
+      final learning = semanticState(m);
+      final data = parse(await (run ?? ((p) => generate(p, reasoning: true,semanticState:learning)))(answerPrompt(query, rows)));
       if (data == null || data['answer'] is! String) return null;
       final answer = (data['answer'] as String).trim();
       if (answer.isEmpty || answer.length > 2600) return null;
@@ -290,6 +331,16 @@ class NeuralReading439 {
         if (i < 0 || i >= rows.length) return null;
         selected.add(rows[i]);
       }
+      // Interpretation of a newly learned term also depends on its original
+      // definition, even if lexical retrieval did not select that passage.
+      final learningEvidence = <Map<String,dynamic>>[];
+      final byId = {for (final r in fragments(m)) r['rid439']:r};
+      for (final d in (data['learnedDefinitions'] as List? ?? []).whereType<Map>()) {
+        final source = byId[d['source']];
+        if (source == null) return null;
+        if (!selected.any((r)=>r['rid439']==source['rid439'])) selected.add(source);
+        learningEvidence.add(source);
+      }
       if (unknown != true && selected.isEmpty) return null;
       final live = fragments(m).map((r) => r['rid439']).toSet();
       if (!rows.every((r) => live.contains(r['rid439']))) return null;
@@ -300,7 +351,10 @@ class NeuralReading439 {
         '${unknown == null ? '\nAstensione non dichiarata dal modello.' : ''}',
         {'kind': 'neural_source_interpretation', 'unknown': unknown, 'unknownDeclared': unknown != null,
           'model': model, 'passages': selected, 'examined': rows.length, 'available': live.length,
-          'semanticValidation': false, 'weightsUpdated': false, 'qaConfig': inferenceConfig440});
+          'semanticValidation': false, 'weightsUpdated': false,
+          'semanticWeightsPlastic': true,'learningRevision':learning['revision'],
+          'learningEvidence':learningEvidence,
+          'qaConfig': inferenceConfig440});
     } catch (_) { return null; }
   }
 }

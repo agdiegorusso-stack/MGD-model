@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
+import 'semantic_plasticity_v0445.dart';
 
 /// Learned recurrent roles and question interpretation. No pretrained model,
 /// transformer, fixed entity table, or cloud inference. Answers are extractive.
@@ -10,6 +11,7 @@ class OwnReader443 {
   final Map<String, List<List<double>>> matrices = {};
   final Map<String, List<double>> vectors = {};
   final List<double> corefWeights;
+  SemanticPlasticity445? plasticity;
   static Future<OwnReader443>? _loading;
   static final tokenPattern = RegExp(r"[\wÀ-ÿ]+(?:['’][\wÀ-ÿ]+)?|[^\w\s]", unicode: true);
   OwnReader443(this.model, this.corefWeights) {
@@ -78,15 +80,29 @@ class OwnReader443 {
     for (var i = 1; i < x.length; i++) { if (x[i] > x[best]) best = i; }
     return best;
   }
+  List<double> baseVector(String word) {
+    final embedding = matrices['embedding.weight']!, d = model['embedding'] as int;
+    final ids = features(word, model['buckets'] as int), f = List<double>.filled(d,0);
+    for (final id in ids) { for (var j=0; j<d; j++) { f[j] += embedding[id][j]/ids.length; } }
+    return f;
+  }
+  OwnReader443 withSemanticState(Map? state) {
+    final reader = OwnReader443(model,corefWeights);
+    reader.plasticity = SemanticPlasticity445.restore(state,model['embedding'] as int);
+    return reader;
+  }
+  Map<String,dynamic> learnFromSources(List<Map<String,dynamic>> rows) {
+    final p = plasticity ??= SemanticPlasticity445(model['embedding'] as int);
+    p.learn(rows,baseVector,tokenize);
+    return p.toJson();
+  }
   Map<String, dynamic> inspect(String text) {
     final words = tokenize(text);
     if (words.isEmpty) return {'text':text,'tokens':words,'spans':<Map<String,dynamic>>[], 'scope':'asserted','scopeConfidence':0.0,'questionType':'summary','questionConfidence':0.0,'scopeDistribution':<double>[.25,.25,.25,.25]};
-    final embedding = matrices['embedding.weight']!, d = model['embedding'] as int;
+    final d = model['embedding'] as int;
     final x = <List<double>>[];
     for (final word in words) {
-      final ids = features(word, model['buckets'] as int);
-      final f = List<double>.filled(d,0);
-      for (final id in ids) { for (var j = 0; j < d; j++) { f[j] += embedding[id][j] / ids.length; } }
+      final f = plasticity?.vector(word,baseVector) ?? baseVector(word);
       final upper = RegExp(r'[A-ZÀ-ÖØ-Þ]').hasMatch(word.substring(0,1));
       final alpha = RegExp(r'[A-Za-zÀ-ÿ]').hasMatch(word);
       final extra=<double>[upper ? 1 : 0, upper && word.length > 1 && word.toUpperCase()==word ? 1 : 0,
@@ -137,7 +153,8 @@ class OwnReader443 {
     } else { q=softmax(linear('question',pooled)); }
     return {'text':text,'tokens':words,'spans':spans,'scope':model['scopes'][argmax(scope)],
       'scopeConfidence':scope.reduce(math.max),'questionType':model['questions'][argmax(q)],
-      'questionConfidence':q.reduce(math.max),'scopeDistribution':scope};
+      'questionConfidence':q.reduce(math.max),'scopeDistribution':scope,
+      'semanticRevision':plasticity?.revision ?? 0};
   }
   Map<String,dynamic>? resolve(String reference,List<Map<String,dynamic>> candidates) {
     if (candidates.isEmpty) return null;
@@ -184,6 +201,9 @@ class OwnReader443 {
     return result;
   }
   Map<String,dynamic> answer(String text,String query) {
+    if (plasticity != null && tokenize('$text $query').any((w)=>plasticity!.conflicts.contains(w.toLowerCase()))) {
+      return {'unknown':true,'answer':'Le fonti conservate danno definizioni incompatibili di un termine. Il significato resta da chiarire.'};
+    }
     final q = inspect(query), es = events(text);
     if (es.isEmpty || (q['questionConfidence'] as double)<.55 || q['questionType']=='unsupported') return {'unknown':true,'answer':'Domanda fuori dalle capacità verificate del lettore.'};
     final queryWords = tokenize(query).where((w) => w.length>3).map((w) => w.toLowerCase()).toSet();
@@ -212,7 +232,23 @@ class OwnReader443 {
     if ((best['scopeConfidence'] as num)<.55 || best['scopeConflict']==true) return {'unknown':true,'answer':'La negazione o la condizione del brano resta incerta.'};
     final scope = '${best['scope']}';
     if (kind!='status' && scope!='asserted') answer += ' (evento ${ {'negated':'negato','conditional':'condizionato','planned':'promesso o previsto'}[scope]})';
-    return {'unknown':false,'answer':answer,'scope':scope,'sourceSentences':best['sourceSentences'],'extractive':true,'semanticValidation':false};
+    final learnedDefinitions = <Map<String,dynamic>>[];
+    if (plasticity != null) {
+      final needed = tokenize('$text $query').map((w)=>w.toLowerCase()).toSet();
+      final seen = <String>{};
+      for (var depth=0; depth<12; depth++) {
+        final fresh = needed.difference(seen);
+        if (fresh.isEmpty) break;
+        seen.addAll(fresh);
+        for (final word in fresh) {
+          for (final d in plasticity!.definitions[word] ?? <Map<String,dynamic>>[]) {
+            learnedDefinitions.add({'word':word,...d}); needed.add('${d['target']}');
+          }
+        }
+      }
+    }
+    return {'unknown':false,'answer':answer,'scope':scope,'sourceSentences':best['sourceSentences'],'extractive':true,'semanticValidation':false,
+      'learnedDefinitions':learnedDefinitions};
   }
   static List<double> rankFeatures(String query,Map event,String kind,int index,int count) {
     final qw=tokenize(query).where((w) => w.length>3).map((w) => w.toLowerCase()).toSet();
