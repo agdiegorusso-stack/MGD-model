@@ -1,0 +1,35 @@
+name: MGD 443 own recurrent reader training
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['research/mgd443_reader/train.py', '.github/workflows/mgd443-train.yml']
+permissions:
+  contents: read
+concurrency:
+  group: mgd443-training
+  cancel-in-progress: true
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install training runtime only; no pretrained model
+        run: |
+          python -m pip install numpy==2.3.5
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Train and evaluate immutable external test
+        run: python research/mgd443_reader/train.py --epochs 12
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-443-own-reader-training
+          path: |
+            research/mgd443_reader/results/reader443.json
+            research/mgd443_reader/results/training-results.json
+            research/mgd443_reader/results/reserved_curriculum.json
+            research/mgd443_reader/results/checkpoint.pt
+          if-no-files-found: error
