@@ -1,0 +1,82 @@
+name: MGD verified APK transfer
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['.github/workflows/mgd-apk-transfer.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neural-0.42.19-APK
+          run-id: 38142273925
+          github-token: ${{ github.token }}
+          path: transfer-apk
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-Neural-0.42.19-verification
+          run-id: 38142273925
+          github-token: ${{ github.token }}
+          path: transfer-verification
+      - name: Verify original APK and split without modifying bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib,json,hashlib
+          apk=pathlib.Path('transfer-apk/app-release.apk')
+          ref=pathlib.Path('transfer-verification')
+          assert (ref/'BUILD-COMMIT.txt').read_text().strip()=='63a30d45bc4a8b4c065f0ed150ad9c7dfcc06140'
+          expected=(ref/'APK-SHA256.txt').read_text().split()[0]
+          with apk.open('rb') as stream: assert hashlib.file_digest(stream,'sha256').hexdigest()==expected
+          out=pathlib.Path('chunks');out.mkdir()
+          parts=[]
+          with apk.open('rb') as stream:
+              index=0
+              while True:
+                  first=stream.read(1024*1024)
+                  if not first: break
+                  p=out/f'MGD-0.42.19.part-{index:02d}'
+                  size=0;h=hashlib.sha256()
+                  with p.open('wb') as dst:
+                      block=first
+                      while block:
+                          dst.write(block);h.update(block);size+=len(block)
+                          if size>=400*1024*1024: break
+                          block=stream.read(min(1024*1024,400*1024*1024-size))
+                  parts.append({'name':p.name,'bytes':size,'sha256':h.hexdigest()});index+=1
+          assert len(parts)==3 and sum(x['bytes'] for x in parts)==apk.stat().st_size
+          manifest={'source_commit':'63a30d45bc4a8b4c065f0ed150ad9c7dfcc06140','source_workflow_run':38142273925,
+              'source_artifact_id':11704116203,'apk_bytes':apk.stat().st_size,'apk_sha256':expected,
+              'parts':parts,'payload_modified':False}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          print(json.dumps(manifest,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.19-APK-part-00
+          path: |
+            chunks/MGD-0.42.19.part-00
+            chunks/manifest.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.19-APK-part-01
+          path: |
+            chunks/MGD-0.42.19.part-01
+            chunks/manifest.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-0.42.19-APK-part-02
+          path: |
+            chunks/MGD-0.42.19.part-02
+            chunks/manifest.json
+          if-no-files-found: error
