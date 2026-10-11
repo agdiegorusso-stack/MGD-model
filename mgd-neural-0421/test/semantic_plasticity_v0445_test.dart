@@ -31,6 +31,8 @@ void main() {
     expect(after['unknown'],false); expect(after['answer'],'Marco');
     final restored = base.withSemanticState(jsonDecode(jsonEncode(state)) as Map);
     expect(restored.answer(text,query)['answer'],'Marco');
+    final wrongBase = <String,dynamic>{...state,'baseModelId':'different-trained-model'};
+    expect(base.withSemanticState(wrongBase).plasticity!.weights,isEmpty);
     // New people and a new object were never part of the learning targets.
     expect(restored.answer('Giulia zanfra la cartella a Paolo oggi.',
       'A chi zanfra Giulia la cartella?')['answer'],'Paolo');

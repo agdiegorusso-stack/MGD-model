@@ -1,8 +1,7 @@
 name: MGD 0.42.22 plastic lexical reader APK
+# APK builds paused at the user's request until semantic learning is demonstrated.
 on:
-  push:
-    branches: ['codex/mgd-predictive-04217']
-    paths: ['.github/workflows/mgd443-apk.yml']
+  workflow_dispatch:
 permissions:
   contents: read
   actions: read

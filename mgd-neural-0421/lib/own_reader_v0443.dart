@@ -12,10 +12,13 @@ class OwnReader443 {
   final Map<String, List<List<double>>> matrices = {};
   final Map<String, List<double>> vectors = {};
   final List<double> corefWeights;
+  final String baseModelId;
+  static String? loadedBaseId;
   SemanticPlasticity445? plasticity;
   static Future<OwnReader443>? _loading;
   static final tokenPattern = RegExp(r"[\wÀ-ÿ]+(?:['’][\wÀ-ÿ]+)?|[^\w\s]", unicode: true);
-  OwnReader443(this.model, this.corefWeights) {
+  OwnReader443(this.model, this.corefWeights, {String? modelId})
+    : baseModelId=modelId ?? sha256.convert(utf8.encode(jsonEncode(model))).toString() {
     for (final e in (model['parameters'] as Map).entries) {
       final raw = e.value as List;
       if (raw.first is List) {
@@ -34,12 +37,11 @@ class OwnReader443 {
   static Future<OwnReader443> _load() async {
     try {
       final raw = await rootBundle.loadString('assets/reader443.json');
-      if (sha256.convert(utf8.encode(raw)).toString()!=SemanticPlasticity445.baseModelId) {
-        throw const FormatException('Aggiornare la revisione della plasticità per questi pesi di base.');
-      }
+      final modelId = sha256.convert(utf8.encode(raw)).toString();
       final m = jsonDecode(raw) as Map<String, dynamic>;
       final c = jsonDecode(await rootBundle.loadString('assets/coreference443.json')) as Map;
-      return OwnReader443(m, (c['weights'] as List).map((x) => (x as num).toDouble()).toList());
+      final reader = OwnReader443(m, (c['weights'] as List).map((x) => (x as num).toDouble()).toList(),modelId:modelId);
+      loadedBaseId=modelId; return reader;
     } catch (_) { _loading = null; rethrow; }
   }
   static List<String> tokenize(String text) => tokenPattern.allMatches(text).map((m) => m.group(0)!).toList();
@@ -92,12 +94,12 @@ class OwnReader443 {
     return f;
   }
   OwnReader443 withSemanticState(Map? state) {
-    final reader = OwnReader443(model,corefWeights);
-    reader.plasticity = SemanticPlasticity445.restore(state,model['embedding'] as int);
+    final reader = OwnReader443(model,corefWeights,modelId:baseModelId);
+    reader.plasticity = SemanticPlasticity445.restore(state,model['embedding'] as int,expectedModelId:baseModelId);
     return reader;
   }
   Map<String,dynamic> learnFromSources(List<Map<String,dynamic>> rows) {
-    final p = plasticity ??= SemanticPlasticity445(model['embedding'] as int);
+    final p = plasticity ??= SemanticPlasticity445(model['embedding'] as int,baseModelId:baseModelId);
     p.learn(rows,baseVector,tokenize);
     return p.toJson();
   }

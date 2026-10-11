@@ -130,7 +130,7 @@ class NeuralReading439 {
   static Map records(ResearchMemory11 m) => _state(m)['records'] as Map? ?? {};
   static Map<String,dynamic> semanticState(ResearchMemory11 m) =>
     SemanticPlasticity445.surviving(m.state317['semantic445'] as Map?,
-      fragments(m).map((r)=>'${r['rid439']}').toSet(),32);
+      fragments(m).map((r)=>'${r['rid439']}').toSet(),32,expectedModelId:OwnReader443.loadedBaseId);
 
   /// Only records whose COMPLETE evidence batch still exists may be used.
   /// A deletion or withdrawn source invalidates the derived interpretation.
@@ -223,6 +223,7 @@ class NeuralReading439 {
   static Future<bool> examineNext(ResearchMemory11 m,
       {NeuralGenerate439? run, bool Function()? shouldContinue}) async {
     if (run == null && (!enabled || busy || (_retryAfter?.isAfter(DateTime.now()) ?? false))) return false;
+    if (run == null) { await OwnReader443.load(); if (busy) return false; }
     final rs = records(m);
     final previous = semanticState(m);
     final processed = (previous['processed'] as List).toSet();
@@ -319,6 +320,7 @@ class NeuralReading439 {
     final rows = context(m, query);
     if (rows.isEmpty) return null;
     try {
+      if (run == null) await OwnReader443.load();
       final learning = semanticState(m);
       final data = parse(await (run ?? ((p) => generate(p, reasoning: true,semanticState:learning)))(answerPrompt(query, rows)));
       if (data == null || data['answer'] is! String) return null;

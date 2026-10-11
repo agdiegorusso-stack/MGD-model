@@ -1,8 +1,6 @@
 name: MGD 0.42.20 measured reading
+# APK builds paused at the user's request until semantic learning is demonstrated.
 on:
-  push:
-    branches: ['codex/mgd-predictive-04217']
-    paths: ['mgd-neural-0421/**', '.github/workflows/mgd-comprehension440.yml']
   workflow_dispatch:
 permissions:
   contents: read
