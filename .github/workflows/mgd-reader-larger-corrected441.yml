@@ -1,0 +1,23 @@
+name: MGD 4B reader corrected template comparison
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd_reader_larger_corrected441.py', 'mgd_reader_qwen_template441.py', 'mgd_reader_larger_corrected_policy441.json', '.github/workflows/mgd-reader-larger-corrected441.yml']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install litert-lm==0.18.0 huggingface_hub
+      - run: python mgd_reader_larger_corrected441.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-larger-reader-corrected441
+          path: mgd-reader-larger-corrected-results

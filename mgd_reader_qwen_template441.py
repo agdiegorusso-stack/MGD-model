@@ -1,0 +1,2 @@
+"""Canonical text content template, verified for string and list messages."""
+TEMPLATE = "{% for message in messages %}{{ '<|im_start|>' + message['role'] + '\\n' }}{% if message['content'] is string %}{{ message['content'] }}{% else %}{% for part in message['content'] %}{% if part['type'] == 'text' %}{{ part['text'] }}{% endif %}{% endfor %}{% endif %}{{ '<|im_end|>\\n' }}{% endfor %}{{ '<|im_start|>assistant\\n' }}"

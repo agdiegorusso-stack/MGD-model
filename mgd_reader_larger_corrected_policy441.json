@@ -1,0 +1,20 @@
+{
+  "candidate": "Same fixed Qwen3-4B-Instruct-2507; corrected native chat_template preserves text parts",
+  "baseline": {
+    "development24": {
+      "choices": 21,
+      "passed": 17
+    },
+    "diagnostic16": {
+      "choices": 11,
+      "passed": 9
+    }
+  },
+  "rule": "Require at least baseline choices and full protocol in both old cohorts, plus at least two more correct choices in at least one cohort. If selected, compare once on the frozen 16 fresh texts without tuning. Before any APK delivery the actual Android runtime, source preservation and original package/signing identity must be verified. Otherwise retain the released reader.",
+  "all_40_old_cases_are_development": true,
+  "fresh_16_frozen_commit": "023fc031438dce1abc77738cbfe0301273fd472a",
+  "the_4b_candidate_was_discovered_from_current_primary_model_catalog": true,
+  "neither_model_scale_nor_finite_tests_prove_universal_comprehension": true,
+  "prior_failed_format_is_not_evidence_of_model_reasoning_quality": true,
+  "template_diagnostic_commit": "09c2d519a01fbad6a9d9101c60105853105ec9df"
+}
