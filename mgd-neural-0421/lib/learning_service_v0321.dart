@@ -50,15 +50,16 @@ class LearningService321 {
     if (memory != null) {
       await RelationalMemory324.learnAsync(memory, observed, source: source);
       final id = ResearchSemantics317.digest(ResearchSemantics317.norm(observed));
-      SourceMemory323.retain(
-          memory,
-          WebDocument11(
+      final document = WebDocument11(
               provider: 'Testo insegnato',
               family: 'locale:utente',
               title: source,
               url: 'local://corpus/' + id,
               text: observed,
-              trust: .75));
+              trust: .75);
+      ResearchSemantics317.enqueue(memory, [document], topic: source,
+          session: 'local:$id');
+      await drainResearch(brain, world, memory, shouldContinue: shouldContinue);
     }
     if (observeCls) await ClsBridge340.observeText(observed, source: source);
     await LearningBridge421.external(observed, source);

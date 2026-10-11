@@ -26,6 +26,7 @@ class ReadingMemory438 {
     'qualcosa', 'sul', 'sullo', 'dell', 'da', 'dal', 'dalla', 'dagli', 'allo',
     'sull', 'l', 'cosa', 'cos', 'che', 'e', 'quanto', 'quanti', 'quante',
     'qual è', 'ci', 'si', 'del', 'su', 'puoi', 'spiegare', 'raccontami',
+    'descrivi', 'definisci', 'approfondisci', 'descrivere', 'spiega', 'spiegami',
   };
   static const _families = [
     ['rimuove', 'rimuovono', 'rimuovere', 'elimina', 'eliminano', 'eliminare'],

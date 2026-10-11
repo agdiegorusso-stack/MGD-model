@@ -440,6 +440,14 @@ class ResearchSemantics317 {
       final m = RegExp(r.pattern, caseSensitive: false).firstMatch(body);
       if (m == null) continue;
       var object = m.group(1)!.replaceAll(RegExp(r'[.;:]+$'), '').trim();
+      if ({'rimuove', 'elimina', 'riduce', 'trasporta', 'regola', 'utilizza',
+          'richiede', 'attraversa', 'separa', 'scambia', 'filtra', 'collega',
+          'misura', 'si basa su'}.contains(r.rel) &&
+          RegExp(r'\b(?:non|ma|però)\b', caseSensitive: false).hasMatch(object)) {
+        // A coordinated clause with its own polarity is not one action's
+        // nominal object. Keep its entire sentence in source memory instead.
+        return [];
+      }
       if (r == rules.last && _ambiguousCopula322(subject, object)) return [];
       if (r.rel == 'tipo di' &&
           RegExp(
@@ -841,7 +849,7 @@ class ResearchSemantics317 {
         meta318: Map<String, dynamic>.from(d['meta318'] as Map? ?? {}),
       );
   static bool needsRecovery318(ResearchMemory11 m) =>
-      m.state317['recovery320Complete'] != true &&
+      m.state317['readingRecovery438'] != true &&
       (m.passages.isNotEmpty ||
           m.sessions.any(
             (s) => (s.audit315['documents'] as List? ?? []).isNotEmpty,
@@ -877,6 +885,7 @@ class ResearchSemantics317 {
     }
     m.state317['recovery318Complete'] = true;
     m.state317['recovery320Complete'] = true;
+    m.state317['readingRecovery438'] = true;
     m.state317['recovery318'] = {
       'requeued': getPending(m) - before,
       'at': DateTime.now().toIso8601String(),
@@ -965,7 +974,7 @@ class ResearchSemantics317 {
       SourceMemory323.retain(m, d, topic: topic);
       if (d.text.trim().isEmpty) continue;
       final key = digest([
-        'reader320',
+        'reader438',
         canonicalUrl(d.url),
         d.text,
         concept(topic),

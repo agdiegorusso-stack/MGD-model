@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../lib/reading_memory_v0438.dart';
+import '../lib/learning_service_v0321.dart';
+import '../lib/mgd_language_v020.dart';
 import '../lib/learning_verification_v0428.dart';
 import '../lib/verification_reader_v0428.dart';
 import '../lib/plastic_language_brain_v04.dart';
@@ -39,6 +41,47 @@ void intake(ResearchMemory11 memory, WebDocument11 doc, {String? topic}) {
 
 void main() {
   sqfliteFfiInit();
+  test('teaching and TXT intake use the same broader action reader as web documents', () async {
+    final m = ResearchMemory11(), b = PlasticLanguageBrain04(), w = MgdWorld06();
+    await LearningService321.learnText(b, w, MgdLanguage20(), paragraph,
+        memory: m, observeCls: false, source: 'Procedura Merlo');
+    expect(m.claims.values.where((c) => c.meta317['usable'] == true).length,
+      greaterThanOrEqualTo(12));
+    expect(ReadingMemory438.stats(m)['passages'], 12);
+  });
+  test('old completed documents are re-read once by the upgraded extractor', () {
+    final m = ResearchMemory11();
+    final d = document(paragraph);
+    intake(m, d);
+    m.claims.clear(); m.evidence.clear();
+    m.state317['recovery320Complete'] = true;
+    m.state317.remove('readingRecovery438');
+    m.state317['documentsRead'] = [ResearchSemantics317.digest([
+      'reader320', ResearchSemantics317.canonicalUrl(d.url), d.text,
+      ResearchSemantics317.concept(d.title)])];
+    expect(ResearchSemantics317.needsRecovery318(m), true);
+    expect(ResearchSemantics317.recoverTexts318(m), 1);
+    final b = PlasticLanguageBrain04(), w = MgdWorld06();
+    while (ResearchSemantics317.getPending(m) > 0) {
+      ResearchSemantics317.processQueue(b, w, m);
+    }
+    expect(m.claims.length, greaterThanOrEqualTo(12));
+    expect(ResearchSemantics317.recoverTexts318(m), 0);
+    expect(ResearchSemantics317.needsRecovery318(m), false);
+  });
+  test('legacy study context is recovered without altering the saved memory during queries', () {
+    final m = ResearchMemory11();
+    intake(m, document('Il sensore misura la pressione.', title: 'Scheda tecnica'), topic: 'Merlo');
+    final state = m.state317['sourceMemory323'] as Map;
+    state['recovered'] = true; state.remove('completeRecovery438');
+    for (final row in (state['rows'] as Map).values.whereType<Map>()) {
+      row.remove('topics438');
+    }
+    final before = jsonEncode(m.toJson());
+    expect(ReadingMemory438.answer(m, 'Che cosa misura Merlo?')!.text,
+      contains('Il sensore misura la pressione.'));
+    expect(jsonEncode(m.toJson()), before);
+  });
   test('new document supplies twelve different sourced actions, not two taxonomy edges', () {
     final m = ResearchMemory11();
     expect(m.claims, isEmpty);
@@ -161,7 +204,8 @@ void main() {
       temporaryRoot: Directory.systemTemp.path);
     try {
       final before = await reader.answer('Descrivi la procedura Merlo');
-      expect(before.route, 'astensione');
+      expect(before.proof, isNull);
+      expect(before.text, isNot(contains('local://merlo')));
       await reader.read([document(paragraph)]);
       final after = await reader.answer('Descrivi la procedura Merlo');
       expect(after.route, 'passaggi');

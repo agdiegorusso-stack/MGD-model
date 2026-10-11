@@ -19,6 +19,7 @@ jobs:
     defaults:
       run:
         working-directory: mgd-neural-0421
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -39,6 +40,7 @@ jobs:
           key: mgd-study-goal-android-signing-v1
       - name: Focused reading and predictor checks
         run: |
+          set -euo pipefail
           mkdir -p tool/reports
           flutter pub get
           flutter test test/predictive_memory_v0437_test.dart test/predictive_memory_widget_v0437_test.dart test/reading_memory_v0438_test.dart test/reading_memory_widget_v0438_test.dart --reporter expanded 2>&1 | tee tool/reports/predictor-tests.log

@@ -80,8 +80,10 @@ class SourceMemory323 {
 
   static void recover(ResearchMemory11 m) {
     if (_state(m)['completeRecovery438'] == true) return;
-    for (final d in ResearchSemantics317.uniqueDocuments320(m)) {
-      retain(m, ResearchSemantics317.docFrom(d));
+    for (final session in m.sessions) {
+      for (final d in (session.audit315['documents'] as List? ?? []).whereType<Map>()) {
+        retain(m, ResearchSemantics317.docFrom(d), topic: session.topic);
+      }
     }
     for (final p in m.passages) {
       retain(
@@ -92,7 +94,7 @@ class SourceMemory323 {
               title: p.sourceTitle,
               url: p.sourceUrl,
               text: p.text,
-              trust: p.trust));
+              trust: p.trust), topic: p.topic);
     }
     for (final e in m.evidence) {
       retain(
