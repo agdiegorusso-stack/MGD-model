@@ -137,13 +137,66 @@ Il task CB pubblico, sul solo modello 0.6B INT4, dà 5/56 (8,9%) dopo la
 correzione del parser delle etichette: le prime misure zero erano invalide per
 valutare la comprensione. I punteggi della versione finale sono nei JSON.
 
-Esito della configurazione QA vincolata, rifiutata:
-11/24 esiti completi sullo sviluppo, 3/12 sulla prima suite indipendente,
-17/36 scelte corrette totali. Le note hanno riferimenti validi in 9/9 gruppi.
-Il formato vincolato si è dimostrato utile per l'estrazione, ma la combinazione
-di prompt e vincoli adottata per le domande ha peggiorato la comprensione.
-È rifiutata per QA. La versione successiva ripristina il prompt e la modalità
-di ragionamento del miglior confronto precedente, lasciando l'estrazione
-vincolata. I primi casi H diventano diagnostici, poiché il loro esito ha
-orientato questa scelta. La nuova suite J viene fissata prima della prova
-successiva; non si presenta il precedente test come ancora cieco.
+Altre famiglie considerate nella revisione
+[18] GraphRAG: https://arxiv.org/abs/2404.16130
+Costruisce un indice di entità, relazioni e comunità, con sintesi per
+domande globali sul corpus. Richiede estrazione e sintesi tramite LLM;
+il grafo aggiunge accesso strutturato, non certificazione della verità.
+Non è implementato come sistema GraphRAG completo in MGD 0.42.19.
+[19] HippoRAG 2: https://arxiv.org/abs/2502.14802
+Integra brani e triple in un grafo per il recupero tramite PageRank e
+filtro neurale delle relazioni pertinenti. Gli autori confrontano memoria
+fattuale, associazione e comprensione di narrazioni. L'osservazione utile
+per MGD è mantenere accesso ai brani originali anche se si costruiscono
+indici derivati. Il lettore finale non implementa quel retriever completo.
+[20] Semantic Entropy Probes: https://arxiv.org/abs/2406.15927
+Studia sonde sulle rappresentazioni interne per stimare incertezza
+semantica senza molte generazioni. Richiede sonde addestrate e accesso
+alle rappresentazioni. Non è presente nell'integrazione; citazioni,
+formato JSON e autovalutazione del lettore non sono una sua sostituzione.
+
+La prova corretta di JSON vincolato senza ragionamento arriva a 13/24 esiti
+completi e 14/24 scelte corrette: il formato non sostituisce il ragionamento.
+I sei gruppi di estrazione producono note con struttura valida, senza il
+segnaposto letterale "nota". Questa è validità del formato, non una misura
+automatica della correttezza delle sei interpretazioni.
+La configurazione finale usa ragionamento limitato per QA e struttura
+JSON vincolata soltanto per le note; i risultati distinti sui 12 testi esclusi dalla selezione
+sono contenuti nel report della build.
+
+Controllo del runtime
+Nel codice LiteRT-LM 0.18.0 il limite dei token di ragionamento avvolge
+un eventuale vincolo definito dall’app. Durante il ragionamento gestisce
+i delimitatori e il budget; nella fase di contenuto torna al vincolo della
+risposta. Questa possibilità del runtime non ha assicurato qualità nelle domande.
+La configurazione consegnata richiede JSON nel prompt QA ma non lo forza;
+per le note mantiene il vincolo. La verifica respinge risposte fuori formato,
+citazioni inesistenti e metadati di astensione mancanti.
+Riferimento di implementazione primario:
+https://github.com/google-ai-edge/LiteRT-LM/blob/v0.18.0/runtime/components/constrained_decoding/thinking_budget_constraint.h
+
+Configurazione QA vincolata rifiutata dopo valutazione completa:
+11/24 casi completi sullo sviluppo e 3/12 sui primi casi H esclusi dalla
+selezione. Totale: 17/36 lettere corrette; 14/36 esiti completi.
+L'estrazione produce riferimenti validi in 9/9 gruppi. È quindi mantenuta
+per le note, mentre QA ripristina ragionamento e prompt del confronto
+precedente (21/24 lettere corrette, 17/24 esiti completi). Il nuovo confronto
+verifica che i 24 prompt coincidano esattamente con quelli misurati.
+I casi H hanno orientato il rifiuto e diventano diagnostici. Una nuova
+suite J di 12 testi è stata fissata prima della nuova prova; non si
+riutilizza il vecchio test presentandolo come ancora cieco.
+
+Correzione del protocollo e dei metadati di astensione
+La run 38139443358 conferma sullo sviluppo 21/24 scelte corrette e 17/24
+esiti completi. I suoi 12 casi J sono invalidi: il valutatore cercava le
+soluzioni nel file H e produceva eccezioni di chiave mancante. Questo zero
+non è un risultato semantico. Tutti i 12 casi J vengono rieseguiti con il
+file corretto, verificando prima una corrispondenza biunivoca fra casi e
+soluzioni. Gli output di sviluppo e le nove prove del formato delle note
+sono riusati solo dopo controlli esatti di prompt, modello, sorgente nativo
+e impostazioni di inferenza. La provenienza è registrata nel report.
+Su Android il modello ha prodotto una risposta corretta con citazione,
+ma senza il campo unknown. L'app ora conserva quella risposta come
+interpretazione proposta e indica “Astensione non dichiarata dal modello”.
+Non inventa il campo mancante. Il punteggio completo resta severo:
+l'omissione continua a essere un fallimento del protocollo di valutazione.

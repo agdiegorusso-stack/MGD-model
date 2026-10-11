@@ -19,7 +19,8 @@ void main() {
     var answer = await NeuralReading439.answer(memory, 'Dove si trova la chiave?');
     expect(answer, isNotNull, reason: NeuralReading439.status);
     expect(answer!.text.toLowerCase(), contains('cassetto'));
-    expect(answer.proof['unknown'], false);
+    expect(answer.proof['unknown'], isNot(true));
+    expect(answer.proof['semanticValidation'], false);
     expect(answer.proof['passages'], isNotEmpty);
     expect(jsonEncode(memory.toJson()), before);
     await NeuralReading439.close();

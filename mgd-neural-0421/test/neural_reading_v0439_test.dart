@@ -133,6 +133,20 @@ void main() {
       messenger.setMockMethodCallHandler(NeuralReading439.channel, null);
     }
   });
+  test('a cited answer with missing abstention remains explicitly unclassified and read-only', () async {
+    final m = ResearchMemory11(); add(m, 'Giulia mise la chiave nel cassetto.');
+    final before = jsonEncode(m.toJson());
+    final a = await NeuralReading439.answer(m, 'Dove si trova la chiave?', run: (_) async =>
+      '\n\n{"answer":"nel cassetto","evidence":["P0"]}"');
+    expect(a!.text, contains('nel cassetto'));
+    expect(a.text, contains('Astensione non dichiarata'));
+    expect(a.proof['unknown'], isNull);
+    expect(a.proof['unknownDeclared'], false);
+    expect(a.proof['semanticValidation'], false);
+    expect(jsonEncode(m.toJson()), before);
+    expect(await NeuralReading439.answer(m, 'Dove?', run: (_) async =>
+      '{"answer":"nel cassetto","evidence":[]}'), isNull);
+  });
   test('emit production prompts for an independent real-model assessment', () {
     final public = [...jsonDecode(File('tool/fixtures/neural_comprehension_439.json').readAsStringSync()) as List, ...jsonDecode(File('tool/fixtures/neural_holdout2_439.json').readAsStringSync()) as List];
     final prompts = <Map<String, dynamic>>[];

@@ -304,10 +304,10 @@ class NeuralReading439 {
     if (rows.isEmpty) return null;
     try {
       final data = parse(await (run ?? ((p) => generate(p, reasoning: true)))(answerPrompt(query, rows)));
-      if (data == null || data['answer'] is! String || data['unknown'] is! bool) return null;
+      if (data == null || data['answer'] is! String) return null;
       final answer = (data['answer'] as String).trim();
       if (answer.isEmpty || answer.length > 2600) return null;
-      final unknown = data['unknown'] == true;
+      final bool? unknown = data['unknown'] is bool ? data['unknown'] as bool : null;
       final refs = data['evidence'];
       if (refs is! List) return null;
       final selected = <Map<String, dynamic>>[];
@@ -317,14 +317,15 @@ class NeuralReading439 {
         if (i < 0 || i >= rows.length) return null;
         selected.add(rows[i]);
       }
-      if (!unknown && selected.isEmpty) return null;
+      if (unknown != true && selected.isEmpty) return null;
       final live = fragments(m).map((r) => r['rid439']).toSet();
       if (!rows.every((r) => live.contains(r['rid439']))) return null;
       final quotes = selected.map((r) => '«${r['text']}»\n${r['title']} — ${r['url']}').join('\n\n');
-      return NeuralAnswer439('${unknown ? 'Dato non determinabile nei brani esaminati' : 'Interpretazione del lettore locale'}:\n'
+      return NeuralAnswer439('${unknown == true ? 'Dato non determinabile nei brani esaminati' : 'Interpretazione del lettore locale'}:\n'
         '$answer${quotes.isEmpty ? '' : '\n\nBrani citati:\n$quotes'}\n\n'
-        'Contesto esaminato: ${rows.length} brani. Interpretazione non certificata.',
-        {'kind': 'neural_source_interpretation', 'unknown': unknown,
+        'Contesto esaminato: ${rows.length} brani. Interpretazione non certificata.'
+        '${unknown == null ? '\nAstensione non dichiarata dal modello.' : ''}',
+        {'kind': 'neural_source_interpretation', 'unknown': unknown, 'unknownDeclared': unknown != null,
           'model': model, 'passages': selected, 'examined': rows.length,
           'semanticValidation': false, 'weightsUpdated': false});
     } catch (_) { return null; }
