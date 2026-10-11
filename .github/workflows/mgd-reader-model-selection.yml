@@ -1,0 +1,23 @@
+name: MGD stronger reader comparison
+on:
+  push:
+    branches: ['codex/mgd-predictive-04217']
+    paths: ['mgd_reader_larger439.py', '.github/workflows/mgd-reader-model-selection.yml']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install litert-lm==0.18.0 huggingface_hub
+      - run: python mgd_reader_larger439.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-stronger-reader-comparison
+          path: mgd-reader-probe-results
