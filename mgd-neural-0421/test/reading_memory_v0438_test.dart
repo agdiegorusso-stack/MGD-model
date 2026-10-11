@@ -41,6 +41,28 @@ void intake(ResearchMemory11 memory, WebDocument11 doc, {String? topic}) {
 
 void main() {
   sqfliteFfiInit();
+  test('late information remains retrievable beyond older 2500 passage and 511 token limits', () {
+    final memory = ResearchMemory11();
+    final text = List.generate(5000, (i) =>
+      'Il deposito D$i utilizza il contenitore C$i.').join(' ');
+    SourceMemory323.retain(memory, document(text, title: 'Manuale depositi', url: 'local://scale'));
+    memory.trim();
+    final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(memory.toJson())));
+    expect(ReadingMemory438.stats(restored)['passages'], 5000);
+    final clock = Stopwatch()..start();
+    for (final id in [0, 24, 300, 1200, 2500, 4999]) {
+      final a = ReadingMemory438.answer(restored, 'Che cosa usa il deposito D$id?')!;
+      expect(a.text, contains('contenitore C$id.'));
+      expect(a.passages.single['url'], 'local://scale');
+    }
+    final out = Directory('tool/reports')..createSync(recursive: true);
+    File('${out.path}/reading-scale-0.42.18.json').writeAsStringSync(jsonEncode({
+      'retained_passages': 5000, 'late_queries_passed': 6, 'late_queries_total': 6,
+      'six_queries_microseconds': clock.elapsedMicroseconds,
+      'reload_and_legacy_trim_preserve_all_passages': true,
+      'measurement_environment': 'Flutter unit test on CI, not an Android phone',
+    }));
+  });
   test('teaching and TXT intake use the same broader action reader as web documents', () async {
     final m = ResearchMemory11(), b = PlasticLanguageBrain04(), w = MgdWorld06();
     await LearningService321.learnText(b, w, MgdLanguage20(), paragraph,

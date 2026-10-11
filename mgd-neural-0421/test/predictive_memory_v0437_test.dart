@@ -70,8 +70,8 @@ void main() {
     final correct = heldOut.where((e) => m.predict(e.$1).first.token == e.$2).length;
     expect(correct, 2);
     final out = Directory('tool/reports')..createSync(recursive: true);
-    File('${out.path}/predictor-0.42.17.json').writeAsStringSync(jsonEncode({
-      'version': '0.42.17', 'architecture': 'recurrent-20-context-8',
+    File('${out.path}/predictor-0.42.18.json').writeAsStringSync(jsonEncode({
+      'version': '0.42.18', 'architecture': 'recurrent-20-context-8',
       'initial_loss': initial, 'final_loss': finalLoss, 'updates': m.updates,
       'unseen_prefix_correct': correct, 'unseen_prefix_total': heldOut.length,
       'training_ms': clock.elapsedMilliseconds,
@@ -195,7 +195,7 @@ void main() {
     expect(brain.predictNext(ca), alpha); expect(brain.predictNext(cb), beta);
     final reloaded = PlasticLanguageBrain04.fromJson(jsonDecode(brain.encodeJson()));
     expect(reloaded.predictNext(ca), alpha); expect(reloaded.predictNext(cb), beta);
-    final file = File('tool/reports/predictor-0.42.17.json');
+    final file = File('tool/reports/predictor-0.42.18.json');
     final report = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
     report['mgd_integration'] = {'initial_loss_without_retrieval': initial,
       'final_loss_without_retrieval': finalLoss, 'ordered_continuations_correct': 2,

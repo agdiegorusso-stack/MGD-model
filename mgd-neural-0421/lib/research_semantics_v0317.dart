@@ -443,7 +443,12 @@ class ResearchSemantics317 {
       if ({'rimuove', 'elimina', 'riduce', 'trasporta', 'regola', 'utilizza',
           'richiede', 'attraversa', 'separa', 'scambia', 'filtra', 'collega',
           'misura', 'si basa su'}.contains(r.rel) &&
-          RegExp(r'\b(?:non|ma|però)\b', caseSensitive: false).hasMatch(object)) {
+          (RegExp(r'\b(?:non|ma|però)\b', caseSensitive: false).hasMatch(object) ||
+           RegExp(r'\be\s+(?:poi|quindi|lo|la|li|le|si|rimuove|rimuovono|'
+             r'elimina|eliminano|riduce|riducono|trasporta|trasportano|regola|regolano|'
+             r'utilizza|utilizzano|richiede|richiedono|attraversa|attraversano|'
+             r'separa|separano|scambia|scambiano|filtra|filtrano|collega|collegano|'
+             r'misura|misurano)\b', caseSensitive: false).hasMatch(object))) {
         // A coordinated clause with its own polarity is not one action's
         // nominal object. Keep its entire sentence in source memory instead.
         return [];
