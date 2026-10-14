@@ -56,3 +56,7 @@ flutter {
     source = "../.."
 }
 
+dependencies {
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
+}
+

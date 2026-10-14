@@ -9,12 +9,14 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var playback: AudioTrack? = null
+    private var axiomTeacher: AxiomTeacherBridge? = null
     private fun stopPlayback() {
         playback?.let { try { it.stop() } catch (_: Exception) {} ; it.release() }
         playback = null
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        axiomTeacher = AxiomTeacherBridge(this, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "mgd.cls/audio")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -48,5 +50,6 @@ class MainActivity : FlutterActivity() {
                 }
             }
     }
-    override fun onStop() { stopPlayback(); super.onStop() }
+    override fun onStop() { axiomTeacher?.cancel(); stopPlayback(); super.onStop() }
+    override fun onDestroy() { axiomTeacher?.close(); axiomTeacher = null; super.onDestroy() }
 }

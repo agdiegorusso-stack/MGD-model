@@ -25,6 +25,7 @@ import 'dart:async';
 import 'book_import_v0341.dart';
 import 'book_lab_service_v0342.dart';
 import 'dart:convert';
+import 'axioms/axiom_page.dart';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:io';
@@ -2251,8 +2252,14 @@ class _Brain04HomeState extends State<Brain04Home> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MGD Neuro $mgdAppVersion319'),
+        title: const Text('MGD Studio $mgdAppVersion319'),
         actions: [
+          TextButton.icon(
+            key: const ValueKey('open-axiom-studio'),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AxiomStudioPage())),
+            icon: const Icon(Icons.hub_outlined),
+            label: const Text('Assiomi'),
+          ),
           IconButton(
             tooltip: 'Previsioni apprese',
             onPressed: _busy || _researchBusy || _maintenance317 ? null : _openPredictor437,

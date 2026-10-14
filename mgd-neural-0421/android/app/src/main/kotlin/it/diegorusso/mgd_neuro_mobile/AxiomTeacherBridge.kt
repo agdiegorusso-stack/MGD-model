@@ -162,7 +162,7 @@ class AxiomTeacherBridge(private val activity: Activity, messenger: BinaryMessen
     private fun modelOrCustomHash(id:String):String = if(id=="custom")prefs.getString("sha:custom","")?:"" else model(id).sha
     private fun hash(path:File):String {
         phase="checking"
-        val digest=MessageDigest.getInstance("SHA-256"), buffer=ByteArray(1024*1024)
+        val digest=MessageDigest.getInstance("SHA-256"); val buffer=ByteArray(1024*1024)
         path.inputStream().use { input -> while(true) {
             if(cancelled.get())throw InterruptedException("Verifica annullata.")
             val n=input.read(buffer);if(n<0)break;digest.update(buffer,0,n)
