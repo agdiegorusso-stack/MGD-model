@@ -82,25 +82,31 @@ jobs:
           fi
           cd mgd-neural-0421
           flutter pub get 2>&1 | tee tool/reports/pub-get0430.log
-          dart format lib/axioms test/axioms0430_test.dart test/axioms0430_widget_test.dart
+          dart format lib/axioms test/axioms0430*.dart
           python tool/review_axioms0430.py
-          dart format lib/axioms
+          python tool/harden_axioms0430.py
+          dart format lib/axioms test/axioms0430*.dart
           cd ..
           git config user.name 'MGD build integration'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -u
           git add -f mgd-neural-0421/.axioms-integrated-0430
           if ! git diff --cached --quiet; then
-            git commit -m 'Integrate axiom studio into existing Android app [skip ci]'
+            git commit -m 'Integrate reviewed axiom studio and persistence fixes [skip ci]'
             git push origin HEAD:codex/mgd-studio-axioms-0430
           fi
           git rev-parse HEAD > mgd-neural-0421/tool/reports/BUILD-COMMIT.txt
       - name: Analyze complete application
+        id: analyze
         working-directory: mgd-neural-0421
         run: set -o pipefail; flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee tool/reports/analyze0430.log
       - name: Axiom operational and adversarial checks
+        id: axioms
         working-directory: mgd-neural-0421
         run: set -o pipefail; flutter test test/axioms0430_test.dart --machine 2>&1 | tee tool/reports/axiom-tests0430.jsonl
+      - name: Axiom storage, rollback and teacher cancellation
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter test test/axioms0430_store_test.dart --machine 2>&1 | tee tool/reports/axiom-store0430.jsonl
       - name: Render and exercise real Flutter screens
         working-directory: mgd-neural-0421
         run: set -o pipefail; flutter test test/axioms0430_widget_test.dart --update-goldens --machine 2>&1 | tee tool/reports/axiom-widget0430.jsonl
@@ -108,9 +114,12 @@ jobs:
         working-directory: mgd-neural-0421
         run: set -o pipefail; flutter test --machine 2>&1 | tee tool/reports/full-tests0430.jsonl
       - name: Build real Android ARM64 APK with LiteRT runtime, no model weights bundled
+        id: apk
+        if: ${{ always() && steps.analyze.outcome == 'success' && steps.axioms.outcome == 'success' }}
         working-directory: mgd-neural-0421
         run: set -o pipefail; flutter build apk --release --target-platform android-arm64 2>&1 | tee tool/reports/build0430.log
       - name: Verify compiled APK identity and signature
+        if: ${{ always() && steps.apk.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -143,6 +152,7 @@ jobs:
               for line in log.read_text(errors='replace').splitlines():
                   try:x=json.loads(line)
                   except Exception:continue
+                  if not isinstance(x,dict):continue
                   if x.get('type')=='testDone' and not x.get('hidden'):done.append(x)
                   if x.get('type')=='error':errors.append(x)
                   if x.get('type')=='done':final=x
@@ -155,7 +165,7 @@ jobs:
               paths += [str(p) for p in (root/'test/goldens').glob('axioms0430*.png')]
               for raw in sorted(set(paths)):
                   p=pathlib.Path(raw)
-                  if p.is_file() and p.stat().st_size<200000000:z.write(p,raw)
+                  if p.is_file() and p.stat().st_size<200000000 and p.suffix.lower() not in {'.ttf','.otf','.woff','.woff2','.keystore','.jks'}:z.write(p,raw)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
@@ -172,6 +182,7 @@ jobs:
           path: MGD-Studio-0430-source.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.apk.outcome == 'success' }}
         with:
           name: MGD-Studio-0430-APK
           path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
