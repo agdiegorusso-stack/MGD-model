@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/mgd-axioms0430-native.yml'
       - 'delivery0430/**'
+      - 'mgd-neural-0421/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -95,22 +96,22 @@ jobs:
                   paths.append(p)
           manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
           (reports/'source-manifest0430.json').write_text(json.dumps(manifest,indent=2))
-          with zipfile.ZipFile('MGD-Studio-0430-compiled-source.zip','w',zipfile.ZIP_DEFLATED) as z:
+          with zipfile.ZipFile('MGD-Studio-0431-compiled-source.zip','w',zipfile.ZIP_DEFLATED) as z:
               for p in paths:z.write(p,str(p))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Studio-0430-verification
+          name: MGD-Studio-0431-verification
           path: mgd-neural-0421/tool/reports
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Studio-0430-compiled-source
-          path: MGD-Studio-0430-compiled-source.zip
+          name: MGD-Studio-0431-compiled-source
+          path: MGD-Studio-0431-compiled-source.zip
       - uses: actions/upload-artifact@v4
         if: steps.verified_build.outcome == 'success'
         with:
-          name: MGD-Studio-0430-APK
-          path: delivery0430/output/MGD-Studio-Assiomi-0.43.0-arm64.apk
+          name: MGD-Studio-0431-APK
+          path: delivery0430/output/MGD-Studio-Assiomi-0.43.1-arm64.apk
           if-no-files-found: error

@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'axiom_core.dart';
 import 'axiom_seed.dart';
+import 'teacher_protocol0431.dart';
+
+part 'axiom_teacher0431.dart';
 
 class AxiomStore extends ChangeNotifier {
   static const channel = MethodChannel('mgd.axioms/teacher');
@@ -267,119 +271,7 @@ class AxiomStore extends ChangeNotifier {
   }
 
   Future<void> teach(String text, J world, int rounds) =>
-      guarded('Il tutor locale esamina conoscenze e lacune…', () async {
-        if (text.trim().isEmpty)
-          throw const FormatException(
-              'Scrivi una frase o una difficoltà da insegnare.');
-        final observed =
-            await job('parse', extra: {'text': text, 'world': world});
-        if (observed['status'] == 'needs_context') {
-          result = observed;
-          status =
-              'Servono dati contestuali: ${(observed['missing_facts'] as List).join(', ')}. Non creo assiomi per sostituirli.';
-          return;
-        }
-        if (observed['status'] == 'search_limit') {
-          result = observed;
-          status =
-              'Limite di ricerca raggiunto: non è una prova che manchino assiomi.';
-          return;
-        }
-        var feedback = <String, dynamic>{'initial_diagnosis': observed};
-        for (var i = 0; i < rounds.clamp(1, 5) && !stopped; i++) {
-          final expectedRevision = student.revision;
-          status =
-              'Ciclo ${i + 1}: inventario → diagnosi → lezione → prove. Il modello è in esecuzione sul dispositivo.';
-          signal();
-          final inventory = copyJ(state['model'] as Map)..remove('lesson_ids');
-          final prompt = jsonEncode({
-            'request': text,
-            'context': world,
-            'inventory': inventory,
-            'feedback': feedback
-          });
-          if (prompt.length > 28000)
-            throw StateError(
-                'Inventario oltre il contesto del tutor locale: nessuna porzione nascosta sarà dichiarata assente. Esporta per un audit più ampio.');
-          final raw = await channel.invokeMethod<String>(
-              'generate', {'system': axiomTeacherContract, 'prompt': prompt});
-          if (stopped) return;
-          if (raw == null || raw.length > 120000)
-            throw const FormatException(
-                'Risposta del tutor assente o troppo grande.');
-          var cleaned = raw.trim();
-          if (cleaned.startsWith('```')) {
-            cleaned = cleaned
-                .replaceFirst(RegExp(r'^```(?:json)?\s*'), '')
-                .replaceFirst(RegExp(r'\s*```$'), '');
-          }
-          J proposal;
-          try {
-            proposal = copyJ(jsonDecode(cleaned) as Map);
-          } catch (_) {
-            feedback = {
-              'invalid_output':
-                  'Restituisci un oggetto JSON completo conforme al contratto, non una spiegazione.'
-            };
-            status =
-                'JSON non valido: il ciclo successivo chiederà una correzione.';
-            continue;
-          }
-          // Bind the taught target to the actual user request, not a substitute chosen by the LLM.
-          final task = proposal['task'];
-          if (task is! Map ||
-              canonical(axTokens(task['text']?.toString() ?? '')) !=
-                  canonical(axTokens(text))) {
-            feedback = {
-              'invalid_target':
-                  'Aggiungi task con text IDENTICO alla richiesta, intent, args, negated e, se serve, before/expected_after/expected_status. Le probes devono essere diverse dal task e dalle lezioni.'
-            };
-            continue;
-          }
-          if (world.isNotEmpty) task['before'] = copyJ(world);
-          final assessment = await job('teach', extra: {'proposal': proposal});
-          if (stopped || expectedRevision != student.revision) return;
-          result = assessment;
-          final next = copyJ(state),
-              record = copyJ(assessment)..remove('model');
-          (next['events'] as List).add({
-            'kind': 'teaching',
-            'at': DateTime.now().toUtc().toIso8601String(),
-            'request': text,
-            'diagnosis': proposal['diagnosis'],
-            'proposal': proposal,
-            'assessment': record
-          });
-          if ((next['events'] as List).length > 200)
-            (next['events'] as List).removeAt(0);
-          if (assessment['accepted'] == true) {
-            next['model'] = assessment['model'];
-            next['audits'] = {};
-            final existing =
-                (next['probes'] as List).map((q) => canonical(q)).toSet();
-            for (final q in [...(assessment['new_probes'] as List), task]) {
-              if (existing.add(canonical(q))) (next['probes'] as List).add(q);
-            }
-            if ((next['probes'] as List).length > 1000)
-              throw StateError(
-                  'Limite delle prove persistenti raggiunto: non scarto protezioni precedenti.');
-            await _commit(next, 'Lezione verificata sul dominio');
-            status =
-                'Lezione accettata nelle prove formative: ${assessment['transfer_tested']} casi nuovi e ${assessment['protected_tested']} regressioni. Minimalità assoluta non certificata.';
-            return;
-          }
-          await _commit(next, 'Proposta respinta senza cambiare modello');
-          feedback = record;
-          final attempts = feedback['attempts'] as List?;
-          if (attempts != null && attempts.length > 3)
-            feedback['attempts'] = attempts.take(3).toList();
-          status = 'Proposta respinta: ${assessment['reason']}';
-          signal();
-        }
-        if (!stopped)
-          status =
-              'Ciclo concluso senza lezione accettata. La lacuna resta aperta; consulta il registro.';
-      });
+      teachWithEvidence0431(text, copyJ(world), rounds);
   @override
   void dispose() {
     _disposed = true;

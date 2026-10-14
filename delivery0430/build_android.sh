@@ -42,17 +42,17 @@ import zipfile,hashlib,json,os
 p=Path('build/app/outputs/flutter-apk/app-release.apk')
 s=Path('tool/reports/apk-identity0430.txt').read_text()
 assert "name='it.diegorusso.mgdneurostable.studio.axioms'" in s
-assert "versionName='0.43.0'" in s and "versionCode='110'" in s
+assert "versionName='0.43.1'" in s and "versionCode='111'" in s
 with zipfile.ZipFile(p) as z:
     assert z.testzip() is None
     assert 'assets/flutter_assets/assets/reader443.json' in z.namelist()
     assert any(n.startswith('lib/arm64-v8a/') for n in z.namelist())
     assert not any(n.endswith(('.litertlm','.gguf','.safetensors')) for n in z.namelist())
 Path('tool/reports/apk0430.json').write_text(json.dumps({
- 'application_id':os.environ['MGD_APPLICATION_ID'], 'version':'0.43.0', 'build':110,
+ 'application_id':os.environ['MGD_APPLICATION_ID'], 'version':'0.43.1', 'build':111,
  'bytes':p.stat().st_size, 'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),
  'teacher_weights_bundled':False, 'physical_phone_inference_tested':False},indent=2))
 PYVERIFY
 mkdir -p "$ROOT/delivery0430/output"
-cp "$APK" "$ROOT/delivery0430/output/MGD-Studio-Assiomi-0.43.0-arm64.apk"
-printf '\nAPK compilato, test e firma verificati: %s\n' "$ROOT/delivery0430/output/MGD-Studio-Assiomi-0.43.0-arm64.apk"
+cp "$APK" "$ROOT/delivery0430/output/MGD-Studio-Assiomi-0.43.1-arm64.apk"
+printf '\nAPK compilato, test e firma verificati: %s\n' "$ROOT/delivery0430/output/MGD-Studio-Assiomi-0.43.1-arm64.apk"
