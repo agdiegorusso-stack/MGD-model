@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/mgd-axioms0430-native.yml'
       - 'delivery0430/**'
+      - 'delivery0432/**'
       - 'mgd-neural-0421/**'
   workflow_dispatch:
 permissions:
@@ -16,7 +17,7 @@ concurrency:
 jobs:
   apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -41,7 +42,7 @@ jobs:
           run-id: 38553162171
           github-token: ${{ github.token }}
           path: retained-0430
-      - name: Apply the delivered production fixes and retain provenance
+      - name: Apply original fixes and the compact protocol integration
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -65,53 +66,68 @@ jobs:
           PY
           git apply --check delivery0430/production_fix.patch
           git apply delivery0430/production_fix.patch
-          git diff --binary > mgd-neural-0421/tool/reports/applied-source0430.diff
-          sha256sum delivery0430/production_fix.patch > mgd-neural-0421/tool/reports/patch-sha256.txt
-      - name: Analyze, run ALL regressions, compile and verify the ARM64 APK
+          python delivery0432/integrate.py
+          git diff --binary > mgd-neural-0421/tool/reports/applied-source0432.diff
+          sha256sum delivery0430/production_fix.patch delivery0432/integrate.py > mgd-neural-0421/tool/reports/patch-sha256.txt
+      - name: Analyze, regressions, signed APK, REAL Gemma and replay through student
         id: verified_build
-        run: bash delivery0430/build_android.sh
-      - name: Summarize evidence and preserve the exact compiled source
+        run: |
+          set -euo pipefail
+          bash delivery0430/build_android.sh
+          ROOT="$PWD"
+          mkdir -p .model-cache
+          curl --fail --location --retry 2 --output .model-cache/gemma4-e2b.litertlm 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/6e5c4f1e395deb959c494953478fa5cec4b8008f/gemma-4-E2B-it.litertlm'
+          echo '181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c  .model-cache/gemma4-e2b.litertlm' | sha256sum --check
+          mgd-neural-0421/android/gradlew --stop
+          timeout 900 mgd-neural-0421/android/gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx1g -p delivery0432/smoke run --args="$ROOT/.model-cache/gemma4-e2b.litertlm $ROOT/mgd-neural-0421/tool/reports/compact-prompts0432.json $ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" 2>&1 | tee mgd-neural-0421/tool/reports/real-gemma0432.log
+          cd mgd-neural-0421
+          MGD_LIVE_0432="$ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" flutter test test/axioms0432_compact_test.dart --machine 2>&1 | tee tool/reports/live-replay0432.jsonl
+      - name: Preserve all evidence and exact compiled source
         if: always()
         run: |
           python - <<'PY'
           from pathlib import Path
           import json,zipfile,hashlib
           root=Path('mgd-neural-0421');reports=root/'tool/reports';reports.mkdir(parents=True,exist_ok=True)
-          p=reports/'full-tests0430.jsonl';events=[]
-          if p.is_file():
-              for line in p.read_text(errors='replace').splitlines():
-                  try:x=json.loads(line)
-                  except ValueError:continue
-                  if isinstance(x,dict):events.append(x)
-          done=[e for e in events if e.get('type')=='testDone' and not e.get('hidden')]
-          summary={'test_done':len(done),'success':sum(e.get('result')=='success' for e in done),'failures':sum(e.get('result') not in ('success','skipped') for e in done),'errors':sum(e.get('type')=='error' for e in events),'runner_done':next((e for e in reversed(events) if e.get('type')=='done'),None),'goldens_updated':False,'physical_phone_tested':False}
-          (reports/'summary0430.json').write_text(json.dumps(summary,indent=2))
-          print(json.dumps(summary,indent=2))
-          paths=[]
-          for base in [root,Path('delivery0430')]:
+          def summary(path):
+              events=[]
+              if path.is_file():
+                  for line in path.read_text(errors='replace').splitlines():
+                      try:x=json.loads(line)
+                      except ValueError:continue
+                      if isinstance(x,dict):events.append(x)
+              done=[e for e in events if e.get('type')=='testDone' and not e.get('hidden')]
+              return {'test_done':len(done),'success':sum(e.get('result')=='success' and not e.get('skipped') for e in done),'failures':sum(e.get('result') not in ('success','skipped') for e in done),'skipped':sum(bool(e.get('skipped')) for e in done),'errors':sum(e.get('type')=='error' for e in events),'runner_done':next((e for e in reversed(events) if e.get('type')=='done'),None)}
+          result={'full_suite':summary(reports/'full-tests0430.jsonl'),'live_replay_suite':summary(reports/'live-replay0432.jsonl'),'goldens_updated':False,'physical_phone_tested':False,'real_gemma_platform':'Linux CPU JVM; not phone GPU'}
+          real=reports/'real-gemma0432.json'
+          if real.is_file():
+              rows=json.loads(real.read_text());result['real_gemma']={'total':len(rows),'passed':sum(r.get('passed') is True for r in rows),'mock':False}
+          (reports/'summary0432.json').write_text(json.dumps(result,indent=2));print(json.dumps(result,indent=2))
+          paths=[Path('.github/workflows/mgd-axioms0430-native.yml')]
+          for base in [root,Path('delivery0430'),Path('delivery0432')]:
               for p in base.rglob('*'):
                   if not p.is_file() or any(s in p.parts for s in ('build','.dart_tool','.gradle','output','prior-ci-38553162171','reports')):continue
                   if p.suffix.lower() in ('.ttf','.otf','.woff','.woff2','.keystore','.jks','.apk','.litertlm','.gguf','.safetensors'):continue
                   if p.name in ('local.properties','key.properties') or p.stat().st_size>200000000:continue
                   paths.append(p)
           manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
-          (reports/'source-manifest0430.json').write_text(json.dumps(manifest,indent=2))
-          with zipfile.ZipFile('MGD-Studio-0431-compiled-source.zip','w',zipfile.ZIP_DEFLATED) as z:
+          (reports/'source-manifest0432.json').write_text(json.dumps(manifest,indent=2))
+          with zipfile.ZipFile('MGD-Studio-0432-compiled-source.zip','w',zipfile.ZIP_DEFLATED) as z:
               for p in paths:z.write(p,str(p))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Studio-0431-verification
+          name: MGD-Studio-0432-verification
           path: mgd-neural-0421/tool/reports
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: MGD-Studio-0431-compiled-source
-          path: MGD-Studio-0431-compiled-source.zip
+          name: MGD-Studio-0432-compiled-source
+          path: MGD-Studio-0432-compiled-source.zip
       - uses: actions/upload-artifact@v4
         if: steps.verified_build.outcome == 'success'
         with:
-          name: MGD-Studio-0431-APK
-          path: delivery0430/output/MGD-Studio-Assiomi-0.43.1-arm64.apk
+          name: MGD-Studio-0432-APK
+          path: delivery0430/output/MGD-Studio-Assiomi-0.43.2-arm64.apk
           if-no-files-found: error
