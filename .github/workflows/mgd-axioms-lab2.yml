@@ -1,4 +1,4 @@
-name: MGD Assiomi Lab2 - new key and real tutor
+name: MGD Assiomi Lab2 - isolated APK and real tutor
 on:
   push:
     branches: ['codex/mgd-studio-axioms-0430']
@@ -19,9 +19,8 @@ jobs:
       MGD_APPLICATION_LABEL: MGD Assiomi Lab 2
       OPENBLAS_NUM_THREADS: '1'
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+      - name: Prepare isolated workspace
+        run: mkdir -p mgd-neural-0421/tool/reports
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -45,7 +44,7 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path, PurePosixPath
-          import zipfile, hashlib, subprocess
+          import zipfile, hashlib, os
           payload=Path('retained-lab2/MGD-Studio-0432-compiled-source.zip')
           assert hashlib.sha256(payload.read_bytes()).hexdigest() == '4aff999c17a3a977cd3daf688e7d304f797e2d39edc174bba6197e665c610cb8'
           with zipfile.ZipFile(payload) as z:
@@ -57,7 +56,7 @@ jobs:
           app=Path('mgd-neural-0421'); reports=app/'tool/reports'; reports.mkdir(parents=True,exist_ok=True)
           p=app/'pubspec.yaml'; t=p.read_text(); assert '0.43.2+112' in t; p.write_text(t.replace('0.43.2+112','0.43.3+113'))
           (reports/'SOURCE-COMMIT.txt').write_text('c1745dd1b9fccd52eb310f7ff57da822a63402a6\n')
-          (reports/'BUILD-COMMIT.txt').write_text(subprocess.check_output(['git','rev-parse','HEAD'],text=True))
+          (reports/'BUILD-COMMIT.txt').write_text(os.environ['GITHUB_SHA']+'\n')
           PY
           chmod +x mgd-neural-0421/android/gradlew
           python delivery0430/check_patch.py | tee mgd-neural-0421/tool/reports/source-integrity-lab2.json
@@ -84,64 +83,6 @@ jobs:
           timeout 900 bash mgd-neural-0421/android/gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx1g -p delivery0432/smoke run --args="$ROOT/.model-cache/gemma4-e2b.litertlm $ROOT/mgd-neural-0421/tool/reports/compact-prompts0432.json $ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" 2>&1 | tee mgd-neural-0421/tool/reports/real-gemma0432.log
           cd mgd-neural-0421
           MGD_LIVE_0432="$ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" flutter test test/axioms0432_compact_test.dart --machine 2>&1 | tee tool/reports/live-replay0432.jsonl
-      - name: Generate a NEW private signing key and encrypt its recovery backup
-        id: signing
-        env:
-          RECOVERY_CERT: |
-            -----BEGIN CERTIFICATE-----
-            MIIEKTCCApGgAwIBAgIUFPKihhRpfBc0tR91UWk+lg1l/4owDQYJKoZIhvcNAQEL
-            BQAwJDEiMCAGA1UEAwwZTUdEIEFzc2lvbWkgTGFiMiBSZWNvdmVyeTAeFw0yNjEw
-            MTQxODQ1MTZaFw0zNjEwMTExODQ1MTZaMCQxIjAgBgNVBAMMGU1HRCBBc3Npb21p
-            IExhYjIgUmVjb3ZlcnkwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDP
-            gF43XNrPFIhBcheCJMGNmP+nzaKbF72qWUW27iQY8Kvs1Fxud65I3v3n7RAXQ6rT
-            pTJgoL6MrVbgR583WCNyBRoFEctsdyPlyHkGFXx+UvNJZN5Xp6PnjUfl8ids3YD3
-            OaM6/h+syva+H9E0K6xB4cF3RbuBKZWHBrhRh4XkS+xLbSnAMRmWG4SlNWEO8Gpt
-            Neg/89tm25GzVJ38FvHZ45lF5s29pTj8STScPbhJd1EcfB49jknZ+lPI21IKYRT8
-            dRf5QiPYGBvjBRa4c3MJOgQ7z86bFnLCDScIklATsPYWNu4LwMIEI5Q+X7Ktgaby
-            Wdsy9CVx58MBoJ8M3OcM/hmMxAeJChBe4C8v3CelgTxeck5vBFoGaXxt0J7RMw16
-            f/Q4HOdQIeDrBT4iycpJOq06fAfjJZmseWJpKv44/QSkt8npoYf+kaUNcS4GVrD4
-            A/PmdcLJBI6c5wDSasuR5tlgDdO/0Qo86y1Vv+zzzt/ddWGJjRuas3ZYuqjG0gcC
-            AwEAAaNTMFEwHQYDVR0OBBYEFPFm8lDR6Erj4+N0FbevffUe6nLmMB8GA1UdIwQY
-            MBaAFPFm8lDR6Erj4+N0FbevffUe6nLmMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
-            hvcNAQELBQADggGBAM1BC6h7aJlaJNwsRGBdouWiiV0QJPu1/CJMRzAp2flzQbYi
-            5kh3tdbnnd0rzuBRaz1GyT69/ui9+fWV+ilMcVGvNpvtDakjRHzrWDHonM/H8sZB
-            yH/tlVwNVoXVQxq9Ba89JvbJL8DkXqR47eQVTyKQWCFAQ949EIGpta2tP23LbjQj
-            w24+Q3hLy7asAr60RCUy5vi1roaVOdJWg/+xHajiHUf80OjbytLON2zzMZsuxLbs
-            LZIY88BYJ0rKfTrt7lrC/sUKG5h149/oUSEk/FB4BF1yvMchn4NyFt86zLqsC2x3
-            +FYp+ccm5omQfEEGGL9k/IbVd8/ZOuLXlg9ot5tE0ZbhWvXUKBKD+6uMZLwpJsAM
-            RkyyoaEK/ziW4MfOeTcLjVf7hFgTzlYGQuoa7bv7gwlj1pVVxOnlSSYbxp7uOQTg
-            S/td8C3Ub6y5aCyaff7A2G6uXU54IEEWNkDflkqg+SYLUMhdLMvXOAaX0EGzPfX9
-            hOBH1t8rxjJqH7BF7g==
-            -----END CERTIFICATE-----
-        run: |
-          set -euo pipefail
-          umask 077
-          mkdir -p "$RUNNER_TEMP/mgd-lab2-signing" delivery-lab2
-          export MGD_STORE_FILE="$RUNNER_TEMP/mgd-lab2-signing/mgd-lab2.p12"
-          export MGD_STORE_PASSWORD="$(python -c 'import secrets; print(secrets.token_urlsafe(36))')"
-          echo "::add-mask::$MGD_STORE_PASSWORD"
-          export MGD_KEY_ALIAS=mgd-lab2
-          export MGD_KEY_PASSWORD="$MGD_STORE_PASSWORD"
-          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$MGD_STORE_FILE" -storepass:env MGD_STORE_PASSWORD -keypass:env MGD_KEY_PASSWORD -alias "$MGD_KEY_ALIAS" -keyalg RSA -keysize 3072 -validity 10000 -dname 'CN=MGD Assiomi Lab2, OU=Development, O=MGD, C=IT'
-          keytool -exportcert -keystore "$MGD_STORE_FILE" -storepass:env MGD_STORE_PASSWORD -alias "$MGD_KEY_ALIAS" -file delivery-lab2/signing-certificate.der
-          python - <<'PY'
-          import os, json, zipfile, hashlib
-          from pathlib import Path
-          d=Path(os.environ['RUNNER_TEMP'])/'mgd-lab2-signing'
-          (d/'recovery-cert.pem').write_text(os.environ['RECOVERY_CERT'])
-          settings={k:os.environ[k] for k in ['MGD_STORE_PASSWORD','MGD_KEY_ALIAS','MGD_KEY_PASSWORD','MGD_APPLICATION_ID']}
-          settings['file']='mgd-lab2.p12'
-          with zipfile.ZipFile(d/'private-backup.zip','w',zipfile.ZIP_DEFLATED) as z:
-              z.write(os.environ['MGD_STORE_FILE'],'mgd-lab2.p12')
-              z.writestr('signing.json',json.dumps(settings,indent=2))
-          digest=hashlib.sha256(Path('delivery-lab2/signing-certificate.der').read_bytes()).hexdigest()
-          with open(os.environ['GITHUB_ENV'],'a') as f:
-              for key in ['MGD_STORE_FILE','MGD_STORE_PASSWORD','MGD_KEY_ALIAS','MGD_KEY_PASSWORD']: f.write(f'{key}={os.environ[key]}\n')
-              f.write(f'MGD_LAB2_CERT_SHA256={digest}\n')
-          Path('mgd-neural-0421/tool/reports/signing-lab2.json').write_text(json.dumps({'application_id':os.environ['MGD_APPLICATION_ID'],'certificate_sha256':digest,'new_key':True,'private_key_in_repository':False,'backup_encrypted':True},indent=2))
-          PY
-          openssl cms -encrypt -binary -aes-256-cbc -in "$RUNNER_TEMP/mgd-lab2-signing/private-backup.zip" -outform DER -out delivery-lab2/signing-backup.cms "$RUNNER_TEMP/mgd-lab2-signing/recovery-cert.pem"
-          rm "$RUNNER_TEMP/mgd-lab2-signing/private-backup.zip"
       - name: Compile the separate ARM64 APK on GitHub
         id: build
         run: |
@@ -162,15 +103,17 @@ jobs:
           identity=(r/'apk-identity-lab2.txt').read_text(); signature=(r/'apk-signature-lab2.txt').read_text()
           assert "name='it.diegorusso.mgdneurostable.studio.axioms.lab2'" in identity
           assert "versionName='0.43.3'" in identity and "versionCode='113'" in identity
-          assert os.environ['MGD_LAB2_CERT_SHA256'] in signature
           with zipfile.ZipFile(p) as z:
               assert z.testzip() is None
               assert 'assets/flutter_assets/assets/reader443.json' in z.namelist()
               assert any(n.startswith('lib/arm64-v8a/') for n in z.namelist())
               assert not any(n.endswith(('.litertlm','.gguf','.safetensors','.p12','.jks','.keystore','.pem')) for n in z.namelist())
-          (r/'apk-lab2.json').write_text(json.dumps({'application_id':os.environ['MGD_APPLICATION_ID'],'version':'0.43.3','build':113,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'certificate_sha256':os.environ['MGD_LAB2_CERT_SHA256'],'separate_install':True,'phone_tested':False},indent=2))
+          (r/'apk-lab2.json').write_text(json.dumps({'application_id':os.environ['MGD_APPLICATION_ID'],'version':'0.43.3','build':113,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'final_signing':'performed after download with an owner-controlled new key','separate_install':True,'phone_tested':False},indent=2))
           PY
+          mkdir -p ../delivery-lab2
           cp "$APK" ../delivery-lab2/MGD-Assiomi-Lab2-0.43.3-arm64.apk
+          cp "$TOOLS/lib/apksigner.jar" ../delivery-lab2/apksigner.jar
+          sha256sum ../delivery-lab2/apksigner.jar > tool/reports/signing-tool-sha256.txt
       - name: Preserve test results
         if: always()
         run: |
@@ -199,16 +142,10 @@ jobs:
           name: MGD-Lab2-verification
           path: mgd-neural-0421/tool/reports
       - uses: actions/upload-artifact@v4
-        if: always() && steps.signing.outcome == 'success'
-        with:
-          name: MGD-Lab2-encrypted-signing-backup
-          path: |
-            delivery-lab2/signing-backup.cms
-            delivery-lab2/signing-certificate.der
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
         if: success() && steps.checks.outcome == 'success' && steps.real_gemma.outcome == 'success' && steps.build.outcome == 'success'
         with:
           name: MGD-Assiomi-Lab2-0.43.3-APK
-          path: delivery-lab2/MGD-Assiomi-Lab2-0.43.3-arm64.apk
+          path: |
+            delivery-lab2/MGD-Assiomi-Lab2-0.43.3-arm64.apk
+            delivery-lab2/apksigner.jar
           if-no-files-found: error
