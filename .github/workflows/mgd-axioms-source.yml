@@ -1,0 +1,20 @@
+name: MGD axiom workspace snapshot
+on:
+  push:
+    branches: ['codex/mgd-studio-axioms-0430']
+    paths: ['.github/workflows/mgd-axioms-source.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export development sources
+        run: git archive --format=zip -o mgd-workspace.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-axiom-workspace-source
+          path: mgd-workspace.zip
+          if-no-files-found: error
