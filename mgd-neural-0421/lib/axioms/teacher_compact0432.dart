@@ -38,7 +38,8 @@ List<J> compactCandidates0432(AxiomStudent s, String request) {
         final surface = env['predicate']!;
         if (surface.isEmpty || !surface.every(entity)) continue;
         final args = <String, dynamic>{
-          for (final role in f['roles'] as List) role as String: env[role]!.single
+          for (final role in f['roles'] as List)
+            role as String: env[role]!.single
         };
         if (args.values.toSet().length != args.length) continue;
         final entries = s.lexicon.where((e) => e['frame_id'] == f['id']);
@@ -58,16 +59,24 @@ List<J> compactCandidates0432(AxiomStudent s, String request) {
           }
           final reference = words.join(' ');
           final reading = s.parse(reference);
-          if (reading['status'] != 'ok' || reading['intent'] != entry['intent'] ||
-              !equalJ(reading['args'], args) || reading['negated'] != neg) continue;
+          if (reading['status'] != 'ok' ||
+              reading['intent'] != entry['intent'] ||
+              !equalJ(reading['args'], args) ||
+              reading['negated'] != neg) continue;
           final key = canonical([entry['intent'], args, neg]);
           final previous = best[key];
           final candidate = <String, dynamic>{
-            'intent': entry['intent'], 'args': args, 'negated': neg,
-            'frame_id': f['id'], 'surface': surface, 'lesson_text': tokens.join(' '),
-            'reference': reference, 'examples': <String>[reference]
+            'intent': entry['intent'],
+            'args': args,
+            'negated': neg,
+            'frame_id': f['id'],
+            'surface': surface,
+            'lesson_text': tokens.join(' '),
+            'reference': reference,
+            'examples': <String>[reference]
           };
-          if (previous == null || surface.length < (previous['surface'] as List).length) {
+          if (previous == null ||
+              surface.length < (previous['surface'] as List).length) {
             best[key] = candidate;
           } else if (equalJ(surface, previous['surface']) &&
               previous['frame_id'] == f['id'] &&
@@ -85,14 +94,20 @@ List<J> compactCandidates0432(AxiomStudent s, String request) {
           output.addAll(p.startsWith(r'$') ? env[p.substring(1)]! : [p]);
         }
         if (!equalJ(output, tokens)) {
-          queue.add({'tokens': output, 'neg': neg, 'depth': (item['depth'] as int) + 1});
-          if (queue.length > 1024) throw const FormatException('Limite di ricerca.');
+          queue.add({
+            'tokens': output,
+            'neg': neg,
+            'depth': (item['depth'] as int) + 1
+          });
+          if (queue.length > 1024)
+            throw const FormatException('Limite di ricerca.');
         }
       }
     }
   }
   final out = best.values.toList();
-  if (out.length > 16) throw const FormatException('Troppe ipotesi: serve disambiguazione.');
+  if (out.length > 16)
+    throw const FormatException('Troppe ipotesi: serve disambiguazione.');
   // Meaning-bearing labels avoid forcing a small language model to predict
   // arbitrary numeric codes. They are built from existing program names only:
   // no target verb, new synonym or expected test answer is inserted here.
@@ -102,28 +117,42 @@ List<J> compactCandidates0432(AxiomStudent s, String request) {
   return out;
 }
 
-String compactPrompt0432(String request, List<J> candidates, {String? feedback}) =>
+String compactPrompt0432(String request, List<J> candidates,
+        {String? feedback}) =>
     jsonEncode({
       'options': {
-        'UNKNOWN': {'meaning': 'None of the listed event meanings fits the sentence.'},
-        for (final c in candidates) c['id'] as String: {
-          'event_type': c['intent'], 'roles': c['args'],
-          'negated': c['negated'], 'examples': c['examples']
-        }
+        'UNKNOWN': {
+          'meaning': 'None of the listed event meanings fits the sentence.'
+        },
+        for (final c in candidates)
+          c['id'] as String: {
+            'event_type': c['intent'],
+            'roles': c['args'],
+            'negated': c['negated'],
+            'examples': c['examples']
+          }
       },
       if (feedback != null) 'previous_format_error': feedback,
-      'scope': 'Only these existing event meanings are available. Do not force an equivalence.',
+      'scope':
+          'Only these existing event meanings are available. Do not force an equivalence.',
       'italian_sentence': request
     });
 
 J compactSchema0432(List<J> candidates) => {
-  'type': 'object', 'properties': {
-    'choice': {'type': 'string', 'enum': ['UNKNOWN', ...candidates.map((c) => c['id'])]}
-  }, 'required': ['choice'], 'additionalProperties': false
-};
+      'type': 'object',
+      'properties': {
+        'choice': {
+          'type': 'string',
+          'enum': ['UNKNOWN', ...candidates.map((c) => c['id'])]
+        }
+      },
+      'required': ['choice'],
+      'additionalProperties': false
+    };
 
 String compactChoice0432(String raw, List<J> candidates) {
-  if (raw.length > 512) throw const FormatException('Risposta compatta oltre il limite.');
+  if (raw.length > 512)
+    throw const FormatException('Risposta compatta oltre il limite.');
   final value = jsonDecode(raw);
   if (value is! Map || value.length != 1 || value['choice'] is! String) {
     throw const FormatException('Serve soltanto il campo choice.');
@@ -135,7 +164,8 @@ String compactChoice0432(String raw, List<J> candidates) {
   return choice;
 }
 
-List<String>? _replace0432(List<String> words, List<String> from, List<String> to) {
+List<String>? _replace0432(
+    List<String> words, List<String> from, List<String> to) {
   final positions = <int>[];
   for (var i = 0; i + from.length <= words.length; i++) {
     if (equalJ(words.sublist(i, i + from.length), from)) positions.add(i);
@@ -153,54 +183,84 @@ J compactPackage0432(AxiomStudent original, String request, J world,
     J candidate, List<Map> regression) {
   final reference = original.execute(candidate['reference'] as String, world);
   final reading = reference['reading'] as Map;
-  if (reading['status'] != 'ok' || reading['intent'] != candidate['intent'] ||
+  if (reading['status'] != 'ok' ||
+      reading['intent'] != candidate['intent'] ||
       !equalJ(reading['args'], candidate['args'])) {
-    throw const FormatException('Riferimento non interpretabile dal discepolo iniziale.');
+    throw const FormatException(
+        'Riferimento non interpretabile dal discepolo iniziale.');
   }
   final surface = List<String>.from(candidate['surface'] as List);
-  final id = 'compact:${axHash([surface, candidate['intent'], candidate['frame_id']]).substring(0, 16)}';
+  final id = 'compact:${axHash([
+        surface,
+        candidate['intent'],
+        candidate['frame_id']
+      ]).substring(0, 16)}';
   final lesson = <String, dynamic>{
-    'kind': 'anchored', 'id': id, 'text': candidate['lesson_text'],
-    'anchor': surface.join(' '), 'intent': candidate['intent'], 'args': candidate['args']
+    'kind': 'anchored',
+    'id': id,
+    'text': candidate['lesson_text'],
+    'anchor': surface.join(' '),
+    'intent': candidate['intent'],
+    'args': candidate['args']
   };
   final target = <String, dynamic>{
-    'id': '$id:target', 'text': request, 'intent': reading['intent'],
-    'args': reading['args'], 'negated': reading['negated'],
-    'before': copyJ(world), 'expected_after': reference['world'],
+    'id': '$id:target',
+    'text': request,
+    'intent': reading['intent'],
+    'args': reading['args'],
+    'negated': reading['negated'],
+    'before': copyJ(world),
+    'expected_after': reference['world'],
     'expected_status': reference['status']
   };
   final groups = <String, List<J>>{};
-  final used = <String>{canonical(axTokens(request)), canonical(axTokens(lesson['text'] as String))};
+  final used = <String>{
+    canonical(axTokens(request)),
+    canonical(axTokens(lesson['text'] as String))
+  };
   void add(J q) {
     if (q['before'] is! Map || q['expected_after'] is! Map) return;
     if (!used.add(canonical(axTokens(q['text'] as String)))) return;
     (groups[canonical(q['args'])] ??= []).add(q);
   }
+
   for (final old in regression) {
-    if (old['intent'] != candidate['intent'] || old['before'] is! Map ||
+    if (old['intent'] != candidate['intent'] ||
+        old['before'] is! Map ||
         original.probe(old)['passed'] != true) continue;
     final parsed = original.parse(old['text'] as String);
     if (!(parsed['proof'] as List).contains(candidate['frame_id'])) continue;
-    final entries = original.lexicon.where((e) => e['frame_id'] == candidate['frame_id'] &&
-        e['intent'] == candidate['intent'] && (parsed['proof'] as List).contains(original.lexId(e as Map)));
+    final entries = original.lexicon.where((e) =>
+        e['frame_id'] == candidate['frame_id'] &&
+        e['intent'] == candidate['intent'] &&
+        (parsed['proof'] as List).contains(original.lexId(e as Map)));
     for (final entry in entries) {
       final known = List<String>.from(entry['surface'] as List);
-      final replacement = _replace0432(axTokens(old['text'] as String), known, surface);
+      final replacement =
+          _replace0432(axTokens(old['text'] as String), known, surface);
       if (replacement == null) continue;
-      final q = copyJ(old)..['text'] = replacement.join(' ')..['reference_text'] = old['text'];
+      final q = copyJ(old)
+        ..['text'] = replacement.join(' ')
+        ..['reference_text'] = old['text'];
       q['id'] = '$id:${axHash(q).substring(0, 12)}';
       q['negated'] = old['negated'] ?? false;
       add(q);
       if (parsed['negated'] != true) {
-        final negative = _replace0432(axTokens(old['text'] as String), known, ['non', ...known]);
+        final negative = _replace0432(
+            axTokens(old['text'] as String), known, ['non', ...known]);
         if (negative == null) continue;
-        final denied = original.execute(negative.join(' '), old['before'] as Map);
+        final denied =
+            original.execute(negative.join(' '), old['before'] as Map);
         if (denied['status'] != 'event_denied_no_update') continue;
         final negativeNew = _replace0432(negative, known, surface)!;
         add({
-          ...copyJ(old), 'id': '${q['id']}:neg', 'text': negativeNew.join(' '),
-          'negated': true, 'expected_status': 'event_denied_no_update',
-          'expected_after': copyJ(old['before'] as Map), 'reference_text': negative.join(' ')
+          ...copyJ(old),
+          'id': '${q['id']}:neg',
+          'text': negativeNew.join(' '),
+          'negated': true,
+          'expected_status': 'event_denied_no_update',
+          'expected_after': copyJ(old['before'] as Map),
+          'reference_text': negative.join(' ')
         });
       }
     }
@@ -214,16 +274,23 @@ J compactPackage0432(AxiomStudent original, String request, J world,
       if (probes.length >= 24) break;
     }
   }
-  if (groups.length < 3 || probes.length < 3 ||
+  if (groups.length < 3 ||
+      probes.length < 3 ||
       !probes.any((q) => q['expected_status'] == 'event_denied_no_update')) {
-    throw const FormatException('Prove di trasferimento insufficienti: nessuna lezione applicata.');
+    throw const FormatException(
+        'Prove di trasferimento insufficienti: nessuna lezione applicata.');
   }
   return {
-    'diagnosis': 'Collegamento lessicale proposto dal tutor a una composizione già nota. '
-        'Nessuna nuova primitiva; verifica condizionata all’equivalenza semantica proposta.',
-    'task': target, 'lessons': [lesson], 'probes': probes,
-    'evidence_source': 'regressioni preesistenti + contrasti di negazione; riferimento congelato',
-    'teacher_choice': candidate['id'], 'reference': candidate['reference'],
+    'diagnosis':
+        'Collegamento lessicale proposto dal tutor a una composizione già nota. '
+            'Nessuna nuova primitiva; verifica condizionata all’equivalenza semantica proposta.',
+    'task': target,
+    'lessons': [lesson],
+    'probes': probes,
+    'evidence_source':
+        'regressioni preesistenti + contrasti di negazione; riferimento congelato',
+    'teacher_choice': candidate['id'],
+    'reference': candidate['reference'],
     'independent_semantic_truth_proven': false
   };
 }
