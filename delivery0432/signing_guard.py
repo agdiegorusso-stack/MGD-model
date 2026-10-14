@@ -13,7 +13,10 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-EXPECTED_SHA256 = "d4974611809f5def4c01e0d805a124be0a9471d7532b15c8eeb8d6ec30eb78e1"
+EXPECTED_SHA256 = "bf943267cca4b7bedea6bd3fd2e6ade7cf0f7d594e414e3ef6b18cd65665624b"
+# Keystore generato il 2026-10-14. File: C:\Users\Miste\mgd-studio-release.keystore
+# alias=mgdkey, storepass/keypass=mgd0430studio, RSA 2048, validità 10000 giorni
+# Custodito localmente dall'utente; Base64 nel secret MGD_KEYSTORE_BASE64 su GitHub.
 
 
 def inspect_key(path: Path, alias: str, password: str) -> dict:
