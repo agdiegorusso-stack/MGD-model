@@ -88,6 +88,11 @@ jobs:
           flutter pub get
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee tool/reports/analyze0430.log
           flutter test --machine 2>&1 | tee tool/reports/full-tests0430.jsonl
+      - name: Install Java 21 required by the desktop LiteRT-LM classes
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - name: REAL Gemma and replay through student, independent of signing availability
         id: real_gemma
         run: |
@@ -103,7 +108,10 @@ jobs:
       - name: Build with the selected original private key and verify final APK
         id: verified_build
         if: success() && steps.signing.outputs.ready == 'true'
-        run: bash delivery0430/build_android.sh
+        run: |
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          bash delivery0430/build_android.sh
       - name: Require both validated tutor and update-compatible signing
         if: always()
         env:
