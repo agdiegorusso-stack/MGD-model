@@ -67,9 +67,8 @@ replace(bridge, 'return mapOf("models" to models,"loaded" to loaded,"backend" to
             "loadedSha256" to if(loaded.isEmpty())"" else modelOrCustomHash(loaded),
             "loadedName" to if(loaded=="custom")(prefs.getString("name:custom","Importato")?:"Importato") else loaded,
             "lastLoadMs" to lastLoadMs,"lastGenerateMs" to lastGenerateMs,"contextTokens" to 4096,''')
-# Add an explicit, opt-in precision alternative; default screenshots unchanged.
-replace(a+'axiom_page.dart', "DropdownMenuItem(value: 'GPU', child: Text('GPU')),",
-    "DropdownMenuItem(value: 'GPU', child: Text('GPU')),\n                  DropdownMenuItem(value: 'GPU_FP32', child: Text('GPU FP32')),")
+# Preserve the CPU/GPU selector and its reviewed golden layout. Precision
+# overrides remain native-only until a separate interface test covers them.
 replace(a+'axiom_page.dart', '          Text(status),',
     "          if ((data['loaded']?.toString() ?? '').isNotEmpty && data['lastLoadMs'] != null)\n            Text('Caricamento: ${data['lastLoadMs']} ms · ultima generazione: ${data['lastGenerateMs']} ms'),\n          Text(status),")
 # Retain the existing integrity checks, updating only the changed native source.
