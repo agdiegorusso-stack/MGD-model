@@ -94,8 +94,10 @@ class SigningTests(unittest.TestCase):
         self.assertNotIn(base64.b64encode(self.key.read_bytes()).decode(), text)
 
     def test_10_real_certificate_pin_cannot_silently_change(self):
+        # Keystore mgd-studio-release.keystore, generato 2026-10-14.
+        # alias=mgdkey, RSA 2048, SHA256 del certificato DER.
         self.assertEqual(guard.EXPECTED_SHA256,
-            "d4974611809f5def4c01e0d805a124be0a9471d7532b15c8eeb8d6ec30eb78e1")
+            "bf943267cca4b7bedea6bd3fd2e6ade7cf0f7d594e414e3ef6b18cd65665624b")
 
 
 if __name__ == "__main__":
