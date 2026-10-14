@@ -1,0 +1,50 @@
+--- a/mgd-neural-0421/android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/AxiomTeacherBridge.kt
++++ b/mgd-neural-0421/android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/AxiomTeacherBridge.kt
+@@ -146,7 +146,7 @@
+                     synchronized(conversationLock) { conversation=session }
+                     val deadline=timer.schedule({cancel()},240,TimeUnit.SECONDS)
+                     try {
+-                        val response=session.sendMessage(prompt).text
++                        val response=session.sendMessage(prompt).toString()
+                         check(!cancelled.get()) { "Generazione interrotta: nessuna lezione applicata." }
+                         response
+                     } finally {
+--- a/mgd-neural-0421/lib/source_memory_v0323.dart
++++ b/mgd-neural-0421/lib/source_memory_v0323.dart
+@@ -7,6 +7,7 @@
+     recover(m);
+     _rows(m).removeWhere((_, r) => r is Map &&
+       (matches('${r['text'] ?? ''}') || matches('${r['title'] ?? ''}') ||
++       matches('${r['url'] ?? ''}') ||
+        (r['topics438'] as List? ?? []).any((t) => matches('$t'))));
+     final state = _state(m);
+     state['revision'] = (state['revision'] as num? ?? 0).toInt() + 1;
+--- /dev/null
++++ b/mgd-neural-0421/test/axioms0430_source_withdrawal_test.dart
+@@ -0,0 +1,26 @@
++import 'dart:convert';
++import 'package:flutter_test/flutter_test.dart';
++import '../lib/web_knowledge_explorer_v11.dart';
++import '../lib/reading_memory_v0438.dart';
++
++void main() {
++  test('URL-only source withdrawal invalidates the cached reading view', () {
++    final memory = ResearchMemory11();
++    SourceMemory323.retain(memory, WebDocument11(
++      provider: 'Test', family: 'local', title: 'Glossario',
++      url: 'local://teacher', text: '«zanfra» significa «consegna».', trust: .9));
++    SourceMemory323.retain(memory, WebDocument11(
++      provider: 'Test', family: 'local', title: 'Episodio',
++      url: 'local://retained', text: 'Anna legge il libro.', trust: .9));
++    expect(ReadingMemory438.rows(memory), hasLength(2));
++    final before = (memory.state317['sourceMemory323'] as Map)['revision'] as int;
++    SourceMemory323.forget33(memory, (text) => text == 'local://teacher');
++    final surviving = ReadingMemory438.rows(memory);
++    expect(surviving, hasLength(1));
++    expect(surviving.single['url'], 'local://retained');
++    expect((memory.state317['sourceMemory323'] as Map)['revision'], greaterThan(before));
++    final restored = ResearchMemory11.fromJson(jsonDecode(jsonEncode(memory.toJson())));
++    expect(ReadingMemory438.rows(restored), hasLength(1));
++    expect(ReadingMemory438.rows(restored).single['url'], 'local://retained');
++  });
++}
