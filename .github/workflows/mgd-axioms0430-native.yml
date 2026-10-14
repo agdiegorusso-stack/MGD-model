@@ -31,10 +31,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/cache@v4
+      # Recovery only. Private signing keys must not be saved to dependency caches.
+      - uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
           key: mgd-axioms-signing-v1
+      - name: Test signing selection and preservation guards
+        run: python -m unittest discover -s delivery0432 -p test_signing_guard.py -v
+      - name: Select the original private key without creating a replacement
+        id: signing
+        env:
+          MGD_KEYSTORE_BASE64: ${{ secrets.MGD_KEYSTORE_BASE64 }}
+          MGD_STORE_PASSWORD: ${{ secrets.MGD_STORE_PASSWORD }}
+          MGD_KEY_ALIAS: ${{ secrets.MGD_KEY_ALIAS }}
+          MGD_KEY_PASSWORD: ${{ secrets.MGD_KEY_PASSWORD }}
+        run: python delivery0432/signing_guard.py
       - name: Restore the previously retained reader payload and golden references
         uses: actions/download-artifact@v4
         with:
@@ -69,19 +80,48 @@ jobs:
           python delivery0432/integrate.py
           git diff --binary > mgd-neural-0421/tool/reports/applied-source0432.diff
           sha256sum delivery0430/production_fix.patch delivery0432/integrate.py > mgd-neural-0421/tool/reports/patch-sha256.txt
-      - name: Analyze, regressions, signed APK, REAL Gemma and replay through student
-        id: verified_build
+      - name: Analyze and run the complete regression suite
+        id: checks
         run: |
           set -euo pipefail
-          bash delivery0430/build_android.sh
+          cd mgd-neural-0421
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee tool/reports/analyze0430.log
+          flutter test --machine 2>&1 | tee tool/reports/full-tests0430.jsonl
+      - name: REAL Gemma and replay through student, independent of signing availability
+        id: real_gemma
+        run: |
+          set -euo pipefail
           ROOT="$PWD"
           mkdir -p .model-cache
           curl --fail --location --retry 2 --output .model-cache/gemma4-e2b.litertlm 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/6e5c4f1e395deb959c494953478fa5cec4b8008f/gemma-4-E2B-it.litertlm'
           echo '181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c  .model-cache/gemma4-e2b.litertlm' | sha256sum --check
-          mgd-neural-0421/android/gradlew --stop
-          timeout 900 mgd-neural-0421/android/gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx1g -p delivery0432/smoke run --args="$ROOT/.model-cache/gemma4-e2b.litertlm $ROOT/mgd-neural-0421/tool/reports/compact-prompts0432.json $ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" 2>&1 | tee mgd-neural-0421/tool/reports/real-gemma0432.log
+          bash mgd-neural-0421/android/gradlew --stop
+          timeout 900 bash mgd-neural-0421/android/gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx1g -p delivery0432/smoke run --args="$ROOT/.model-cache/gemma4-e2b.litertlm $ROOT/mgd-neural-0421/tool/reports/compact-prompts0432.json $ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" 2>&1 | tee mgd-neural-0421/tool/reports/real-gemma0432.log
           cd mgd-neural-0421
           MGD_LIVE_0432="$ROOT/mgd-neural-0421/tool/reports/real-gemma0432.json" flutter test test/axioms0432_compact_test.dart --machine 2>&1 | tee tool/reports/live-replay0432.jsonl
+      - name: Build with the selected original private key and verify final APK
+        id: verified_build
+        if: success() && steps.signing.outputs.ready == 'true'
+        run: bash delivery0430/build_android.sh
+      - name: Require both validated tutor and update-compatible signing
+        if: always()
+        env:
+          SIGNING_READY: ${{ steps.signing.outputs.ready }}
+          CHECKS_OUTCOME: ${{ steps.checks.outcome }}
+          MODEL_OUTCOME: ${{ steps.real_gemma.outcome }}
+          BUILD_OUTCOME: ${{ steps.verified_build.outcome }}
+        run: |
+          python - <<'PYGATE'
+          import os, sys
+          errors=[]
+          if os.environ['SIGNING_READY'] != 'true':
+              errors.append('Original 0.43.1 PRIVATE signing key is unavailable. Recover it into MGD_KEYSTORE_BASE64; do not substitute the public certificate or a newly generated key.')
+          for key in ['CHECKS_OUTCOME','MODEL_OUTCOME','BUILD_OUTCOME']:
+              if os.environ[key] != 'success': errors.append(key + '=' + os.environ[key])
+          for error in errors: print('::error::' + error)
+          sys.exit(bool(errors))
+          PYGATE
       - name: Preserve all evidence and exact compiled source
         if: always()
         run: |
@@ -98,7 +138,8 @@ jobs:
                       if isinstance(x,dict):events.append(x)
               done=[e for e in events if e.get('type')=='testDone' and not e.get('hidden')]
               return {'test_done':len(done),'success':sum(e.get('result')=='success' and not e.get('skipped') for e in done),'failures':sum(e.get('result') not in ('success','skipped') for e in done),'skipped':sum(bool(e.get('skipped')) for e in done),'errors':sum(e.get('type')=='error' for e in events),'runner_done':next((e for e in reversed(events) if e.get('type')=='done'),None)}
-          result={'full_suite':summary(reports/'full-tests0430.jsonl'),'live_replay_suite':summary(reports/'live-replay0432.jsonl'),'goldens_updated':False,'physical_phone_tested':False,'real_gemma_platform':'Linux CPU JVM; not phone GPU'}
+          signing=reports/'signing-preflight0432.json'
+          result={'signing_preflight':json.loads(signing.read_text()) if signing.is_file() else None,'full_suite':summary(reports/'full-tests0430.jsonl'),'live_replay_suite':summary(reports/'live-replay0432.jsonl'),'goldens_updated':False,'physical_phone_tested':False,'real_gemma_platform':'Linux CPU JVM; not phone GPU'}
           real=reports/'real-gemma0432.json'
           if real.is_file():
               rows=json.loads(real.read_text());result['real_gemma']={'total':len(rows),'passed':sum(r.get('passed') is True for r in rows),'mock':False}
@@ -106,7 +147,7 @@ jobs:
           paths=[Path('.github/workflows/mgd-axioms0430-native.yml')]
           for base in [root,Path('delivery0430'),Path('delivery0432')]:
               for p in base.rglob('*'):
-                  if not p.is_file() or any(s in p.parts for s in ('build','.dart_tool','.gradle','output','prior-ci-38553162171','reports')):continue
+                  if not p.is_file() or any(s in p.parts for s in ('build','.dart_tool','.gradle','__pycache__','output','prior-ci-38553162171','reports')):continue
                   if p.suffix.lower() in ('.ttf','.otf','.woff','.woff2','.keystore','.jks','.apk','.litertlm','.gguf','.safetensors'):continue
                   if p.name in ('local.properties','key.properties') or p.stat().st_size>200000000:continue
                   paths.append(p)
@@ -126,7 +167,7 @@ jobs:
           name: MGD-Studio-0432-compiled-source
           path: MGD-Studio-0432-compiled-source.zip
       - uses: actions/upload-artifact@v4
-        if: steps.verified_build.outcome == 'success'
+        if: success() && steps.verified_build.outcome == 'success' && steps.real_gemma.outcome == 'success' && steps.signing.outputs.ready == 'true'
         with:
           name: MGD-Studio-0432-APK
           path: delivery0430/output/MGD-Studio-Assiomi-0.43.2-arm64.apk
