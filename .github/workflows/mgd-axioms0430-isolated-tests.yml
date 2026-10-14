@@ -1,0 +1,70 @@
+name: MGD axiom exact-source isolated regression
+on:
+  push:
+    branches: ['codex/mgd-studio-axioms-0430']
+    paths: ['.github/workflows/mgd-axioms0430-isolated-tests.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  exact_source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 94d6a069369c488e44b30fb7fb952cc1f471fad8
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5 scipy==1.16.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-443-factorized-reader-training
+          run-id: 38176357502
+          github-token: ${{ github.token }}
+          path: research/mgd443_reader/results
+      - run: python research/mgd443_reader/prepare_app.py
+      - name: Resolve dependencies and record exact source
+        working-directory: mgd-neural-0421
+        run: |
+          flutter pub get
+          mkdir -p tool/reports
+          git rev-parse HEAD > tool/reports/EXACT-SOURCE.txt
+      - name: Generate screen baselines from this exact source
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter test test/axioms0430_widget_test.dart --update-goldens --machine 2>&1 | tee tool/reports/isolated-widget0430.jsonl
+      - name: Run all tests without parallel worker contention
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter test --concurrency=1 --machine 2>&1 | tee tool/reports/isolated-full0430.jsonl
+      - name: Summarize without hiding failed or skipped tests
+        if: always()
+        run: |
+          python - <<'PY'
+          import pathlib,json
+          root=pathlib.Path('mgd-neural-0421/tool/reports');root.mkdir(parents=True,exist_ok=True);summary={}
+          for p in root.glob('isolated-*0430.jsonl'):
+              events=[]
+              for line in p.read_text(errors='replace').splitlines():
+                  try:v=json.loads(line)
+                  except Exception:continue
+                  if isinstance(v,dict):events.append(v)
+              done=[e for e in events if e.get('type')=='testDone' and not e.get('hidden')]
+              summary[p.name]={'test_done':len(done),'success':sum(e.get('result')=='success' for e in done),'errors':[e for e in events if e.get('type')=='error'],'done':[e for e in events if e.get('type')=='done']}
+          (root/'isolated-summary0430.json').write_text(json.dumps(summary,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-0430-exact-source-regression
+          path: |
+            mgd-neural-0421/tool/reports
+            mgd-neural-0421/test/goldens/axioms0430*.png
+          if-no-files-found: error
