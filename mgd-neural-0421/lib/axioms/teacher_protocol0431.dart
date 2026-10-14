@@ -8,8 +8,9 @@ J decodeTeacher0431(String raw) {
   }
   var text = raw.trim();
   if (text.startsWith('```')) {
-    final fence = RegExp(r'^```(?:json)?\s*([\s\S]*?)\s*```$',
-        caseSensitive: false).firstMatch(text);
+    final fence =
+        RegExp(r'^```(?:json)?\s*([\s\S]*?)\s*```$', caseSensitive: false)
+            .firstMatch(text);
     if (fence == null) {
       throw const FormatException('Blocco JSON incompleto.');
     }
@@ -35,21 +36,26 @@ List<String> teacherProblems0431(J p, String request, J world) {
         problems.add('$path.$k: stringa obbligatoria.');
       }
     }
-    if (q['args'] is! Map || (q['args'] as Map).isEmpty ||
+    if (q['args'] is! Map ||
+        (q['args'] as Map).isEmpty ||
         !(q['args'] as Map).values.every((v) => v is String && entity(v))) {
       problems.add('$path.args: ruoli con valori testuali obbligatori.');
     }
     if (q['negated'] is! bool) {
       problems.add('$path.negated: booleano obbligatorio.');
     }
-    if (q['expected_status'] is String && !const [
-      'applied', 'preconditions_false', 'needs_context',
-      'event_denied_no_update'
-    ].contains(q['expected_status'])) {
+    if (q['expected_status'] is String &&
+        !const [
+          'applied',
+          'preconditions_false',
+          'needs_context',
+          'event_denied_no_update'
+        ].contains(q['expected_status'])) {
       problems.add('$path.expected_status: usare uno stato operativo ammesso.');
     }
     if (target && q['text'] != request) {
-      problems.add('task.text: copiare esattamente la richiesta, non una frase alternativa.');
+      problems.add(
+          'task.text: copiare esattamente la richiesta, non una frase alternativa.');
     }
     // The user's observation, never the teacher's replacement, binds the target.
     final before = target ? world : q['before'];
@@ -57,13 +63,15 @@ List<String> teacherProblems0431(J p, String request, J world) {
       problems.add('task.before: non modificare il contesto osservato.');
     }
     if (before is! Map || q['expected_after'] is! Map) {
-      problems.add('$path: before ed expected_after devono essere mondi completi.');
+      problems
+          .add('$path: before ed expected_after devono essere mondi completi.');
       return;
     }
     final after = q['expected_after'] as Map;
     for (final relation in ['location', 'holder', 'owner']) {
       if (before[relation] is! Map || after[relation] is! Map) {
-        problems.add('$path: includere le mappe $relation in before ed expected_after.');
+        problems.add(
+            '$path: includere le mappe $relation in before ed expected_after.');
         continue;
       }
       for (final key in (before[relation] as Map).keys) {
@@ -78,11 +86,13 @@ List<String> teacherProblems0431(J p, String request, J world) {
   checkProbe(p['task'], 'task', target: true);
   final lessons = p['lessons'];
   if (lessons is! List || lessons.isEmpty || lessons.length > 4) {
-    problems.add('lessons: fornire da 1 a 4 lezioni, non risposte al posto del discepolo.');
+    problems.add(
+        'lessons: fornire da 1 a 4 lezioni, non risposte al posto del discepolo.');
   } else {
     for (var i = 0; i < lessons.length; i++) {
       final lesson = lessons[i];
-      if (lesson is! Map || lesson['kind'] is! String ||
+      if (lesson is! Map ||
+          lesson['kind'] is! String ||
           lesson['id'] is! String) {
         problems.add('lessons[$i]: kind e id obbligatori.');
       }
@@ -90,14 +100,17 @@ List<String> teacherProblems0431(J p, String request, J world) {
   }
   final probes = p['probes'];
   if (probes is! List || probes.length < 3 || probes.length > 24) {
-    problems.add('probes: servono da 3 a 24 prove, almeno tre combinazioni di ruoli.');
+    problems.add(
+        'probes: servono da 3 a 24 prove, almeno tre combinazioni di ruoli.');
   } else {
     for (var i = 0; i < probes.length; i++) {
       checkProbe(probes[i], 'probes[$i]');
-      if (probes[i] is Map && probes[i]['text'] is String &&
+      if (probes[i] is Map &&
+          probes[i]['text'] is String &&
           canonical(axTokens(probes[i]['text'] as String)) ==
               canonical(axTokens(request))) {
-        problems.add('probes[$i].text: deve essere diverso anche dal task originale.');
+        problems.add(
+            'probes[$i].text: deve essere diverso anche dal task originale.');
       }
     }
   }
@@ -131,30 +144,42 @@ J teacherFormatExample0431() {
     final after = copyJ(before);
     if (!negated) after['location'][who] = where;
     return {
-      'id': id, 'text': text, 'intent': 'move',
-      'args': {'who': who, 'where': where}, 'negated': negated,
-      'before': before, 'expected_after': after,
+      'id': id,
+      'text': text,
+      'intent': 'move',
+      'args': {'who': who, 'where': where},
+      'negated': negated,
+      'before': before,
+      'expected_after': after,
       'expected_status': negated ? 'event_denied_no_update' : 'applied'
     };
   }
+
   return {
     'diagnosis': 'ESEMPIO DI FORMATO: move è composto e noto; '
         'qui si insegna un collegamento linguistico, non una primitiva.',
     'task': probe('target', 'irene', 'roma', 'Irene viaggia verso Roma.'),
-    'lessons': [{
-      'kind': 'anchored', 'id': 'format-example-viaggia',
-      'text': 'Nora viaggia verso Bari.', 'anchor': 'viaggia',
-      'intent': 'move', 'args': {'who': 'nora', 'where': 'bari'}
-    }],
+    'lessons': [
+      {
+        'kind': 'anchored',
+        'id': 'format-example-viaggia',
+        'text': 'Nora viaggia verso Bari.',
+        'anchor': 'viaggia',
+        'intent': 'move',
+        'args': {'who': 'nora', 'where': 'bari'}
+      }
+    ],
     'probes': [
       probe('p1', 'dario', 'milano', 'Dario viaggia verso Milano.'),
       probe('p2', 'elena', 'torino', 'È Elena che viaggia verso Torino.'),
-      probe('p3', 'marta', 'genova', 'Marta non viaggia verso Genova.', negated: true)
+      probe('p3', 'marta', 'genova', 'Marta non viaggia verso Genova.',
+          negated: true)
     ]
   };
 }
 
-String get axiomTeacherContract0431 => r'''
+String get axiomTeacherContract0431 =>
+    r'''
 Sei l'insegnante del discepolo simbolico MGD, non il suo sostituto.
 Esamina l'intero inventory. Una parola nuova non è un assioma nuovo: se il
 significato è esprimibile con programmi e ruoli noti, insegna il collegamento.
@@ -203,4 +228,5 @@ lessons:[] e probes:[]; la richiesta di estensione resta aperta, non è un succe
 
 Il seguente oggetto è SOLTANTO un esempio COMPLETO del formato. NON copiarne il
 task, le lezioni o le risposte quando non sono pertinenti alla richiesta:
-''' + jsonEncode(teacherFormatExample0431());
+''' +
+    jsonEncode(teacherFormatExample0431());
