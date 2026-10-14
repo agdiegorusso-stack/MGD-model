@@ -1,0 +1,171 @@
+name: MGD Studio 0.43.0 axioms and local teacher
+on:
+  push:
+    branches: ['codex/mgd-studio-axioms-0430']
+    paths:
+      - '.github/workflows/mgd-axioms0430.yml'
+      - 'mgd-neural-0421/lib/axioms/**'
+      - 'mgd-neural-0421/test/axioms0430*'
+      - 'mgd-neural-0421/tool/integrate_axioms0430.py'
+      - 'mgd-neural-0421/android/app/src/main/kotlin/it/diegorusso/mgd_neuro_mobile/AxiomTeacherBridge.kt'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mgd-axioms0430
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: mgd-axioms-signing-v1
+          restore-keys: |
+            mgd-study-goal-android-signing-v1
+      - name: Preserve installed app when signing identity cannot be recovered
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.android mgd-neural-0421/tool/reports
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -keystore ~/.android/debug.keystore -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US' >/dev/null 2>&1
+          fi
+          fingerprint=$(keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -J-Duser.language=en | sed -n 's/.*SHA256: //p' | tr -d ':' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          if [ "$fingerprint" = eefef321dc8edab8e9758e84693d268af3275e7cb16a42cf3883d3c0680d7b6c ]; then
+            echo MGD_APPLICATION_ID=it.diegorusso.mgdneurostable.studio >> "$GITHUB_ENV"
+            echo 'MGD_APPLICATION_LABEL=MGD Studio 0.43.0' >> "$GITHUB_ENV"
+            echo 'matching_original_signature=true' > mgd-neural-0421/tool/reports/install-mode.txt
+          else
+            echo MGD_APPLICATION_ID=it.diegorusso.mgdneurostable.studio.axioms >> "$GITHUB_ENV"
+            echo 'MGD_APPLICATION_LABEL=MGD Studio Assiomi' >> "$GITHUB_ENV"
+            echo 'matching_original_signature=false; side-by-side identity protects installed app and its data' > mgd-neural-0421/tool/reports/install-mode.txt
+          fi
+          printf '%s\n' "$fingerprint" > mgd-neural-0421/tool/reports/signing-certificate-sha256.txt
+      - run: python -m pip install numpy==2.3.5 scipy==1.16.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: MGD-443-factorized-reader-training
+          run-id: 38176357502
+          github-token: ${{ github.token }}
+          path: research/mgd443_reader/results
+      - name: Restore the existing own-reader payload unchanged in purpose
+        run: python research/mgd443_reader/prepare_app.py
+      - name: Integrate existing application and retain reproducible source changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f mgd-neural-0421/.axioms-integrated-0430 ]; then
+            python mgd-neural-0421/tool/integrate_axioms0430.py
+            printf 'Integrated existing app; do not reapply the historical patch.\n' > mgd-neural-0421/.axioms-integrated-0430
+          fi
+          cd mgd-neural-0421
+          flutter pub get 2>&1 | tee tool/reports/pub-get0430.log
+          dart format lib/axioms test/axioms0430_test.dart test/axioms0430_widget_test.dart
+          cd ..
+          git config user.name 'MGD build integration'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mgd-neural-0421/lib mgd-neural-0421/test/axioms0430* mgd-neural-0421/android mgd-neural-0421/pubspec.yaml mgd-neural-0421/pubspec.lock mgd-neural-0421/.axioms-integrated-0430
+          if ! git diff --cached --quiet; then
+            git commit -m 'Integrate axiom studio into existing Android app [skip ci]'
+            git push origin HEAD:codex/mgd-studio-axioms-0430
+          fi
+          git rev-parse HEAD > mgd-neural-0421/tool/reports/BUILD-COMMIT.txt
+      - name: Analyze complete application
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee tool/reports/analyze0430.log
+      - name: Axiom operational and adversarial checks
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter test test/axioms0430_test.dart --machine 2>&1 | tee tool/reports/axiom-tests0430.jsonl
+      - name: Render and exercise real Flutter screens
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter test test/axioms0430_widget_test.dart --update-goldens --machine 2>&1 | tee tool/reports/axiom-widget0430.jsonl
+      - name: Full legacy and new regression suite
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter test --machine 2>&1 | tee tool/reports/full-tests0430.jsonl
+      - name: Build real Android ARM64 APK with LiteRT runtime, no model weights bundled
+        working-directory: mgd-neural-0421
+        run: set -o pipefail; flutter build apk --release --target-platform android-arm64 2>&1 | tee tool/reports/build0430.log
+      - name: Verify compiled APK identity and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          apk=mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
+          "$tools/apksigner" verify --verbose --print-certs "$apk" > mgd-neural-0421/tool/reports/apk-signature0430.txt
+          "$tools/aapt" dump badging "$apk" > mgd-neural-0421/tool/reports/apk-identity0430.txt
+          sha256sum "$apk" > mgd-neural-0421/tool/reports/APK-SHA256.txt
+          python - <<'PY'
+          import os,zipfile,pathlib,json,hashlib
+          p=pathlib.Path('mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk')
+          identity=pathlib.Path('mgd-neural-0421/tool/reports/apk-identity0430.txt').read_text()
+          assert f"name='{os.environ['MGD_APPLICATION_ID']}'" in identity
+          assert "versionName='0.43.0'" in identity and "versionCode='110'" in identity
+          with zipfile.ZipFile(p) as z:
+              assert not any(n.endswith(('.litertlm','.gguf','.safetensors')) for n in z.namelist())
+              assert 'assets/flutter_assets/assets/reader443.json' in z.namelist()
+          pathlib.Path('mgd-neural-0421/tool/reports/apk0430.json').write_text(json.dumps({'application_id':os.environ['MGD_APPLICATION_ID'],'version':'0.43.0','build':110,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'teacher_weights_bundled':False,'physical_phone_inference_tested':False},indent=2))
+          PY
+      - name: Package auditable sources and summarize tests even on failure
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib,zipfile,json,subprocess
+          root=pathlib.Path('mgd-neural-0421');reports=root/'tool/reports';reports.mkdir(parents=True,exist_ok=True)
+          summary={}
+          for log in reports.glob('*0430.jsonl'):
+              done=[];errors=[];final=None
+              for line in log.read_text(errors='replace').splitlines():
+                  try:x=json.loads(line)
+                  except Exception:continue
+                  if x.get('type')=='testDone' and not x.get('hidden'):done.append(x)
+                  if x.get('type')=='error':errors.append(x)
+                  if x.get('type')=='done':final=x
+              summary[log.name]={'test_done':len(done),'success':sum(x.get('result')=='success' for x in done),'errors':len(errors),'runner_done':final}
+          (reports/'summary0430.json').write_text(json.dumps(summary,indent=2))
+          with zipfile.ZipFile('MGD-Studio-0430-source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              paths=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+              paths += [str(p) for p in (root/'assets').glob('*') if p.is_file()]
+              paths += [str(p) for p in (root/'tool/fixtures').glob('*') if p.is_file()]
+              paths += [str(p) for p in (root/'test/goldens').glob('axioms0430*.png')]
+              for raw in sorted(set(paths)):
+                  p=pathlib.Path(raw)
+                  if p.is_file() and p.stat().st_size<200000000:z.write(p,raw)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-Studio-0430-verification
+          path: |
+            mgd-neural-0421/tool/reports
+            mgd-neural-0421/test/goldens/axioms0430*.png
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MGD-Studio-0430-source
+          path: MGD-Studio-0430-source.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MGD-Studio-0430-APK
+          path: mgd-neural-0421/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
