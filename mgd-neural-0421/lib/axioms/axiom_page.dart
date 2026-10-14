@@ -696,7 +696,10 @@ class _AxiomPainter extends CustomPainter {
           text: TextSpan(
               text: '${n['label']}\n${typeName(n['type'] as String)}',
               style: TextStyle(
-                  fontSize: 12, height: 1.25, color: colors.onSurface)),
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  height: 1.25,
+                  color: colors.onSurface)),
           textDirection: TextDirection.ltr,
           maxLines: 3,
           ellipsis: '…')

@@ -26,17 +26,18 @@ class AxiomStore extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  Future<void> open() async {
-    _db = await openDatabase('${await getDatabasesPath()}/mgd_axioms_0430.db',
+  Future<void> open({String? databasePath}) async {
+    _db = await openDatabase(
+        databasePath ?? '${await getDatabasesPath()}/mgd_axioms_0430.db',
         version: 1, onCreate: (db, v) async {
       await db.execute(
           'CREATE TABLE current (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)');
       await db.execute(
           'CREATE TABLE history (id INTEGER PRIMARY KEY AUTOINCREMENT, payload TEXT NOT NULL, reason TEXT NOT NULL, at TEXT NOT NULL)');
     });
-    final rows = await _db!.query('current', where: 'id=1');
+    final rows = await _db!.query('current', columns: ['id'], where: 'id=1');
     if (rows.isNotEmpty) {
-      state = copyJ(jsonDecode(rows.single['payload'] as String) as Map);
+      state = copyJ(jsonDecode(await _readPayload0430('current', 1)) as Map);
     }
     student.validateModel();
     nodes = student.graph();
@@ -44,6 +45,35 @@ class AxiomStore extends ChangeNotifier {
     status =
         'Memoria pronta. Il grafo rappresenta il discepolo simbolico, non i pesi del vecchio lettore.';
     signal();
+  }
+
+  /// Read bounded slices rather than an entire multi-megabyte CursorWindow row.
+  Future<String> _readPayload0430(String table, int id) async {
+    if (!const ['current', 'history'].contains(table))
+      throw ArgumentError('Tabella non ammessa.');
+    final sizes = await _db!
+        .rawQuery('SELECT length(payload) AS n FROM $table WHERE id=?', [id]);
+    if (sizes.isEmpty)
+      throw StateError('Revisione assente. Nessuna memoria sostituita.');
+    final length = (sizes.single['n'] as num).toInt();
+    if (length < 2 || length > 8000000)
+      throw const FormatException('Snapshot fuori limite.');
+    final out = StringBuffer();
+    for (var offset = 1; offset <= length; offset += 131072) {
+      final rows = await _db!.rawQuery(
+          'SELECT substr(payload, ?, 131072) AS part FROM $table WHERE id=?',
+          [offset, id]);
+      if (rows.isEmpty || rows.single['part'] is! String)
+        throw StateError('Snapshot incompleto.');
+      out.write(rows.single['part'] as String);
+    }
+    return out.toString();
+  }
+
+  Future<void> closeStorage() async {
+    final database = _db;
+    _db = null;
+    await database?.close();
   }
 
   Future<void> _commit(J next, String reason) async {
@@ -190,10 +220,12 @@ class AxiomStore extends ChangeNotifier {
       });
   Future<void> undo() =>
       guarded('Ripristino della revisione precedente…', () async {
-        final rows = await _db!.query('history', orderBy: 'id DESC', limit: 1);
+        final rows = await _db!
+            .query('history', columns: ['id'], orderBy: 'id DESC', limit: 1);
         if (rows.isEmpty) throw StateError('Nessuna revisione precedente.');
-        final prior =
-            copyJ(jsonDecode(rows.single['payload'] as String) as Map);
+        final prior = copyJ(jsonDecode(
+                await _readPayload0430('history', rows.single['id'] as int))
+            as Map);
         await _commit(prior, 'Ripristino');
         status = 'Revisione precedente ripristinata.';
       });

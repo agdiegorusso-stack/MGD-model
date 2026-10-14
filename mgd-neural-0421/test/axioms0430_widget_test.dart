@@ -1,11 +1,36 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mgd_neuro_mobile/axioms/axiom_page.dart';
 import 'package:mgd_neuro_mobile/axioms/axiom_store.dart';
 
+Future<void> loadFonts0430() async {
+  final root = Platform.environment['FLUTTER_ROOT'];
+  final candidates = <Directory>[
+    if (root != null) Directory('$root/bin/cache/artifacts/material_fonts')
+  ];
+  var cursor = File(Platform.resolvedExecutable).parent;
+  for (var i = 0; i < 8; i++) {
+    candidates.add(Directory('${cursor.path}/material_fonts'));
+    cursor = cursor.parent;
+  }
+  final dir = candidates
+      .firstWhere((d) => File('${d.path}/Roboto-Regular.ttf').existsSync());
+  for (final name in ['Roboto', 'MaterialIcons']) {
+    final path =
+        '${dir.path}/${name == 'Roboto' ? 'Roboto-Regular.ttf' : 'MaterialIcons-Regular.otf'}';
+    final loader = FontLoader(name)
+      ..addFont(
+          Future.value(ByteData.sublistView(await File(path).readAsBytes())));
+    await loader.load();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(loadFonts0430);
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(AxiomStore.channel, (call) async {
@@ -46,7 +71,10 @@ void main() {
       store.nodes = store.student.graph();
       store.status = 'Memoria pronta per la verifica della UI.';
       await tester.pumpWidget(MaterialApp(
-          theme: ThemeData.dark(useMaterial3: true),
+          theme: ThemeData(
+              brightness: Brightness.dark,
+              useMaterial3: true,
+              fontFamily: 'Roboto'),
           home: AxiomStudioPage(store: store)));
       await tester.pumpAndSettle();
       expect(find.text('Assiomi · MGD Studio'), findsOneWidget);
@@ -80,7 +108,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp(
-        theme: ThemeData.dark(useMaterial3: true),
+        theme: ThemeData(
+            brightness: Brightness.dark,
+            useMaterial3: true,
+            fontFamily: 'Roboto'),
         home: const TeacherModelsPage()));
     await tester.pumpAndSettle();
     expect(find.text('Gemma 4 E2B · 2.59 GB'), findsOneWidget);

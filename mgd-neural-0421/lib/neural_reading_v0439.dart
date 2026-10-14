@@ -259,6 +259,8 @@ class NeuralReading439 {
     finally { if (run == null) busy = false; }
     if (epoch != _epoch || shouldContinue?.call() == false) return false;
     final live = fragments(m).map((r) => r['rid439']).toSet();
+    // Protect the previous teaching provenance even when generation fails.
+    if (!processed.every(live.contains)) return false;
     if (!batch.every((r) => live.contains(r['rid439']))) return false;
     if (learned != null && !(learned['processed'] as List).every(live.contains)) return false;
     if (learned != null) m.state317['semantic445'] = learned;
